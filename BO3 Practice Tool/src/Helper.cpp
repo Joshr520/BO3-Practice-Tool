@@ -218,7 +218,7 @@ namespace GUIWindow
         return (stat(s.c_str(), &buffer) == 0);
     }
 
-    void VerifyFileStructure(std::string selfDirectory, std::string bo3Directory)
+    void VerifyFileStructure()
     {
         std::string practiceToolDirectory = bo3Directory + "\\Practice Tool";
         std::string gscDirectory = practiceToolDirectory + "\\GSC";
@@ -272,7 +272,7 @@ namespace GUIWindow
         }
     }
 
-    void WritePracticePatches(std::string bo3Directory, int patch[8])
+    void WritePracticePatches(int patch[8])
     {
         std::string outData;
         for (int i = 0; i < 8; i++)
@@ -285,7 +285,7 @@ namespace GUIWindow
         outFile.close();
     }
 
-    void NotifyGame(std::string bo3Directory, std::vector<int> passList)
+    void NotifyGame(std::vector<int> passList)
     {
         if (appStatus == "Status: Inactive")
             return;
@@ -300,7 +300,7 @@ namespace GUIWindow
         outFile.close();
     }
 
-    void InjectTool(bool enable, std::string bo3Directory)
+    void InjectTool(bool enable)
     {
         std::string compiler = bo3Directory + "\\Practice Tool\\GSC\\DebugCompiler.exe";
         std::string gsc = bo3Directory + "\\Practice Tool\\GSC";

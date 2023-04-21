@@ -18,10 +18,10 @@ namespace GUIWindow
 	void SwapGumSelection(int newGum, int gumSlot);
 	std::vector<int> GumSearch(std::vector<int> inGumArr, char searchText[64]);
 	bool DoesPathExist(const std::string& s);
-	void VerifyFileStructure(std::string selfDirectory, std::string bo3Directory);
-	void WritePracticePatches(std::string bo3Directory, int patch[8]);
-	void NotifyGame(std::string bo3Directory, std::vector<int> passList);
-	void InjectTool(bool enable, std::string bo3Directory);
+	void VerifyFileStructure();
+	void WritePracticePatches(int patch[8]);
+	void NotifyGame(std::vector<int> passList);
+	void InjectTool(bool enable);
 	std::vector<int> GetWeaponIndex(std::string currentMap, std::string weaponSelectName);
 	void ResetToggles();
 }

@@ -34,4 +34,6 @@ namespace GUIWindow
 
 	inline std::string appStatus = "Status: Inactive";
 	inline std::string currentMap = "";
+	inline std::string selfDirectory;
+	inline std::string bo3Directory;
 }

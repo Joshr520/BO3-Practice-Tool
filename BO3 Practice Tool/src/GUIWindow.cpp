@@ -56,11 +56,8 @@ void GKValveSolverPtr();
 void PresetSelectionFunc(int input);
 void SwapSelectionFunc(int input);
 
-std::string selfDirectory;
-
 // JSON Settings
 bool steamPathFound = false;
-std::string bo3Directory;
 
 // Function pointer list for main UI content
 std::vector<std::function<void()>> funcList;
@@ -192,7 +189,7 @@ namespace GUIWindow
         if (DoesPathExist(bo3Directory))
         {
             steamPathFound = true;
-            VerifyFileStructure(selfDirectory, bo3Directory);
+            VerifyFileStructure();
         }
 
         pID = MemHelp::GetProcessIdByName("BlackOps3.exe");
@@ -207,7 +204,7 @@ namespace GUIWindow
         }
 
         BGB::WritePresetToGame(BGB::inactivePreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
-        WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+        WritePracticePatches(inactivePracticePatchIndexes);
     }
 
     void Run()
@@ -461,12 +458,12 @@ bool RenderFrame()
                     {
                         BGB::writeGums = false;
                         BGB::WritePresetToGame(BGB::inactivePreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
-                        WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+                        WritePracticePatches(inactivePracticePatchIndexes);
                         ResetToggles();
                     }
                     else
-                        WritePracticePatches(bo3Directory, practicePatchIndexes);
-                    InjectTool(enabled, bo3Directory);
+                        WritePracticePatches(practicePatchIndexes);
+                    InjectTool(enabled);
                 }
             }
             ImGui::Separator();
@@ -593,7 +590,7 @@ bool RenderFrame()
                 std::ofstream outFile(selfDirectory + "/settings.json");
                 outFile << std::setw(4) << data;
                 outFile.close();
-                VerifyFileStructure(selfDirectory, bo3Directory);
+                VerifyFileStructure();
             }
         }
 
@@ -849,9 +846,9 @@ void PracticePatchesPtr()
         if (CreateListBox("##SOE", zodPracticeList, practicePatchIndexes[0], ImVec2(200.0f, 200.0f)))
         {
             if (appStatus == "Status: Active")
-                WritePracticePatches(bo3Directory, practicePatchIndexes);
+                WritePracticePatches(practicePatchIndexes);
             else
-                WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+                WritePracticePatches(inactivePracticePatchIndexes);
         }
     }
     ImGui::EndGroup();
@@ -864,9 +861,9 @@ void PracticePatchesPtr()
         if (CreateListBox("##Giant", factoryPracticeList, practicePatchIndexes[1], ImVec2(200.0f, 200.0f)))
         {
             if (appStatus == "Status: Active")
-                WritePracticePatches(bo3Directory, practicePatchIndexes);
+                WritePracticePatches(practicePatchIndexes);
             else
-                WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+                WritePracticePatches(inactivePracticePatchIndexes);
         }
     }
     ImGui::EndGroup();
@@ -879,9 +876,9 @@ void PracticePatchesPtr()
         if (CreateListBox("##DE", castlePracticeList, practicePatchIndexes[2], ImVec2(200.0f, 200.0f)))
         {
             if (appStatus == "Status: Active")
-                WritePracticePatches(bo3Directory, practicePatchIndexes);
+                WritePracticePatches(practicePatchIndexes);
             else
-                WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+                WritePracticePatches(inactivePracticePatchIndexes);
         }
     }
     ImGui::EndGroup();
@@ -894,9 +891,9 @@ void PracticePatchesPtr()
         if (CreateListBox("##ZNS", islandPracticeList, practicePatchIndexes[3], ImVec2(200.0f, 200.0f)))
         {
             if (appStatus == "Status: Active")
-                WritePracticePatches(bo3Directory, practicePatchIndexes);
+                WritePracticePatches(practicePatchIndexes);
             else
-                WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+                WritePracticePatches(inactivePracticePatchIndexes);
         }
     }
     ImGui::EndGroup();
@@ -906,9 +903,9 @@ void PracticePatchesPtr()
         if (CreateListBox("##GK", stalingradPracticeList, practicePatchIndexes[4], ImVec2(200.0f, 200.0f)))
         {
             if (appStatus == "Status: Active")
-                WritePracticePatches(bo3Directory, practicePatchIndexes);
+                WritePracticePatches(practicePatchIndexes);
             else
-                WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+                WritePracticePatches(inactivePracticePatchIndexes);
         }
     }
     ImGui::EndGroup();
@@ -921,9 +918,9 @@ void PracticePatchesPtr()
         if (CreateListBox("##Rev", genesisPracticeList, practicePatchIndexes[5], ImVec2(200.0f, 200.0f)))
         {
             if (appStatus == "Status: Active")
-                WritePracticePatches(bo3Directory, practicePatchIndexes);
+                WritePracticePatches(practicePatchIndexes);
             else
-                WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+                WritePracticePatches(inactivePracticePatchIndexes);
         }
     }
     ImGui::EndGroup();
@@ -936,9 +933,9 @@ void PracticePatchesPtr()
         if (CreateListBox("##Moon", moonPracticeList, practicePatchIndexes[6], ImVec2(200.0f, 200.0f)))
         {
             if (appStatus == "Status: Active")
-                WritePracticePatches(bo3Directory, practicePatchIndexes);
+                WritePracticePatches(practicePatchIndexes);
             else
-                WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+                WritePracticePatches(inactivePracticePatchIndexes);
         }
     }
     ImGui::EndGroup();
@@ -951,9 +948,9 @@ void PracticePatchesPtr()
         if (CreateListBox("##Origins", tombPracticeList, practicePatchIndexes[7], ImVec2(200.0f, 200.0f)))
         {
             if (appStatus == "Status: Active")
-                WritePracticePatches(bo3Directory, practicePatchIndexes);
+                WritePracticePatches(practicePatchIndexes);
             else
-                WritePracticePatches(bo3Directory, inactivePracticePatchIndexes);
+                WritePracticePatches(inactivePracticePatchIndexes);
         }
     }
     ImGui::EndGroup();
@@ -966,14 +963,14 @@ void PlayerOptionsPtr()
         if (ImGui::BeginTabItem(ICON_FA_GEAR " General Options"))
         {
             if (CreateButton("Godmode", ImVec2(100.0f, 25.0f), &PlayerOptions::godActive, true, fakeColor, true))
-                NotifyGame(bo3Directory, { 0, 11, PlayerOptions::godActive });
+                NotifyGame({ 0, 11, PlayerOptions::godActive });
             SAMELINE;
             if (CreateButton("Infinite Ammo", ImVec2(150.0f, 25.0f), &PlayerOptions::infAmmoActive, true, fakeColor, true))
-                NotifyGame(bo3Directory, { 0, 12, PlayerOptions::infAmmoActive });
+                NotifyGame({ 0, 12, PlayerOptions::infAmmoActive });
             SAMELINE;
             ImGui::SetNextItemWidth(175.0f);
             if (ImGui::SliderInt("Timescale", &PlayerOptions::timescaleInt, 1, 10))
-                NotifyGame(bo3Directory, { 0, 13, PlayerOptions::timescaleInt });
+                NotifyGame({ 0, 13, PlayerOptions::timescaleInt });
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem(ICON_FA_GEAR " Weapon Options"))
@@ -984,33 +981,33 @@ void PlayerOptionsPtr()
                 std::vector weaponNums = GetWeaponIndex(currentMap, weaponSelectName);
                 notify.insert(notify.end(), weaponNums.begin(), weaponNums.end());
                 notify.push_back(Weapons::upgradedWeapon);
-                NotifyGame(bo3Directory, notify);
+                NotifyGame(notify);
             }
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Current Weapon", ImVec2(200.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 2, 0 });
+                NotifyGame({ 0, 2, 0 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Alt Weapon", ImVec2(200.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 2, 7 });
+                NotifyGame({ 0, 2, 7 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Hero Weapon", ImVec2(200.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 2, 6 });
+                NotifyGame({ 0, 2, 6 });
             SAMELINE;
             ImGui::Checkbox("Upgraded", &Weapons::upgradedWeapon);
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Lethals", ImVec2(158.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 2, 1 });
+                NotifyGame({ 0, 2, 1 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Tacticals", ImVec2(158.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 2, 2 });
+                NotifyGame({ 0, 2, 2 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Shield Slot", ImVec2(158.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 2, 3 });
+                NotifyGame({ 0, 2, 3 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Reset Melee", ImVec2(158.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 2, 4 });
+                NotifyGame({ 0, 2, 4 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Mine Slot", ImVec2(158.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 2, 5 });
+                NotifyGame({ 0, 2, 5 });
             // Can't use API helper function for listboxes because we need custom control over the selection variable
             // All listboxes for the weapons will act as a single listbox over several listbox containers
             ImGui::BeginChild(ImGui::GetID("Weapon List 1"), ImVec2(310.0f, ImGui::GetContentRegionAvail().y - 40.0f));
@@ -1197,10 +1194,10 @@ void PlayerOptionsPtr()
         if (ImGui::BeginTabItem(ICON_FA_GEAR " Point Options"))
         {
             if (CreateButton(ICON_FA_CIRCLE_PLUS " Max Score", ImVec2(125.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 0, 4194303 });
+                NotifyGame({ 0, 0, 4194303 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Reset Score", ImVec2(125.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 0, 500 });
+                NotifyGame({ 0, 0, 500 });
             ImGui::SetNextItemWidth(200.0f);
             if (ImGui::InputInt("Set Points", &pointInput, 1000, 10000, ImGuiInputTextFlags_EnterReturnsTrue))
             {
@@ -1211,7 +1208,7 @@ void PlayerOptionsPtr()
             }
             SAMELINE;
             if (CreateButton(ICON_FA_ARROW_RIGHT " Send##Point Input", ImVec2(80.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 0, pointInput });
+                NotifyGame({ 0, 0, pointInput });
             SAMELINE;
             HelpMarker("Increment +- 1000\nCtrl + Click increment +- 10000");
             ImGui::EndTabItem();
@@ -1219,34 +1216,34 @@ void PlayerOptionsPtr()
         if (ImGui::BeginTabItem(ICON_FA_GEAR " Perk Options"))
         {
             if (CreateButton(ICON_FA_CIRCLE_PLUS " Give All Perks", ImVec2(145.f, 25.f)))
-                NotifyGame(bo3Directory, { 0, 7 });
+                NotifyGame({ 0, 7 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take All Perks", ImVec2(145.f, 25.f)))
-                NotifyGame(bo3Directory, { 0, 8 });
+                NotifyGame({ 0, 8 });
             if (CreateButton(ICON_FA_CIRCLE_PLUS " Give Perk", ImVec2(145.f, 25.f)))
-                NotifyGame(bo3Directory, { 0, 9, perkSelectIndex });
+                NotifyGame({ 0, 9, perkSelectIndex });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Perk", ImVec2(145.f, 25.f)))
-                NotifyGame(bo3Directory, { 0, 10, perkSelectIndex });
+                NotifyGame({ 0, 10, perkSelectIndex });
             CreateListBox("##Perk List", Perks::perksList[currentMap], perkSelectIndex, ImVec2(300.f, 300.f));
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem(ICON_FA_GEAR " Gobblegum Options"))
         {
             if (CreateButton(ICON_FA_CIRCLE_PLUS " Give Classic Gum", ImVec2(175.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 3, gobblegumClassicSelectIndex });
+                NotifyGame({ 0, 3, gobblegumClassicSelectIndex });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_PLUS " Give Mega Gum", ImVec2(175.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 3, gobblegumMegaSelectIndex + 19 });
+                NotifyGame({ 0, 3, gobblegumMegaSelectIndex + 19 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Gum", ImVec2(125.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 4 });
+                NotifyGame({ 0, 4 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Take Gum Charge", ImVec2(175.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 5 });
+                NotifyGame({ 0, 5 });
             SAMELINE;
             if (CreateButton(ICON_FA_CIRCLE_MINUS " Activate Gum", ImVec2(175.0f, 25.0f)))
-                NotifyGame(bo3Directory, { 0, 6 });
+                NotifyGame({ 0, 6 });
             CreateListBox("##Classic Gums List", BGB::classicList, gobblegumClassicSelectIndex, ImVec2(300.0f, ImGui::GetContentRegionAvail().y - 40.0f));
             SAMELINE;
             CreateListBox("##Mega Gums List", BGB::megaList, gobblegumMegaSelectIndex, ImVec2(300.0f, ImGui::GetContentRegionAvail().y - 40.0f));
@@ -1260,16 +1257,16 @@ void PlayerOptionsPtr()
 void ZombieOptionsPtr()
 {
     if (CreateButton("Ignore Players", ImVec2(140.0F, 25.0f), &ZombieOptions::zombiesIgnore, true, fakeColor, true))
-        NotifyGame(bo3Directory, { 1, 0, ZombieOptions::zombiesIgnore });
+        NotifyGame({ 1, 0, ZombieOptions::zombiesIgnore });
     SAMELINE;
     if (CreateButton("Kill Horde", ImVec2(140.0F, 25.0f), NULL))
-        NotifyGame(bo3Directory, { 1, 1 });
+        NotifyGame({ 1, 1 });
     SAMELINE;
     if (CreateButton("Freeze Zombies", ImVec2(140.0F, 25.0f), &ZombieOptions::zombiesFreeze, true, fakeColor, true))
-        NotifyGame(bo3Directory, { 1, 2, ZombieOptions::zombiesFreeze });
+        NotifyGame({ 1, 2, ZombieOptions::zombiesFreeze });
     SAMELINE;
     if (CreateButton("Toggle Spawning", ImVec2(140.0F, 25.0f), &ZombieOptions::zombiesSpawn, true, fakeColor, true))
-        NotifyGame(bo3Directory, { 1, 3, ZombieOptions::zombiesSpawn });
+        NotifyGame({ 1, 3, ZombieOptions::zombiesSpawn });
     DummySpace(0, 5);
     ImGui::Text("Zombie Speed Options");
     SAMELINE;
@@ -1281,9 +1278,9 @@ void ZombieOptionsPtr()
         ZombieOptions::zombieSpeedRun = false;
         ZombieOptions::zombieSpeedSprint = false;
         if (ZombieOptions::zombieSpeedWalk)
-            NotifyGame(bo3Directory, { 1, 4, 0 });
+            NotifyGame({ 1, 4, 0 });
         else
-            NotifyGame(bo3Directory, { 1, 4, 3 });
+            NotifyGame({ 1, 4, 3 });
     }
     SAMELINE;
     if (CreateButton("Run", ImVec2(100.0f, 25.0f), &ZombieOptions::zombieSpeedRun, true, fakeColor, true))
@@ -1291,9 +1288,9 @@ void ZombieOptionsPtr()
         ZombieOptions::zombieSpeedWalk = false;
         ZombieOptions::zombieSpeedSprint = false;
         if (ZombieOptions::zombieSpeedRun)
-            NotifyGame(bo3Directory, { 1, 4, 1 });
+            NotifyGame({ 1, 4, 1 });
         else
-            NotifyGame(bo3Directory, { 1, 4, 3 });
+            NotifyGame({ 1, 4, 3 });
     }
     SAMELINE;
     if (CreateButton("Sprint", ImVec2(100.0f, 25.0f), &ZombieOptions::zombieSpeedSprint, true, fakeColor, true))
@@ -1301,9 +1298,9 @@ void ZombieOptionsPtr()
         ZombieOptions::zombieSpeedWalk = false;
         ZombieOptions::zombieSpeedRun = false;
         if (ZombieOptions::zombieSpeedSprint)
-            NotifyGame(bo3Directory, { 1, 4, 2 });
+            NotifyGame({ 1, 4, 2 });
         else
-            NotifyGame(bo3Directory, { 1, 4, 3 });
+            NotifyGame({ 1, 4, 3 });
     }
 
 }
@@ -1311,10 +1308,10 @@ void ZombieOptionsPtr()
 void RoundOptionsPtr()
 {
     if (CreateButton("End Round", ImVec2(120.0f, 25.0f)))
-        NotifyGame(bo3Directory, { 2, 0 });
+        NotifyGame({ 2, 0 });
     SAMELINE;
     if (CreateButton("Restart Round", ImVec2(120.0f, 25.0f)))
-        NotifyGame(bo3Directory, { 2, 1 });
+        NotifyGame({ 2, 1 });
     ImGui::SetNextItemWidth(125.0f);
     if (ImGui::InputInt("Set Round", &roundInput, 1, 10, ImGuiInputTextFlags_EnterReturnsTrue))
     {
@@ -1325,7 +1322,7 @@ void RoundOptionsPtr()
     }
     SAMELINE;
     if (CreateButton(ICON_FA_ARROW_RIGHT " Send##Round Input", ImVec2(80.0f, 25.0f)))
-        NotifyGame(bo3Directory, { 2, 1, roundInput });
+        NotifyGame({ 2, 1, roundInput });
     SAMELINE;
     HelpMarker("Increment +- 1\nCtrl + Click increment +- 10");
     ImGui::SetNextItemWidth(100.0f);
@@ -1338,7 +1335,7 @@ void RoundOptionsPtr()
     }
     SAMELINE;
     if (CreateButton(ICON_FA_ARROW_RIGHT " Send##Zombie Count", ImVec2(80.0f, 25.0f)))
-        NotifyGame(bo3Directory, { 2, 2, zombieCount });
+        NotifyGame({ 2, 2, zombieCount });
 }
 
 void PowerupOptionsPtr()
@@ -1347,7 +1344,7 @@ void PowerupOptionsPtr()
     SAMELINE;
     ImGui::BeginGroup();
     if (CreateButton("Give Powerup", ImVec2(125.0f, 25.0f)))
-        NotifyGame(bo3Directory, { 3, 0, PowerupOptions::powerupListIndex, PowerupOptions::instaGrab });
+        NotifyGame({ 3, 0, PowerupOptions::powerupListIndex, PowerupOptions::instaGrab });
     ImGui::Checkbox("Insta Grab", &PowerupOptions::instaGrab);
     ImGui::EndGroup();
 }
@@ -1380,9 +1377,9 @@ void EggStepOptionsPtr()
                 SAMELINE;
                 ImGui::BeginGroup();
                 if (CreateButton("Complete Step##Ritual", ImVec2(125.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 4, 0, EggStepOptions::zodRitualIndex });
+                    NotifyGame({ 4, 0, EggStepOptions::zodRitualIndex });
                 if (CreateButton("Complete All Steps##Ritual", ImVec2(155.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 4, 0, 4 });
+                    NotifyGame({ 4, 0, 4 });
                 ImGui::EndGroup();
             }
             // Egg List
@@ -1406,9 +1403,9 @@ void EggStepOptionsPtr()
                 SAMELINE;
                 ImGui::BeginGroup();
                 if (CreateButton("Complete Step##Egg", ImVec2(125.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 4, 2, EggStepOptions::zodEggIndex });
+                    NotifyGame({ 4, 2, EggStepOptions::zodEggIndex });
                 if (CreateButton("Complete All Steps##Egg", ImVec2(155.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 4, 1 });
+                    NotifyGame({ 4, 1 });
                 ImGui::EndGroup();
             }
             ImGui::EndGroup();
@@ -1435,9 +1432,9 @@ void EggStepOptionsPtr()
                 SAMELINE;
                 ImGui::BeginGroup();
                 if (CreateButton("Complete Step##Ovum", ImVec2(125.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 4, 4, EggStepOptions::zodOvumIndex });
+                    NotifyGame({ 4, 4, EggStepOptions::zodOvumIndex });
                 if (CreateButton("Complete All Steps##Ovum", ImVec2(155.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 4, 3 });
+                    NotifyGame({ 4, 3 });
                 ImGui::EndGroup();
             }
             // Flag List
@@ -1461,9 +1458,9 @@ void EggStepOptionsPtr()
                 SAMELINE;
                 ImGui::BeginGroup();
                 if (CreateButton("Complete Step##Flag", ImVec2(125.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 4, 6, EggStepOptions::zodFlagIndex });
+                    NotifyGame({ 4, 6, EggStepOptions::zodFlagIndex });
                 if (CreateButton("Complete All Steps##Flag", ImVec2(155.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 4, 5 });
+                    NotifyGame({ 4, 5 });
                 ImGui::EndGroup();
             }
             ImGui::EndGroup();
@@ -1500,7 +1497,7 @@ void CraftableOptionsPtr()
     if (craftSize > 0)
     {
         if (CreateButton("Pickup Every Part", ImVec2(150.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 5, 0 });
+            NotifyGame({ 5, 0 });
         for (int i = 0; i < craftSize; i++)
         {
             if (ImGui::CollapsingHeader(Craftables::craftNames[currentMap][i].c_str()))
@@ -1510,9 +1507,9 @@ void CraftableOptionsPtr()
                 SAMELINE;
                 ImGui::BeginGroup();
                 if (CreateButton("Pickup Part##" + std::to_string(i), ImVec2(150.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 5, 1, i, Craftables::craftComboIndexes[currentMap][i] });
+                    NotifyGame({ 5, 1, i, Craftables::craftComboIndexes[currentMap][i] });
                 if (CreateButton("Pickup All Parts##" + std::to_string(i), ImVec2(150.0f, 25.0f)))
-                    NotifyGame(bo3Directory, { 5, 1, i, 0, 1 });
+                    NotifyGame({ 5, 1, i, 0, 1 });
                 ImGui::EndGroup();
             }
         }
@@ -1524,28 +1521,28 @@ void CraftableOptionsPtr()
 void BlockerOptionsPtr()
 {
     if (CreateButton("Open All Doors", ImVec2(150.0f, 25.0f)))
-        NotifyGame(bo3Directory, { 6, 0 });
+        NotifyGame({ 6, 0 });
     SAMELINE;
     if (CreateButton("Global Power On", ImVec2(150.0f, 25.0f)))
-        NotifyGame(bo3Directory, { 6, 2 });
+        NotifyGame({ 6, 2 });
     SAMELINE;
     if (CreateButton("Open All Barriers", ImVec2(150.0f, 25.0f)))
-        NotifyGame(bo3Directory, { 6, 5, 0 });
+        NotifyGame({ 6, 5, 0 });
     SAMELINE;
     if (CreateButton("Close All Barriers", ImVec2(150.0f, 25.0f)))
-        NotifyGame(bo3Directory, { 6, 5, 1 });
+        NotifyGame({ 6, 5, 1 });
     switch (hashstr(currentMap.c_str()))
     {
     case hashstr("zm_zod"):
     {
         if (CreateButton("Open Selected Door", ImVec2(200.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::zodDoorIndex });
+            NotifyGame({ 6, 1, Blockers::zodDoorIndex });
         SAMELINE;
         if (CreateButton("Activate Selected Power", ImVec2(200.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 3, Blockers::zodPowerIndex });
+            NotifyGame({ 6, 3, Blockers::zodPowerIndex });
         SAMELINE;
         if (CreateButton("Smash Selected Smashable", ImVec2(225.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, Blockers::zodSmashablesIndex });
+            NotifyGame({ 6, 4, Blockers::zodSmashablesIndex });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1568,16 +1565,16 @@ void BlockerOptionsPtr()
     case hashstr("zm_factory"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::factoryDoorIndex });
+            NotifyGame({ 6, 1, Blockers::factoryDoorIndex });
         SAMELINE;
         if (CreateButton("Activate West TP", ImVec2(150.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, 0 });
+            NotifyGame({ 6, 4, 0 });
         SAMELINE;
         if (CreateButton("Activate East TP", ImVec2(150.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, 1 });
+            NotifyGame({ 6, 4, 1 });
         SAMELINE;
         if (CreateButton("Activate South TP", ImVec2(150.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, 2 });
+            NotifyGame({ 6, 4, 2 });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1588,10 +1585,10 @@ void BlockerOptionsPtr()
     case hashstr("zm_castle"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::castleDoorIndex });
+            NotifyGame({ 6, 1, Blockers::castleDoorIndex });
         SAMELINE;
         if (CreateButton("Activate Selected Landing Pad", ImVec2(250.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, Blockers::castleLanderIndex });
+            NotifyGame({ 6, 4, Blockers::castleLanderIndex });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 350.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1608,7 +1605,7 @@ void BlockerOptionsPtr()
     case hashstr("zm_island"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::islandDoorIndex });
+            NotifyGame({ 6, 1, Blockers::islandDoorIndex });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 300.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1619,7 +1616,7 @@ void BlockerOptionsPtr()
     case hashstr("zm_stalingrad"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::stalingradDoorIndex });
+            NotifyGame({ 6, 1, Blockers::stalingradDoorIndex });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 300.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1630,13 +1627,13 @@ void BlockerOptionsPtr()
     case hashstr("zm_genesis"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::genesisDoorIndex });
+            NotifyGame({ 6, 1, Blockers::genesisDoorIndex });
         SAMELINE;
         if (CreateButton("Activate Selected Gen", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 3, Blockers::genesisGenIndex });
+            NotifyGame({ 6, 3, Blockers::genesisGenIndex });
         SAMELINE;
         if (CreateButton("Trap Apothicon", ImVec2(150.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, 0 });
+            NotifyGame({ 6, 4, 0 });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 300.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1653,7 +1650,7 @@ void BlockerOptionsPtr()
     case hashstr("zm_prototype"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::prototypeDoorIndex });
+            NotifyGame({ 6, 1, Blockers::prototypeDoorIndex });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1664,7 +1661,7 @@ void BlockerOptionsPtr()
     case hashstr("zm_asylum"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::asylumDoorIndex });
+            NotifyGame({ 6, 1, Blockers::asylumDoorIndex });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1675,7 +1672,7 @@ void BlockerOptionsPtr()
     case hashstr("zm_sumpf"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::sumpfDoorIndex });
+            NotifyGame({ 6, 1, Blockers::sumpfDoorIndex });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1686,10 +1683,10 @@ void BlockerOptionsPtr()
     case hashstr("zm_theater"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::theaterDoorIndex });
+            NotifyGame({ 6, 1, Blockers::theaterDoorIndex });
         SAMELINE;
         if (CreateButton("Link TP", ImVec2(125.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, 0 });
+            NotifyGame({ 6, 4, 0 });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1700,10 +1697,10 @@ void BlockerOptionsPtr()
     case hashstr("zm_cosmodrome"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::cosmodromeDoorIndex });
+            NotifyGame({ 6, 1, Blockers::cosmodromeDoorIndex });
         SAMELINE;
         if (CreateButton("Open PAP", ImVec2(125.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, 0 });
+            NotifyGame({ 6, 4, 0 });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1714,10 +1711,10 @@ void BlockerOptionsPtr()
     case hashstr("zm_temple"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::templeDoorIndex });
+            NotifyGame({ 6, 1, Blockers::templeDoorIndex });
         SAMELINE;
         if (CreateButton("Open PAP", ImVec2(125.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, 0 });
+            NotifyGame({ 6, 4, 0 });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1728,10 +1725,10 @@ void BlockerOptionsPtr()
     case hashstr("zm_moon"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::moonDoorIndex });
+            NotifyGame({ 6, 1, Blockers::moonDoorIndex });
         SAMELINE;
         if (CreateButton("Open TP Cage", ImVec2(125.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 4, 0 });
+            NotifyGame({ 6, 4, 0 });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1742,10 +1739,10 @@ void BlockerOptionsPtr()
     case hashstr("zm_tomb"):
     {
         if (CreateButton("Open Selected Door", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 1, Blockers::tombDoorIndex });
+            NotifyGame({ 6, 1, Blockers::tombDoorIndex });
         SAMELINE;
         if (CreateButton("Activate Selected Gen", ImVec2(175.0f, 25.0f)))
-            NotifyGame(bo3Directory, { 6, 3, Blockers::tombGenIndex });
+            NotifyGame({ 6, 3, Blockers::tombGenIndex });
         ImGui::BeginGroup();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 250.0f / 2 - ImGui::CalcTextSize("Doors List").x / 2);
         ImGui::Text("Doors List");
@@ -1771,7 +1768,7 @@ void MapOptionsPtr()
     SAMELINE;
     if (CreateButton("Load Map", ImVec2(100.0f, 25.0f)))
     {
-        NotifyGame(bo3Directory, { 7, 0, MapOptions::mapListIndex });
+        NotifyGame({ 7, 0, MapOptions::mapListIndex });
     }
     ImGui::EndGroup();
 }

@@ -142,7 +142,7 @@ namespace Weapons
 
 namespace BGB
 {
-#define PRESET_FILE "Gum Profiles/GumPresets.csv"
+#define PRESET_FILE "\\Gum Profiles\\GumPresets.csv"
 
     void InitBGBDescriptions()
     {
@@ -288,7 +288,7 @@ namespace BGB
         gumPresets.clear();
 
         std::string line;
-        std::ifstream file(PRESET_FILE);
+        std::ifstream file(GUIWindow::selfDirectory + PRESET_FILE);
 
         while (getline(file, line))
         {
@@ -321,7 +321,7 @@ namespace BGB
     {
         std::string line;
         std::string outData;
-        std::ifstream inFile(PRESET_FILE);
+        std::ifstream inFile(GUIWindow::selfDirectory + PRESET_FILE);
 
         while (getline(inFile, line))
         {
@@ -333,7 +333,7 @@ namespace BGB
         }
         inFile.close();
 
-        std::ofstream outFile(PRESET_FILE);
+        std::ofstream outFile(GUIWindow::selfDirectory + PRESET_FILE);
         outFile << outData;
         outFile.close();
         if (currentPreset > 0) currentPreset--;
@@ -343,10 +343,10 @@ namespace BGB
     void CreateNewGumPreset(std::string presetName)
     {
         std::string line;
-        std::ifstream checkFile(PRESET_FILE);
+        std::ifstream checkFile(GUIWindow::selfDirectory + PRESET_FILE);
         while (getline(checkFile, line));
 
-        std::ofstream file(PRESET_FILE, std::ios::app);
+        std::ofstream file(GUIWindow::selfDirectory + PRESET_FILE, std::ios::app);
         if (line != "")
             file << "\n";
         checkFile.close();
@@ -375,7 +375,7 @@ namespace BGB
     {
         std::string line;
         std::string outData;
-        std::ifstream inFile(PRESET_FILE);
+        std::ifstream inFile(GUIWindow::selfDirectory + PRESET_FILE);
 
         while (getline(inFile, line))
         {
@@ -397,7 +397,7 @@ namespace BGB
         }
         inFile.close();
 
-        std::ofstream outFile(PRESET_FILE);
+        std::ofstream outFile(GUIWindow::selfDirectory + PRESET_FILE);
         outFile << outData;
         outFile.close();
 
