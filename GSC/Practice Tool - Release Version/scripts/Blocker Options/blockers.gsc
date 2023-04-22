@@ -74,18 +74,15 @@ InitBlockerLists()
 
 OpenAllDoors()
 {
-	if(!IsTrue(level.disable_text))
+	if(IsTrue(level.blockers_open))
 	{
-		if(level.blockers_open)
-		{
-			thread WriteToScreen("Doors Already Opened");
-			return;
-		}
-		else
-		{
-			level.blockers_open = 1;
-			thread WriteToScreen("Opening All Doors");
-		}
+		thread WriteToScreen("Doors Already Opened");
+		return;
+	}
+	else
+	{
+		level.blockers_open = 1;
+		thread WriteToScreen("Opening All Doors");
 	}
 	SetDvar("zombie_unlock_all", 1);
     types = Array("zombie_door", "zombie_airlock_buy", "zombie_debris");
@@ -140,18 +137,15 @@ OpenAllDoors()
 OpenBeastDoors()
 {
 	if(level.script != "zm_zod") return;
-	if(!IsTrue(level.disable_text))
+	if(IsTrue(level.smashables_open))
 	{
-		if(level.smashables_open)
-		{
-			thread WriteToScreen("Beast Breakables Already Broken");
-			return;
-		}
-		else
-		{
-			level.smashables_open = 1;
-			thread WriteToScreen("Opening All Beast Breakables");
-		}
+		thread WriteToScreen("Beast Breakables Already Broken");
+		return;
+	}
+	else
+	{
+		level.smashables_open = 1;
+		thread WriteToScreen("Opening All Beast Breakables");
 	}
 	foreach(smashable in level.zod_smashables)
 	{
@@ -232,18 +226,15 @@ EnableTeleporters()
 
 ActivateAllPower(excludes = Array())
 {
-	if(!IsTrue(level.disable_text))
+	if(IsTrue(level.power_on))
 	{
-		if(level.power_on)
-		{
-			thread WriteToScreen("Power Already On");
-			return;
-		}
-		else
-		{
-			level.power_on = 1;
-			thread WriteToScreen("Turning On All Powers");
-		}
+		thread WriteToScreen("Power Already On");
+		return;
+	}
+	else
+	{
+		level.power_on = 1;
+		thread WriteToScreen("Turning On All Powers");
 	}
     level flag::set("power_on");
     power_trigs = GetEntArray("use_elec_switch", "targetname");

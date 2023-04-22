@@ -32,11 +32,8 @@ Wisp2Practice()
     level flag::set("time_travel_teleporter_ready");
     tele = GetEntArray("trigger_teleport_pad", "targetname")[0];
     self SetOrigin(tele.origin);
-    level.is_cooldown = 0;
-    level flag::clear("rocket_firing");
     wait 0.25;
     tele notify("trigger", self);
-    self thread [[ @zm_castle_teleporter<scripts\zm\zm_castle_teleporter.gsc>::function_264f93ff ]](1, 0);
     wait 25;
     Timescale(1);
     IPrintLnBold("Read Safe Code");
@@ -67,26 +64,4 @@ Wisp2Practice()
     level flag::wait_till("spawn_zombies");
     Timescale(1);
     level flag::clear("story_playing");
-}
-
-detour zm_castle_teleporter<scripts\zm\zm_castle_teleporter.gsc>::teleport_pad_active_think()
-{
-	self setcursorhint("HINT_NOICON");
-	self.var_1c5080fe = 1;
-	e_player = undefined;
-	self sethintstring(&"ZM_CASTLE_TELEPORT_USE", 500);
-	exploder::exploder("fxexp_100");
-	while(true)
-	{
-		self waittill("trigger", e_player);
-        IPrintLnBold("Triggered");
-		if(zm_utility::is_player_valid(e_player) && !level.is_cooldown && !level flag::get("rocket_firing") && level flag::get("time_travel_teleporter_ready"))
-		{
-			IPrintLnBold("Time Travel");
-		}
-		else if(zm_utility::is_player_valid(e_player) && !level.is_cooldown && !level flag::get("rocket_firing"))
-		{
-
-		}
-	}
 }

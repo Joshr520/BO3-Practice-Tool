@@ -158,6 +158,5 @@ LoadPracticePatches()
             break;
     }
     if(practice_patch < 0) return;
-    level.disable_text = true;
     self thread [[level.practice_patches[level.script][practice_patch]]]();
 }
