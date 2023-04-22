@@ -9,7 +9,7 @@ Video Tutorial: https://youtu.be/5ePclqVjGWU
 
 ### Text Instructions:
 
-Donwload the latest release from https://github.com/Joshr520/BO3-Practice-Tool/releases/tag/Beta  
+Donwload the latest release from https://github.com/Joshr520/BO3-Practice-Tool/releases/latest
 Extract the ZIP folder  
 Run the BO3 Practice Tool.exe  
 Select your Black Ops 3 exe using the "Browse" button in the practice tool  
