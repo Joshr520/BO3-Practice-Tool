@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <direct.h>
 #include <fstream>
+#include <thread>
 
 using namespace ImageHelp;
 using namespace BGB;
@@ -26,8 +27,8 @@ using namespace ZombieCalc;
 using namespace GKValveSolver;
 
 std::string ToLower(const char* str, int length);
-
 void LogFile(std::string text);
+void WaitToKillCompiler(PROCESS_INFORMATION lpExecInfo);
 
 namespace GUIWindow
 {
@@ -263,12 +264,24 @@ namespace GUIWindow
                     std::string name = ent->d_name;
                     std::string oldFile = startDirectory + "\\" + name;
                     std::string newFile = gscDirectory + "\\" + name;
-                    MoveFileEx(oldFile.c_str(), newFile.c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING);
+                    if (MoveFileEx(oldFile.c_str(), newFile.c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING) == 0)
+                    {
+                        LogFile("Move " + oldFile + " To " + newFile + " Failed");
+                        LogFile("Error Code: " + std::to_string(GetLastError()));
+                        if (remove(oldFile.c_str()) < 0)
+                        {
+                            LogFile("Couldn't Remove File: " + oldFile);
+                            LogFile("Error Code: " + errno);
+                        }
+                    }
                 }
                 closedir(dir);
             }
-
-            _rmdir(startDirectory.c_str());
+            if (_rmdir(startDirectory.c_str()) < 0)
+            {
+                LogFile("Couldn't Remove GSC Directory");
+                LogFile("Error Code: " + errno);
+            }
         }
     }
 
@@ -302,13 +315,28 @@ namespace GUIWindow
 
     void InjectTool(bool enable)
     {
-        std::string compiler = bo3Directory + "\\Practice Tool\\GSC\\DebugCompiler.exe";
-        std::string gsc = bo3Directory + "\\Practice Tool\\GSC";
-        std::string ptPass = "--inject \"" + gsc + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
-        std::string nmPass = "--inject \"" + gsc + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
+        std::string compiler = "\"E:\\Steam\\steamapps\\common\\Call of Duty Black Ops III\\Practice Tool\\GSC\\DebugCompiler.exe\"";
+        std::string gsc = "\"E:\\Steam\\steamapps\\common\\Call of Duty Black Ops III\\Practice Tool\\GSC";
+        std::string ptPass = compiler + " --inject " + gsc + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
+        std::string nmPass = compiler + " --inject " + gsc + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
 
-        if (enable) ShellExecute(NULL, "open", compiler.c_str(), ptPass.c_str(), gsc.c_str(), 0);
-        else ShellExecute(NULL, "open", compiler.c_str(), nmPass.c_str(), gsc.c_str(), 0);
+        char args[1028];
+
+        if (enable)
+            strcpy_s(args, ptPass.c_str());
+        else
+            strcpy_s(args, nmPass.c_str());
+
+        STARTUPINFO startupInfo = { sizeof(startupInfo) };
+        PROCESS_INFORMATION processInfo;
+        if (CreateProcess(NULL, args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
+        {
+            std::thread checkProc(WaitToKillCompiler, processInfo);
+            checkProc.detach();
+        }
+        else
+            printf("Error Code: %d", GetLastError());
+
     }
 
     std::vector<int> GetWeaponIndex(std::string currentMap, std::string weaponSelectName)
@@ -356,9 +384,16 @@ std::string ToLower(const char* str, int length)
 
 void LogFile(std::string text)
 {
-    std::ofstream logFile("log.txt", std::ios::app);
-
+    std::ofstream logFile(GUIWindow::selfDirectory + "\\log.txt", std::ios::app);
     logFile << text << "\n";
-
     logFile.close();
+}
+
+void WaitToKillCompiler(PROCESS_INFORMATION processInfo)
+{
+    Sleep(3000);
+
+    TerminateProcess(processInfo.hProcess, 0);
+    CloseHandle(processInfo.hProcess);
+    CloseHandle(processInfo.hThread);
 }
