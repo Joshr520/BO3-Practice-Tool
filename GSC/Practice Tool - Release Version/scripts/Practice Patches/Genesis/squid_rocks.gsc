@@ -51,10 +51,10 @@ ToggleBugFog()
 {
     for(;;)
     {
-        while(!compiler::waitkey(0x74)) wait 0.05;
+        WaitF5();
         level clientfield::set("chaos_fog_bank_switch", 1);
         IPrintLnBold("Fog Start");
-        while(!compiler::waitkey(0x74)) wait 0.05;
+        WaitF5();
         level clientfield::set("chaos_fog_bank_switch", 0);
         IPrintLnBold("Fog Stop");
     }
@@ -68,8 +68,8 @@ ShowSquidRocksControls()
     for(;;)
     {
         controls.alpha = 1;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
         controls.alpha = 0;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
     }
 }

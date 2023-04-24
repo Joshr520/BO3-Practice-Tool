@@ -43,7 +43,7 @@ ActiveSpawnerTP()
 {
     for(;;)
     {
-        while(!compiler::waitkey(0x74)) wait 0.05;
+        WaitF5();
         if(level flag::get("spawner_debug_active"))
         {
             IPrintLnBold("Debug TP Already Active");
@@ -57,7 +57,7 @@ ActiveSpawnerTP()
 		{
 			IPrintLnBold(index + " - " + loc.origin);
 			self SetOrigin(loc.origin);
-			while(!compiler::waitkey(0x74)) wait 0.05;
+			WaitF5();
 		}
 		IPrintLnBold("Original Location");
 		self SetOrigin(org);
@@ -85,7 +85,7 @@ ActiveZonesTP()
 {
     for(;;)
     {
-        while(!compiler::waitkey(0x75)) wait 0.05;
+        WaitF6();
         if(level flag::get("spawner_debug_active"))
         {
             IPrintLnBold("Debug TP Already Active");
@@ -108,7 +108,7 @@ ActiveZonesTP()
         {
             IPrintLnBold(index + " - " + active_zones_keys[index]);
             self SetOrigin(zone.volumes[0].origin);
-            while(!compiler::waitkey(0x75)) wait 0.05;
+            WaitF6();
         }
         IPrintLnBold("Original Location");
         self SetOrigin(org);
@@ -170,7 +170,7 @@ SpawnManipTP()
 {
     for(;;)
     {
-        while(!compiler::waitkey(0x77)) wait 0.05;
+        WaitF8();
         if(level flag::get("spawner_debug_active"))
         {
             IPrintLnBold("Debug TP Already Active");
@@ -212,7 +212,7 @@ SpawnManipTP()
 		{
 			IPrintLnBold(index + " - " + loc.origin);
 			self SetOrigin(loc.origin);
-			while(!compiler::waitkey(0x77)) wait 0.05;
+			WaitF8();
 		}
         IPrintLnBold("Original Location");
 		self SetOrigin(org);
@@ -224,7 +224,7 @@ ABHDebug()
 {
     for(;;)
     {
-        while(!compiler::waitkey(0x76)) wait 0.05;
+        WaitF7();
         if(level flag::get("spawner_debug_active"))
         {
             IPrintLnBold("Debug TP Already Active");
@@ -274,7 +274,7 @@ ABHDebug()
                 {
                     IPrintLnBold(index + " - " + s_player_respawn.origin);
                     self SetOrigin(s_player_respawn.origin);
-                    while(!compiler::waitkey(0x76)) wait 0.05;
+                    WaitF7();
                 }
             }
         }
@@ -294,9 +294,9 @@ ShowSpawnDebugControls()
     for(;;)
     {
         controls.alpha = 1;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
         controls.alpha = 0;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
     }
 }
 
@@ -305,7 +305,7 @@ TramSpawnersMonitor()
     tram_spawners = struct::get_array("zone_start_spawners", "targetname");
     for(;;)
     {
-        while(!compiler::waitkey(0x77)) wait 0.05;
+        WaitF8();
         foreach(spawner in tram_spawners)
         {
             if(spawner.script_int === 1)
@@ -314,7 +314,7 @@ TramSpawnersMonitor()
             }
         }
         thread WriteToScreen("Tram Spawners Enabled");
-        while(!compiler::waitkey(0x77)) wait 0.05;
+        WaitF8();
         foreach(spawner in tram_spawners)
         {
             if(spawner.script_int === 1)

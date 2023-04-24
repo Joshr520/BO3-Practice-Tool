@@ -9,18 +9,18 @@ init()
     level.zm_disable_recording_stats = true;
     level.rankedmatch = 1;
     level.var_dfc343e9 = 0;
+
+    InitVars();
+    level.round_sr = false;
+    level.pap_sr = false;
+    level.basic_timer = false;
+    level.map_specific_timer = false;
 }
 
 on_player_connect()
 {
     level flag::wait_till("start_zombie_round_logic");
     if(!self IsHost()) return;
-
-    self InitVars();
-    level.round_sr = false;
-    level.pap_sr = false;
-    level.basic_timer = false;
-    level.map_specific_timer = false;
 
     self thread StartInGameSplits();
 }
@@ -85,6 +85,7 @@ InitVars()
 InitCustomFlags()
 {
     level flag::init("round_skip_request");
+    level flag::init("puzzle_practice");
 }
 
 IsTrue(bool)

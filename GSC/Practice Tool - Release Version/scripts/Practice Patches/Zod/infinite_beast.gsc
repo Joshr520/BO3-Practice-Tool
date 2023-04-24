@@ -57,8 +57,8 @@ ShowInfiniteBeastControls()
     for(;;)
     {
         controls.alpha = 1;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
         controls.alpha = 0;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
     }
 }

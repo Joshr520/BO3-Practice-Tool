@@ -67,7 +67,7 @@ ToggleBeaconFX()
     }
     for(;;)
     {
-        while(!compiler::waitkey(0x74)) wait 0.05;
+        WaitF5();
         foreach(beacon in beacons)
         {
             beacon_fx = struct::get(beacon.target);
@@ -75,7 +75,7 @@ ToggleBeaconFX()
         }
         IPrintLnBold("Beacons Activated");
         wait 1;
-        while(!compiler::waitkey(0x74)) wait 0.05;
+        WaitF5();
         foreach(beacon in beacons)
         {
             beacon_fx = struct::get(beacon.target);
@@ -90,11 +90,11 @@ ToggleDogFog()
 {
     for(;;)
     {
-        while(!compiler::waitkey(0x75)) wait 0.05;
+        WaitF6();
         level clientfield::set("castle_fog_bank_switch", 1);
         IPrintLnBold("Fog Start");
         wait 1;
-        while(!compiler::waitkey(0x75)) wait 0.05;
+        WaitF6();
         level clientfield::set("castle_fog_bank_switch", 0);
         IPrintLnBold("Fog Stop");
         wait 1;
@@ -109,8 +109,8 @@ ShowLightningBowControls()
     for(;;)
     {
         controls.alpha = 1;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
         controls.alpha = 0;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
     }
 }

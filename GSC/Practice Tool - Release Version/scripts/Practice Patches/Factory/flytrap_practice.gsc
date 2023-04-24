@@ -16,7 +16,7 @@ FlytrapPractice()
 
     for(;;)
     {
-        while(!compiler::waitkey(0x74)) wait 0.05;
+        WaitF5();
         self SetPlayerAngles(VectortoAngles(GetEnt("trig_ee_perk_bear", "targetname").origin - self GetTagOrigin("j_head")));
     }
 }
@@ -45,8 +45,8 @@ ShowFlytrapControls()
     for(;;)
     {
         controls.alpha = 1;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
         controls.alpha = 0;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
     }
 }

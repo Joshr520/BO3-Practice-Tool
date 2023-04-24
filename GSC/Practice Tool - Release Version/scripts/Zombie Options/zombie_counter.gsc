@@ -43,9 +43,9 @@ MonitorAlpha(hud1, hud2)
     {
         hud1.alpha = 1;
         hud2.alpha = 1;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
         hud1.alpha = 0;
         hud2.alpha = 0;
-        while(!compiler::waitkey(0x72)) wait 0.05;
+        WaitF3();
     }
 }
