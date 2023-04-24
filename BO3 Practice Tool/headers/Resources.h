@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <tuple>
 
+#include "ImageHelp.h"
+
 constexpr unsigned long hashstr(const char* str, int h = 0)
 {
 	return !str[h] ? 55 : (hashstr(str, h + 1) * 33) + (unsigned char)(str[h]);
@@ -163,4 +165,17 @@ namespace GKValveSolver
 	void CalcValveProbabilities();
 	void CalcRemainingGreen();
 	void CalcExcludedValves();
+}
+
+namespace IceCodePractice
+{
+	struct IceCodePair
+	{
+		ImageHelp::Image digitImage;
+		ImageHelp::Image symbolImage;
+	};
+
+	inline std::vector<IceCodePair> iceCodePairs;
+
+	void InitIceCodePairs();
 }

@@ -3,6 +3,7 @@
 #include <d3d11.h>
 
 #include <vector>
+#include <unordered_map>
 #include <string>
 
 namespace ImageHelp
@@ -24,4 +25,5 @@ namespace ImageHelp
 	inline std::vector<Image> bgbImgList;
 	inline std::vector<Image> codeImgList;
 	inline std::vector<Image> valveSolverImgList;
+	inline std::unordered_map<std::string, Image> iceCodeImgList;
 }

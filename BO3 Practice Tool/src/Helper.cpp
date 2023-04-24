@@ -25,6 +25,7 @@ using namespace PowerupOptions;
 using namespace Craftables;
 using namespace ZombieCalc;
 using namespace GKValveSolver;
+using namespace IceCodePractice;
 
 std::string ToLower(const char* str, int length);
 void LogFile(std::string text);
@@ -42,6 +43,7 @@ namespace GUIWindow
         InitPerksList();
         InitPowerupList();
         InitCraftablesList();
+        InitIceCodePairs();
         zombiesForRound = GetZombieCountForRound(1, 1);
         specialZombiesForRound = GetZombieCountForRound(1, 1);
         hordesForRound = zombiesForRound / 24.0f;

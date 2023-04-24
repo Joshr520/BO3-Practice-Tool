@@ -1,5 +1,6 @@
 #pragma warning( disable : 4244 ) 
 
+#include "ImageHelp.h"
 #include "Resources.h"
 #include <limits.h>
 
@@ -577,5 +578,25 @@ namespace GKValveSolver
                 }
             }
         }
+    }
+}
+
+namespace IceCodePractice
+{
+    void InitIceCodePairs()
+    {
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["dot-digit"], ImageHelp::iceCodeImgList["dot-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-digit"], ImageHelp::iceCodeImgList["i-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-digit"], ImageHelp::iceCodeImgList["l-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["f-digit"], ImageHelp::iceCodeImgList["f-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-dot-digit"], ImageHelp::iceCodeImgList["i-dot-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-i-digit"], ImageHelp::iceCodeImgList["i-i-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-l-digit"], ImageHelp::iceCodeImgList["i-l-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-f-digit"], ImageHelp::iceCodeImgList["i-f-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-dot-digit"], ImageHelp::iceCodeImgList["l-dot-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-i-digit"], ImageHelp::iceCodeImgList["l-i-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-l-digit"], ImageHelp::iceCodeImgList["l-l-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-f-digit"], ImageHelp::iceCodeImgList["l-f-symbol"] }));
+        int a = 0;
     }
 }

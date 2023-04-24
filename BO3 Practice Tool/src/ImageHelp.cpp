@@ -138,8 +138,27 @@ namespace ImageHelp
                 Image valve;
                 valve.imgRelativePath = name.substr(0, name.size() - 4);
                 valve.imgDirectPath = filename;
-                valve.index = (int)codeImgList.size() + 1;
+                valve.index = (int)valveSolverImgList.size() + 1;
                 valveSolverImgList.push_back(valve);
+            }
+            closedir(dir);
+        }
+        if ((dir = opendir("Resource Images/Ice Code")) != NULL)
+        {
+            while ((ent = readdir(dir)) != NULL)
+            {
+                if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
+                    continue;
+                std::string name = ent->d_name;
+                if (name.find(".png") == std::string::npos)
+                    continue;
+                std::string filename = "Resource Images/Ice Code/";
+                filename.append(name);
+                Image iceCode;
+                iceCode.imgRelativePath = name.substr(0, name.size() - 4);
+                iceCode.imgDirectPath = filename;
+                iceCode.index = (int)iceCodeImgList.size() + 1;
+                iceCodeImgList.insert({ iceCode.imgRelativePath, iceCode });
             }
             closedir(dir);
         }
@@ -162,6 +181,15 @@ namespace ImageHelp
         for (Image& img : valveSolverImgList)
         {
             bool ret = LoadTextureFromFile(g_pd3dDevice, img.imgDirectPath.c_str(), &img.imgTexture, &img.imgWidth, &img.imgHeight);
+            IM_ASSERT(ret);
+        }
+
+        for (std::pair<std::string, Image> img : iceCodeImgList)
+        {
+            bool ret = LoadTextureFromFile(g_pd3dDevice, img.second.imgDirectPath.c_str(), &img.second.imgTexture, &img.second.imgWidth, &img.second.imgHeight);
+            iceCodeImgList[img.first].imgTexture = img.second.imgTexture;
+            iceCodeImgList[img.first].imgWidth = img.second.imgWidth;
+            iceCodeImgList[img.first].imgHeight = img.second.imgHeight;
             IM_ASSERT(ret);
         }
     }
