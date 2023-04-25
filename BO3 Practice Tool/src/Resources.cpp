@@ -3,6 +3,9 @@
 #include "ImageHelp.h"
 #include "Resources.h"
 #include <limits.h>
+#include <algorithm>
+#include <random>
+#include <chrono>
 
 namespace ZombieCalc
 {
@@ -235,56 +238,6 @@ namespace ZombieCalc
         waveTime_2 = ParseTimeFromMilli(spawnRate_2 * waveCount_2 + waveIntermission_2 + 500);
         waveTime_3 = ParseTimeFromMilli(spawnRate_3 * waveCount_3 + waveIntermission_3 + 500);
         waveTime_4 = ParseTimeFromMilli(spawnRate_4 * waveCount_4 + waveIntermission_4 + 500);
-    }
-
-    std::string ParseTimeFromMilli(int milliseconds)
-    {
-        std::string finalTime = "";
-        int hours = 0;
-        int minutes = 0;
-        int seconds = 0;
-        if (milliseconds >= 3600000)
-        {
-            hours = milliseconds / 3600000;
-            if (hours < 10)
-                finalTime += "0";
-            finalTime += std::to_string(hours) + ":";
-            milliseconds -= hours * 3600000;
-        }
-        if (milliseconds >= 60000)
-        {
-            minutes = milliseconds / 60000;
-            if (minutes < 10)
-                finalTime += "0";
-            finalTime += std::to_string(minutes) + ":";
-            milliseconds -= minutes * 60000;
-        }
-        else if (hours > 0)
-        {
-            finalTime += "00:";
-        }
-        if (milliseconds >= 1000)
-        {
-            seconds = milliseconds / 1000;
-            if (seconds < 10 && (hours || minutes))
-                finalTime += "0";
-            finalTime += std::to_string(seconds) + ".";
-            milliseconds -= seconds * 1000;
-        }
-        else
-            if(hours || minutes)
-                finalTime += "00.";
-            else
-                finalTime += "0.";
-        if (milliseconds >= 50)
-        {
-            if (milliseconds < 100)
-                finalTime += "0";
-            finalTime += std::to_string(milliseconds);
-        }
-        else
-            finalTime += "000";
-        return finalTime;
     }
 }
 
@@ -597,6 +550,112 @@ namespace IceCodePractice
         iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-i-digit"], ImageHelp::iceCodeImgList["l-i-symbol"] }));
         iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-l-digit"], ImageHelp::iceCodeImgList["l-l-symbol"] }));
         iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-f-digit"], ImageHelp::iceCodeImgList["l-f-symbol"] }));
-        int a = 0;
+
+        randomIceCodePairs = iceCodePairs;
+
+        RandomizeCodes();
     }
+
+    void RandomizeCodes()
+    {
+        unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+        std::shuffle(iceCodePairs.begin(), iceCodePairs.end(), std::default_random_engine(seed));
+        seed /= 2;
+        std::shuffle(randomIceCodePairs.begin(), randomIceCodePairs.end(), std::default_random_engine(seed));
+        seed /= 2;
+        std::shuffle(&randomList[0], &randomList[11], std::default_random_engine(seed));
+    }
+
+    void ProgressGame(bool success, int numCode)
+    {
+        if (!gameStarted)
+        {
+            gameStarted = true;
+            startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        }
+        if (success)
+        {
+            gameProgress++;
+            for (bool& checked : gameChecked)
+                checked = false;
+            if (gameProgress >= 12)
+            {
+                std::time_t finalTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
+                gameTime = "Time: " + ParseTimeFromMilli(finalTime);
+                std::stringstream ss;
+                ss.precision(4);
+                float percentage = (timesGuessed - timesMissed) / (float)timesGuessed * 100;
+                ss << percentage << "%%";
+                accuracy = "Accuracy: " + ss.str();
+                gameProgress = 0;
+                gameStarted = false;
+                timesMissed = 0;
+                RandomizeCodes();
+                return;
+            }
+            unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+            std::shuffle(randomIceCodePairs.begin(), randomIceCodePairs.end(), std::default_random_engine(seed));
+        }
+        else if (!gameChecked[numCode])
+        {
+            gameChecked[numCode] = true;
+            timesMissed++;
+        }
+        timesGuessed++;
+        std::stringstream ss;
+        ss.precision(4);
+        float percentage = (timesGuessed - timesMissed) / (float)timesGuessed * 100;
+        ss << "Accuracy: " << percentage << "%%";
+        accuracy = "Accuracy: " + ss.str();
+    }
+}
+
+std::string ParseTimeFromMilli(int milliseconds)
+{
+    std::string finalTime = "";
+    int hours = 0;
+    int minutes = 0;
+    int seconds = 0;
+    if (milliseconds >= 3600000)
+    {
+        hours = milliseconds / 3600000;
+        if (hours < 10)
+            finalTime += "0";
+        finalTime += std::to_string(hours) + ":";
+        milliseconds -= hours * 3600000;
+    }
+    if (milliseconds >= 60000)
+    {
+        minutes = milliseconds / 60000;
+        if (minutes < 10)
+            finalTime += "0";
+        finalTime += std::to_string(minutes) + ":";
+        milliseconds -= minutes * 60000;
+    }
+    else if (hours > 0)
+    {
+        finalTime += "00:";
+    }
+    if (milliseconds >= 1000)
+    {
+        seconds = milliseconds / 1000;
+        if (seconds < 10 && (hours || minutes))
+            finalTime += "0";
+        finalTime += std::to_string(seconds) + ".";
+        milliseconds -= seconds * 1000;
+    }
+    else
+        if (hours || minutes)
+            finalTime += "00.";
+        else
+            finalTime += "0.";
+    if (milliseconds >= 50)
+    {
+        if (milliseconds < 100)
+            finalTime += "0";
+        finalTime += std::to_string(milliseconds);
+    }
+    else
+        finalTime += "000";
+    return finalTime;
 }

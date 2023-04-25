@@ -252,9 +252,9 @@ namespace GUIWindow
             std::ofstream outFile(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
             outFile.close();
         }
-        if (DoesPathExist(selfDirectory + "\\GSC"))
+        if (DoesPathExist("\\GSC"))
         {
-            std::string startDirectory = selfDirectory + "\\GSC";
+            std::string startDirectory = "\\GSC";
             DIR* dir;
             struct dirent* ent;
             if ((dir = opendir(startDirectory.c_str())) != NULL)
@@ -337,7 +337,7 @@ namespace GUIWindow
             checkProc.detach();
         }
         else
-            printf("Error Code: %d", GetLastError());
+            LogFile("Error Code: " + std::to_string(GetLastError()));
 
     }
 
@@ -386,7 +386,7 @@ std::string ToLower(const char* str, int length)
 
 void LogFile(std::string text)
 {
-    std::ofstream logFile(GUIWindow::selfDirectory + "\\log.txt", std::ios::app);
+    std::ofstream logFile("\\log.txt", std::ios::app);
     logFile << text << "\n";
     logFile.close();
 }

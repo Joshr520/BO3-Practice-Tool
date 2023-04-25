@@ -31,6 +31,7 @@ using namespace ImageHelp;
 using namespace ZombieCalc;
 using namespace SOECodeGuide;
 using namespace GKValveSolver;
+using namespace IceCodePractice;
 
 // Forward function declarations
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -50,7 +51,7 @@ void CraftableOptionsPtr();
 void BlockerOptionsPtr();
 void MapOptionsPtr();
 void ZombieCalculatorPtr();
-void SOECodeGuidePtr();
+void CodeGuidesPtr();
 void GKValveSolverPtr();
 
 void PresetSelectionFunc(int input);
@@ -164,13 +165,9 @@ namespace GUIWindow
         ImGui_ImplWin32_Init(hWnd);
         ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-        TCHAR buf[256];
-        GetCurrentDirectoryA(256, buf);
-        selfDirectory = buf;
-
-        if (!DoesPathExist(selfDirectory + "/settings.json"))
+        if (!DoesPathExist("settings.json"))
         {
-            std::ofstream outFile(selfDirectory + "/settings.json");
+            std::ofstream outFile("settings.json");
 
             json j;
             j["Steam Path"] = "";
@@ -179,7 +176,7 @@ namespace GUIWindow
             outFile.close();
         }
 
-        std::ifstream inFile(selfDirectory + "/settings.json");
+        std::ifstream inFile("settings.json");
         json data = json::parse(inFile);
         inFile.close();
 
@@ -235,7 +232,7 @@ namespace GUIWindow
             funcList.push_back(func);
             func = std::function<void()>(ZombieCalculatorPtr);
             funcList.push_back(func);
-            func = std::function<void()>(SOECodeGuidePtr);
+            func = std::function<void()>(CodeGuidesPtr);
             funcList.push_back(func);
             func = std::function<void()>(GKValveSolverPtr);
             funcList.push_back(func);
@@ -474,7 +471,7 @@ bool RenderFrame()
             ImGui::PopFont();
             
             const char* sidebarItems[] = { "Gobblegum Loadout", "Practice Patches", "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options",
-                "Craftable Options", "Blocker Options", "Map Options", "Zombie Calculator", "SOE Code Guide", "GK Valve Solver"};
+                "Craftable Options", "Blocker Options", "Map Options", "Zombie Calculator", "Code Guides", "GK Valve Solver"};
             const char* sidebarPreview = sidebarItems[sidebarCurrentItem];
             static int frontendItems = 2;
             static int inGameItems = frontendItems + 8;
@@ -581,13 +578,13 @@ bool RenderFrame()
             {
                 bo3Directory = bo3Directory.substr(0, bo3Directory.length() - 14);
                 steamPathFound = true;
-                std::ifstream inFile(selfDirectory + "/settings.json");
+                std::ifstream inFile("settings.json");
                 bool good = inFile.good();
                 json data = json::parse(inFile);
                 inFile.close();
                 if (data.contains("Steam Path"))
                     data["Steam Path"] = bo3Directory;
-                std::ofstream outFile(selfDirectory + "/settings.json");
+                std::ofstream outFile("settings.json");
                 outFile << std::setw(4) << data;
                 outFile.close();
                 VerifyFileStructure();
@@ -2442,38 +2439,311 @@ void ZombieCalculatorPtr()
     }
 }
 
-void SOECodeGuidePtr()
+void CodeGuidesPtr()
 {
-    ImGui::SetNextItemWidth(130.0f);
-    if (ImGui::BeginCombo("Code 1", soeCodeCombo[codeIndex_1].c_str(), ImGuiComboFlags_HeightRegular))
+    if (ImGui::BeginTabBar("Code Guide Tabs"))
     {
-        for (int i = 0; i < soeCodeCombo.size(); ++i)
+        if (ImGui::BeginTabItem("SOE Code"))
         {
-            const bool is_selected = codeIndex_1 == i;
-            if (ImGui::Selectable(soeCodeCombo[i].c_str(), is_selected))
-                codeIndex_1 = i;
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-    ImGui::SetNextItemWidth(130.0f);
-    if (ImGui::BeginCombo("Code 2", soeCodeCombo[codeIndex_2].c_str(), ImGuiComboFlags_HeightRegular))
-    {
-        for (int i = 0; i < soeCodeCombo.size(); ++i)
-        {
-            const bool is_selected = codeIndex_2 == i;
-            if (ImGui::Selectable(soeCodeCombo[i].c_str(), is_selected))
-                codeIndex_2 = i;
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
+            ImGui::SetNextItemWidth(130.0f);
+            if (ImGui::BeginCombo("Code 1", soeCodeCombo[codeIndex_1].c_str(), ImGuiComboFlags_HeightRegular))
+            {
+                for (int i = 0; i < soeCodeCombo.size(); ++i)
+                {
+                    const bool is_selected = codeIndex_1 == i;
+                    if (ImGui::Selectable(soeCodeCombo[i].c_str(), is_selected))
+                        codeIndex_1 = i;
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::SetNextItemWidth(130.0f);
+            if (ImGui::BeginCombo("Code 2", soeCodeCombo[codeIndex_2].c_str(), ImGuiComboFlags_HeightRegular))
+            {
+                for (int i = 0; i < soeCodeCombo.size(); ++i)
+                {
+                    const bool is_selected = codeIndex_2 == i;
+                    if (ImGui::Selectable(soeCodeCombo[i].c_str(), is_selected))
+                        codeIndex_2 = i;
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
 
-    ImGui::Image(codeImgList[codeIndex_1].imgTexture, ImVec2(490.0f, 490.0f));
-    SAMELINE;
-    ImGui::Image(codeImgList[codeIndex_2].imgTexture, ImVec2(490.0f, 490.0f));
+            ImGui::Image(codeImgList[codeIndex_1].imgTexture, ImVec2(490.0f, 490.0f));
+            SAMELINE;
+            ImGui::Image(codeImgList[codeIndex_2].imgTexture, ImVec2(490.0f, 490.0f));
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Ice Code"))
+        {
+            if (showSolution)
+            {
+                if (CreateButton(ICON_FA_ARROW_LEFT, ImVec2(50.0f, 25.0f)))
+                    showSolution = false;
+                ImGui::Image(ImageHelp::iceCodeImgList["solution"].imgTexture, ImVec2(min(1280.0f, ImGui::GetContentRegionAvail().x), min(720.0f, ImGui::GetContentRegionAvail().y - 30)));
+            }
+            else
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0)); ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(25, 100, 128, 100));
+                bool skip = false;
+                // Images group 1
+                {
+                    ImGui::BeginGroup();
+                    if (gameChecked[0])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[0].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[0])
+                            skip = true;
+                        if (randomIceCodePairs[0].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 0);
+                        else
+                            ProgressGame(false, 0);
+                    }
+                    if (!skip && gameChecked[0])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    SAMELINE;
+                    if (gameChecked[1])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[1].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[1])
+                            skip = true;
+                        if (randomIceCodePairs[1].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 1);
+                        else
+                            ProgressGame(false, 1);
+                    } SAMELINE;
+                    if (!skip && gameChecked[1])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    if (gameChecked[2])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[2].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[2])
+                            skip = true;
+                        if (randomIceCodePairs[2].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 2);
+                        else
+                            ProgressGame(false, 2);
+                    } SAMELINE;
+                    if (!skip && gameChecked[2])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    if (gameChecked[3])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[3].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[3])
+                            skip = true;
+                        if (randomIceCodePairs[3].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 3);
+                        else
+                            ProgressGame(false, 3);
+                    }
+                    if (!skip && gameChecked[3])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    ImGui::EndGroup();
+                }
+                SAMELINE;
+                ImGui::BeginGroup();
+                if (CreateButton("Show Solution Key", ImVec2(150.0f, 25.0f)))
+                    showSolution = true;
+                ImGui::Text(gameTime.c_str());
+                ImGui::Text(accuracy.c_str());
+                ImGui::EndGroup();
+                // Images group 2
+                {
+                    ImGui::BeginGroup();
+                    if (gameChecked[4])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[4].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[4])
+                            skip = true;
+                        if (randomIceCodePairs[4].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 4);
+                        else
+                            ProgressGame(false, 4);
+                    } SAMELINE;
+                    if (!skip && gameChecked[4])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    if (gameChecked[5])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[5].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[5])
+                            skip = true;
+                        if (randomIceCodePairs[5].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 5);
+                        else
+                            ProgressGame(false, 5);
+                    } SAMELINE;
+                    if (!skip && gameChecked[5])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    if (gameChecked[6])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[6].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[6])
+                            skip = true;
+                        if (randomIceCodePairs[6].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 6);
+                        else
+                            ProgressGame(false, 6);
+                    } SAMELINE;
+                    if (!skip && gameChecked[6])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    if (gameChecked[7])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[7].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[7])
+                            skip = true;
+                        if (randomIceCodePairs[7].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 7);
+                        else
+                            ProgressGame(false, 7);
+                    }
+                    if (!skip && gameChecked[7])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    ImGui::EndGroup();
+                }
+                SAMELINE;
+                DummySpace(15.0f, 0.0f);
+                SAMELINE;
+                ImGui::Image(iceCodePairs[randomList[gameProgress]].digitImage.imgTexture, ImVec2(170.0f, 152.0f));
+                // Images group 3
+                {
+                    ImGui::BeginGroup();
+                    if (gameChecked[8])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[8].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[8])
+                            skip = true;
+                        if (randomIceCodePairs[8].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 8);
+                        else
+                            ProgressGame(false, 8);
+                    } SAMELINE;
+                    if (!skip && gameChecked[8])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    if (gameChecked[9])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[9].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[9])
+                            skip = true;
+                        if (randomIceCodePairs[9].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 9);
+                        else
+                            ProgressGame(false, 9);
+                    } SAMELINE;
+                    if (!skip && gameChecked[9])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    if (gameChecked[10])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[10].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[10])
+                            skip = true;
+                        if (randomIceCodePairs[10].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 10);
+                        else
+                            ProgressGame(false, 10);
+                    } SAMELINE;
+                    if (!skip && gameChecked[10])
+                        ImGui::PopStyleColor(3);
+                    skip = false;
+                    if (gameChecked[11])
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(170, 0, 0, 255));
+                    }
+                    if (ImGui::ImageButton(randomIceCodePairs[11].symbolImage.imgTexture, ImVec2(170.0f, 152.0f)))
+                    {
+                        if (!gameChecked[11])
+                            skip = true;
+                        if (randomIceCodePairs[11].symbolImage.index == iceCodePairs[randomList[gameProgress]].symbolImage.index)
+                            ProgressGame(true, 11);
+                        else
+                            ProgressGame(false, 11);
+                    }
+                    if (!skip && gameChecked[11])
+                        ImGui::PopStyleColor(3);
+                    ImGui::EndGroup();
+                }
+                ImGui::PopStyleColor(2);
+
+                // Timer operations
+                if (gameStarted)
+                {
+                    std::time_t finalTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
+                    gameTime = "Time: " + ParseTimeFromMilli(finalTime);
+                }
+            }
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
 }
 
 void GKValveSolverPtr()
@@ -2481,9 +2751,7 @@ void GKValveSolverPtr()
     if (showEvaluation)
     {
         if (CreateButton(ICON_FA_ARROW_LEFT, ImVec2(50.0f, 25.0f)))
-        {
             showEvaluation = false;
-        }
         
         DummySpace(15.0f, 0.0f);
         SAMELINE;
@@ -2806,9 +3074,7 @@ void GKValveSolverPtr()
         }
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2.5f);
         if (CreateButton("Evaluate Valves", ImVec2(150.0f, 25.0f)))
-        {
             showEvaluation = true;
-        }
         if (!valveComboSet || greenChosen)
         {
             ImGui::EndDisabled();

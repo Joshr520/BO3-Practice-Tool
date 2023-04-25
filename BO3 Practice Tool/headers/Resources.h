@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <tuple>
+#include <chrono>
 
 #include "ImageHelp.h"
 
@@ -123,7 +124,6 @@ namespace ZombieCalc
 	std::string SpecialRoundTime(int round, int playerCount, int corpseDelay, bool soe);
 	std::string CustomRoundTime(int round, int playerCount, int zombieCount);
 	void CalcLockdownTime(int round, int playerCount);
-	std::string ParseTimeFromMilli(int milliseconds);
 }
 
 namespace SOECodeGuide
@@ -175,7 +175,22 @@ namespace IceCodePractice
 		ImageHelp::Image symbolImage;
 	};
 
+	inline bool showSolution = false;
+	inline bool gameStarted = false;
+	inline bool gameChecked[12] = { false };
+	inline int gameProgress = 0;
+	inline int timesMissed = 0;
+	inline int timesGuessed = 0;
+	inline int randomList[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 	inline std::vector<IceCodePair> iceCodePairs;
+	inline std::vector<IceCodePair> randomIceCodePairs;
+	inline std::time_t startTime;
+	inline std::string gameTime = "Time: ";
+	inline std::string accuracy = "Accuracy: ";
 
 	void InitIceCodePairs();
+	void RandomizeCodes();
+	void ProgressGame(bool success, int numCode);
 }
+
+std::string ParseTimeFromMilli(int milliseconds);
