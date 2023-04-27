@@ -10,10 +10,11 @@ init()
     level.rankedmatch = 1;
     level.var_dfc343e9 = 0;
 
+    compiler::startserver();
     InitVars();
     level.round_sr = false;
     level.pap_sr = false;
-    level.basic_timer = false;
+    level.basic_timer = true;
     level.map_specific_timer = false;
 }
 
@@ -28,6 +29,8 @@ on_player_connect()
 on_player_spawned()
 {
     if(self IsTestClient()) return;
+
+    self thread TombSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
 }
@@ -86,6 +89,7 @@ InitCustomFlags()
 {
     level flag::init("round_skip_request");
     level flag::init("puzzle_practice");
+    level flag::init("tomb_soft_patch");
 }
 
 IsTrue(bool)
