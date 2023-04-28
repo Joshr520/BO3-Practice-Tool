@@ -1,16 +1,18 @@
 GenesisSoftPatch()
 {
-    level flag::wait_till("initial_blackscreen_passed");
+    level flag::wait_till("start_zombie_round_logic");
     if(level.script != "zm_genesis")
     {
+        level flag::wait_till("initial_blackscreen_passed");
         thread WriteToScreen("Wrong Map For Loaded Patch - Correct Map: Rev");
         return;
     }
-    thread WriteToScreen("Rev Soft Patch Loaded");
     self.bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_shopping_free", "zm_bgb_immolation_liquidation", "zm_bgb_extra_credit");
  	level.players[0].bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_shopping_free", "zm_bgb_immolation_liquidation", "zm_bgb_extra_credit");
     self.bgb_pack_randomized = array::randomize(self.bgb_pack);
     while(self.bgb_pack_randomized[0] == "zm_bgb_shopping_free" || (self.bgb_pack_randomized[0] == "zm_bgb_perkaholic" && self.bgb_pack_randomized[1] == "zm_bgb_immolation_liquidation")) self.bgb_pack_randomized = array::randomize(self.bgb_pack);
+    level flag::wait_till("initial_blackscreen_passed");
+    thread WriteToScreen("Rev Soft Patch Loaded");
     level.customrandomweaponweights = ::GenesisBox;
 }
 

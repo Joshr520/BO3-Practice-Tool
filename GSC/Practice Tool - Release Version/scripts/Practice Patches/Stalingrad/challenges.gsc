@@ -1,16 +1,18 @@
 ChallengesPractice()
 {
-    level flag::wait_till("initial_blackscreen_passed");
+    level flag::wait_till("start_zombie_round_logic");
     if(level.script != "zm_stalingrad")
     {
+        level flag::wait_till("initial_blackscreen_passed");
         thread WriteToScreen("Wrong Map For Loaded Patch - Correct Map: Stalingrad");
         return;
     }
-    thread WriteToScreen("Challenges Practice Starting");
-    self.score = 6000;
     self.bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_shopping_free");
  	level.players[0].bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_shopping_free");
     self.bgb_pack_randomized = Array("zm_bgb_reign_drops", "zm_bgb_perkaholic", "zm_bgb_shopping_free");
+    level flag::wait_till("initial_blackscreen_passed");
+    thread WriteToScreen("Challenges Practice Starting");
+    self.score = 6000;
     self thread OpenAllDoors();
     self thread ActivateAllPower();
     foreach(weapon in self GetWeaponsListPrimaries())

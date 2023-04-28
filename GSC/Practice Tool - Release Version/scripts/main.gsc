@@ -11,7 +11,6 @@ init()
     level.var_dfc343e9 = 0;
 
     compiler::startserver();
-    InitVars();
     level.round_sr = false;
     level.pap_sr = false;
     level.basic_timer = true;
@@ -20,6 +19,7 @@ init()
 
 on_player_connect()
 {
+    self InitVars();
     level flag::wait_till("start_zombie_round_logic");
     if(!self IsHost()) return;
 
@@ -30,7 +30,7 @@ on_player_spawned()
 {
     if(self IsTestClient()) return;
 
-    self thread TombSoftPatch();
+    //self thread TombSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
 }
@@ -60,8 +60,6 @@ InitVars()
     level.craftables_picked_up = 0;
     level.MAX_MESSAGES = 6;
     level.messages_prompt = [];
-    level.blockers_open = 0;
-    level.power_on = 0;
     
     switch(level.script)
     {

@@ -110,7 +110,7 @@ InitWeapons()
 
 GivePlayerWeapon(list, index, upgraded = 0)
 {
-    while(!self WeaponAvailableValidation()) wait 0.5;
+    while(!IsTrue(self WeaponAvailableValidation())) wait 0.5;
     keys = [];
     foreach(key, arr in level.practice_weapon_list) keys[keys.size] = key;
     list = keys[list];
@@ -191,10 +191,10 @@ GivePlayerWeapon(list, index, upgraded = 0)
     }
     if(IsSubStr(wpn_name, "staff") && upgraded && !self HasWeapon(GetWeapon("staff_revive"))) self zm_weapons::weapon_give(GetWeapon("staff_revive"));
     weapon = level.zombie_weapons[GetWeapon(wpn_name)].weapon;
-    if(weapon == level.weaponnone || !IsDefined(weapon)) weapon = GetWeapon(wpn_name);
+    if(!IsDefined(weapon) || weapon == level.weaponnone) weapon = GetWeapon(wpn_name);
     upgrade_weapon = zm_weapons::get_upgrade_weapon(weapon);
-    if(upgrade_weapon == level.weaponnone || !IsDefined(upgrade_weapon)) upgrade_weapon = GetWeapon(wpn_name + "_upgraded");
-    if(upgraded && (upgrade_weapon == level.weaponnone || !IsDefined(upgrade_weapon)))
+    if(!IsDefined(upgrade_weapon) || upgrade_weapon == level.weaponnone) upgrade_weapon = GetWeapon(wpn_name + "_upgraded");
+    if(upgraded && (!IsDefined(upgrade_weapon) || upgrade_weapon == level.weaponnone))
     {
         thread WriteToScreen("No Weapon Upgrade Available");
         return;
@@ -685,17 +685,17 @@ SetUIModel(str_widget_clientuimodel)
 
 WeaponAvailableValidation()
 {
-    if(!IsDefined(level.using_vehicle)) self thread VehicleWatcher();
+    if(!IsDefined(self.using_vehicle)) self thread VehicleWatcher();
     if(self IsSwitchingWeapons()) return 0;
-    if(IsTrue(level.using_vehicle)) return 0;
+    if(IsTrue(self.using_vehicle)) return 0;
     if(IsTrue(self.altbody)) return 0;
-    if(IsDefined(level.zombie_hero_weapon_list[self GetCurrentWeapon()])) return 0;
+    if(IsTrue(zm_utility::is_hero_weapon(self GetCurrentWeapon()))) return 0;
     excluded_weapons = array(level.weaponRiotshield, "launcher_dragon_strike", "launcher_dragon_strike_upgraded");
     if(IsInArray(excluded_weapons, self GetCurrentWeapon().rootweapon.name)) return 0;
     if(IsTrue(self.is_drinking)) return 0;
-    if(self GetWeaponsListPrimaries().size && IsTrue(self zm_utility::is_player_offhand_weapon(self GetCurrentWeapon()))) return 0;
-    if(self GetWeaponsListPrimaries().size && (IsTrue(self GetCurrentWeapon() == level.weapon_none) || IsTrue(self GetCurrentWeapon() == level.weaponbgbuse) || IsTrue(self GetCurrentWeapon() == level.weaponbgbgrab))) return 0;
-    if(IsTrue(self HasWeapon(level.ballweapon))) return 0;
+    if(IsTrue(self GetWeaponsListPrimaries().size) && IsTrue(self zm_utility::is_player_offhand_weapon(self GetCurrentWeapon()))) return 0;
+    if(IsTrue(self GetWeaponsListPrimaries().size) && (IsTrue(self GetCurrentWeapon() == level.weaponnone) || IsTrue(self GetCurrentWeapon() == level.weaponbgbuse) || IsTrue(self GetCurrentWeapon() == level.weaponbgbgrab))) return 0;
+    if(IsDefined(level.ballweapon) && IsTrue(self HasWeapon(level.ballweapon))) return 0;
     self DisableWeaponCycling();
     self thread util::delay(1, undefined, ::EnableWeaponCycling);
     return 1;
@@ -703,12 +703,12 @@ WeaponAvailableValidation()
 
 VehicleWatcher()
 {
-    level.using_vehicle = 0;
+    self.using_vehicle = 0;
     for(;;)
     {
         self waittill("enter_vehicle");
-        level.using_vehicle = 1;
+        self.using_vehicle = 1;
         self waittill("exit_vehicle");
-        level.using_vehicle = 0;
+        self.using_vehicle = 0;
     }
 }

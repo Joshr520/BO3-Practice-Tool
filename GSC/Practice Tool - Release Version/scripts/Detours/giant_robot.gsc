@@ -95,6 +95,13 @@ detour zm_tomb_giant_robot<scripts\zm\zm_tomb_giant_robot.gsc>::robot_cycling()
                     case 1:
                         random_number = 0;
                         break;
+					default:
+						random_number = RandomInt(3);
+						while(random_number == last_robot)
+						{
+							random_number = RandomInt(3);
+						}
+						break;
                 }
             }
 			last_robot = random_number;

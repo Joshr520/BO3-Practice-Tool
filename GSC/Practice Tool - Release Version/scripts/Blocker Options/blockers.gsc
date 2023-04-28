@@ -73,17 +73,8 @@ InitBlockerLists()
 }
 
 OpenAllDoors()
-{
-	if(IsTrue(level.blockers_open))
-	{
-		thread WriteToScreen("Doors Already Opened");
-		return;
-	}
-	else
-	{
-		level.blockers_open = 1;
-		thread WriteToScreen("Opening All Doors");
-	}
+{	
+	thread WriteToScreen("Opening All Doors");
 	SetDvar("zombie_unlock_all", 1);
     types = Array("zombie_door", "zombie_airlock_buy", "zombie_debris");
     foreach(type in types)
@@ -226,16 +217,7 @@ EnableTeleporters()
 
 ActivateAllPower(excludes = Array())
 {
-	if(IsTrue(level.power_on))
-	{
-		thread WriteToScreen("Power Already On");
-		return;
-	}
-	else
-	{
-		level.power_on = 1;
-		thread WriteToScreen("Turning On All Powers");
-	}
+	thread WriteToScreen("Turning On All Powers");
     level flag::set("power_on");
     power_trigs = GetEntArray("use_elec_switch", "targetname");
     foreach(trig in power_trigs)

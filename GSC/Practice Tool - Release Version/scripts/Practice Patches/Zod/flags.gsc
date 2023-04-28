@@ -1,11 +1,15 @@
 FlagsPractice()
 {
-    level flag::wait_till("initial_blackscreen_passed");
+    level flag::wait_till("start_zombie_round_logic");
     if(level.script != "zm_zod")
     {
+        level flag::wait_till("initial_blackscreen_passed");
         thread WriteToScreen("Wrong Map For Loaded Patch - Correct Map: SOE");
         return;
     }
+    self.bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_wall_power");
+ 	level.players[0].bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_wall_power");
+    level flag::wait_till("initial_blackscreen_passed");
     thread WriteToScreen("Starting Flags Practice");
     wait 3;
     Timescale(10);
@@ -28,8 +32,6 @@ FlagsPractice()
 	self.bgb = bgb;
     self thread ActivateAllPower(Array((2471, -3811, 306), (4567, -4666, 306), (1922, -4784, -332), (857, -3728, 501), (1191, -5509, 178), (3026, -4458, 180), (2637, -5649, -102), (4712, -4224, 452), (2861, -6897, 306)));
     self thread Godmode(1);
-    self.bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_wall_power");
- 	level.players[0].bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_wall_power");
 
     self thread FinishRitual(4);
 

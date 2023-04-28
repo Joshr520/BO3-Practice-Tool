@@ -1,17 +1,18 @@
 OvumsPractice()
 {
-    level flag::wait_till("initial_blackscreen_passed");
+    level flag::wait_till("start_zombie_round_logic");
     if(level.script != "zm_zod")
     {
         thread WriteToScreen("Wrong Map For Loaded Patch - Correct Map: SOE");
         return;
     }
+    self.bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_wall_power");
+ 	level.players[0].bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_wall_power");
+    level flag::wait_till("initial_blackscreen_passed");
     thread WriteToScreen("Starting Ovums Practice");
     wait 3;
     Timescale(10);
     self thread Godmode(1);
-    self.bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_wall_power");
- 	level.players[0].bgb_pack = Array("zm_bgb_perkaholic", "zm_bgb_reign_drops", "zm_bgb_dead_of_nuclear_winter", "zm_bgb_anywhere_but_here", "zm_bgb_wall_power");
 
     self thread FinishRitual(0);
     self thread FinishRitual(1);
