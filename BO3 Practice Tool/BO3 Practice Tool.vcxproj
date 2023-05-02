@@ -157,6 +157,7 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
     <ClInclude Include="headers\GUIWindow.h" />
     <ClInclude Include="headers\Helper.h" />
     <ClInclude Include="headers\ImageHelp.h" />
+    <ClInclude Include="headers\KeyBinds.h" />
     <ClInclude Include="headers\MapOptions.h" />
     <ClInclude Include="headers\Memhelp.h" />
     <ClInclude Include="headers\PlayerOptions.h" />
@@ -190,6 +191,7 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
     <ClCompile Include="src\GUIWindow.cpp" />
     <ClCompile Include="src\Helper.cpp" />
     <ClCompile Include="src\ImageHelp.cpp" />
+    <ClCompile Include="src\KeyBinds.cpp" />
     <ClCompile Include="src\Memhelp.cpp" />
     <ClCompile Include="src\PlayerOptions.cpp" />
     <ClCompile Include="src\PowerupOptions.cpp" />

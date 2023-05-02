@@ -25,3 +25,6 @@ namespace GUIWindow
 	std::vector<int> GetWeaponIndex(std::string currentMap, std::string weaponSelectName);
 	void ResetToggles();
 }
+
+void LogFile(std::string text);
+void NLog(std::string text);

@@ -497,6 +497,8 @@ namespace GKValveSolver
                     result.push_back(std::to_string(direction + 1));
                     break;
                 }
+                if (direction == 2)
+                    result.push_back("0");
             }
         }
         if (result.size() != 6)
@@ -590,6 +592,7 @@ namespace IceCodePractice
                 gameProgress = 0;
                 gameStarted = false;
                 timesMissed = 0;
+                timesGuessed = 0;
                 RandomizeCodes();
                 return;
             }

@@ -11,6 +11,7 @@
 #include "ImageHelp.h"
 #include "Helper.h"
 #include "Memhelp.h"
+#include "KeyBinds.h"
 #include "../Resource.h"
 
 #include <string>
@@ -24,6 +25,7 @@
 
 #define SAMELINE ImGui::SameLine()
 
+// json issue occurs if the file exists but isn't in json format. not sure how this library is supposed to account for that
 using json = nlohmann::json;
 
 using namespace GUIWindow;
@@ -32,6 +34,7 @@ using namespace ZombieCalc;
 using namespace SOECodeGuide;
 using namespace GKValveSolver;
 using namespace IceCodePractice;
+using namespace KeyBinds;
 
 // Forward function declarations
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -42,6 +45,7 @@ bool EndFrame();
 
 void GobblegumLoadoutPtr();
 void PracticePatchesPtr();
+void SettingsPtr();
 void PlayerOptionsPtr();
 void ZombieOptionsPtr();
 void RoundOptionsPtr();
@@ -126,6 +130,9 @@ static int currentRound = 0;
 static char readMap[13];
 int error = 0;
 
+// Keybind data
+std::vector<int> assignedKeys;
+
 namespace GUIWindow
 {
     void Setup()
@@ -165,9 +172,13 @@ namespace GUIWindow
         ImGui_ImplWin32_Init(hWnd);
         ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-        if (!DoesPathExist("settings.json"))
+        TCHAR buf[256];
+        GetCurrentDirectoryA(256, buf);
+        selfDirectory = buf;
+
+        if (!DoesPathExist(selfDirectory + "\\settings.json"))
         {
-            std::ofstream outFile("settings.json");
+            std::ofstream outFile(selfDirectory + "\\settings.json");
 
             json j;
             j["Steam Path"] = "";
@@ -176,7 +187,7 @@ namespace GUIWindow
             outFile.close();
         }
 
-        std::ifstream inFile("settings.json");
+        std::ifstream inFile(selfDirectory + "\\settings.json");
         json data = json::parse(inFile);
         inFile.close();
 
@@ -207,12 +218,15 @@ namespace GUIWindow
     void Run()
     {
         Setup();
-        InitVariables();
+        if (steamPathFound)
+            InitVariables();
         // Init function list
         {
             auto func = std::function<void()>(GobblegumLoadoutPtr);
             funcList.push_back(func);
             func = std::function<void()>(PracticePatchesPtr);
+            funcList.push_back(func);
+            func = std::function<void()>(SettingsPtr);
             funcList.push_back(func);
             func = std::function<void()>(PlayerOptionsPtr);
             funcList.push_back(func);
@@ -247,6 +261,8 @@ namespace GUIWindow
         style.PopupRounding = 6.0f;
         style.WindowBorderSize = 0.0f;
         style.Colors[2].w = 0.6f;
+
+        KeyBinds::keyboardRegistered = KeyBinds::RegisterRawInput(hWnd);
 
         while (!done)
         {
@@ -361,10 +377,130 @@ namespace GUIWindow
         case WM_DPICHANGED:
             if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DpiEnableScaleViewports)
             {
-                //const int dpi = HIWORD(wParam);
-                //printf("WM_DPICHANGED to %d (%.0f%%)\n", dpi, (float)dpi / 96.0f * 100.0f);
                 const RECT* suggested_rect = (RECT*)lParam;
                 ::SetWindowPos(hWnd, NULL, suggested_rect->left, suggested_rect->top, suggested_rect->right - suggested_rect->left, suggested_rect->bottom - suggested_rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
+            }
+            break;
+        case WM_INPUT:
+            UINT dwSize;
+            GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+            LPBYTE lpb = new BYTE[dwSize];
+            if (lpb == NULL)
+                break;
+            if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+                NLog("GetRawInputData does not return correct size!");
+            RAWINPUT* raw = (RAWINPUT*)lpb;
+            if (raw->header.dwType == RIM_TYPEKEYBOARD)
+            {
+                int key = raw->data.keyboard.VKey;
+                // Check invalid key
+                if (key == 0xff)
+                    break;
+                // Check key pressed or released
+                if (raw->data.keyboard.Message == WM_KEYDOWN || raw->data.keyboard.Message == WM_SYSKEYDOWN)
+                {
+                    if (KeyBinds::keyMap[key])
+                        KeyBinds::keyMapHeld[key] = true;
+                    KeyBinds::keyMap[key] = true;
+                    if (!KeyBinds::keyMapHeld[key])
+                        KeyBinds::usedKeys.push_back(key);
+                }
+                else if (raw->data.keyboard.Message == WM_KEYUP || raw->data.keyboard.Message == WM_SYSKEYUP)
+                {
+                    KeyBinds::keyMapHeld[key] = false;
+                    KeyBinds::keyMap[key] = false;
+                    KeyBinds::usedKeys.erase(std::remove(KeyBinds::usedKeys.begin(), KeyBinds::usedKeys.end(), key), KeyBinds::usedKeys.end());
+                }
+                else
+                    break;
+                // New hotkey registration
+                if (KeyBinds::registerHotKey)
+                {
+                    // Catch system key press events
+                    if (raw->data.keyboard.Message == WM_KEYDOWN || raw->data.keyboard.Message == WM_SYSKEYDOWN)
+                    {
+                        // Escape clears the current hotkey
+                        if (key == VK_ESCAPE)
+                        {
+                            KeyBinds::registerHotKey = false;
+                            KeyBinds::hotkeyToAssign->keyNames = "";
+                            KeyBinds::hotkeyToAssign->keys = { };
+                            KeyBinds::usedKeys = { };
+                            KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
+                        }
+                        // Make sure key isn't held down and we haven't hit the max combo length already
+                        else if (!KeyBinds::keyMapHeld[key] && KeyBinds::totalNumKeys < 3)
+                        {
+                            // Check to make sure key isn't already used in the sequence
+                            if (std::find(assignedKeys.begin(), assignedKeys.end(), key) != assignedKeys.end())
+                                break;
+                            // Check if this is the first key in the sequence
+                            if (!KeyBinds::initialKeyToRelease)
+                            {
+                                // Check for modifier key
+                                if (key != VK_SHIFT && key != VK_CONTROL && key != VK_MENU)
+                                {
+                                    KeyBinds::registerHotKey = false;
+                                    KeyBinds::hotkeyToAssign->keyNames = KeyBinds::keyDictionary[key];
+                                    KeyBinds::hotkeyToAssign->keys = { key };
+                                    KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
+                                    break;
+                                }
+                                else
+                                {
+                                    KeyBinds::modifiersPressed++;
+                                    KeyBinds::initialKeyToRelease = key;
+                                    assignedKeys.push_back(key);
+                                }
+                                if (KeyBinds::registerHotKey)
+                                    KeyBinds::totalNumKeys++;
+                                KeyBinds::hotkeyToAssign->keyNames = KeyBinds::keyDictionary[key];
+                                KeyBinds::hotkeyToAssign->keys = { key };
+                            }
+                            else
+                            {
+                                // Check for modifier key to limit ctrl + shift + alt as a keybind - max length we're supporting is 3
+                                if (key == VK_SHIFT || key == VK_CONTROL || key == VK_MENU)
+                                {
+                                    KeyBinds::modifiersPressed++;
+                                    if (KeyBinds::modifiersPressed > 2)
+                                        break;
+                                }
+                                KeyBinds::totalNumKeys++;
+                                KeyBinds::hotkeyToAssign->keyNames += "+" + KeyBinds::keyDictionary[key];
+                                KeyBinds::hotkeyToAssign->keys.push_back(key);
+                                if (KeyBinds::totalNumKeys > 2)
+                                {
+                                    KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
+                                }
+                            }
+                        }
+                    }
+                    // Catach system key release events
+                    else if (raw->data.keyboard.Message == WM_KEYUP || raw->data.keyboard.Message == WM_SYSKEYUP)
+                    {
+                        // Wait for first key in the sequence to be released, signaling the end of the hotkey - only triggered if modifier keys are detected
+                        if (key == KeyBinds::initialKeyToRelease)
+                        {
+                            KeyBinds::registerHotKey = false;
+                            KeyBinds::initialKeyToRelease = 0;
+                            KeyBinds::modifiersPressed = 0;
+                            KeyBinds::totalNumKeys = 0;
+                            for (const int& usedKey : KeyBinds::usedKeys)
+                            {
+                                KeyBinds::keyMap[usedKey] = false;
+                                KeyBinds::keyMapHeld[usedKey] = false;
+                            }
+                            assignedKeys = { };
+                            KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
+                        }
+                    }
+                    break;
+                }
+                // If we make it here, we can safely assume that we have received a key press or release event, and that a new keybind is not being registered
+                // Therefore, we can check if the newest key was pressed, and run a keybind event to search for a match given the pressed keys
+                if (KeyBinds::keyMap[key] && !KeyBinds::keyMapHeld[key])
+                    KeyBinds::CheckAndRunKeybind();
             }
             break;
         }
@@ -398,7 +534,7 @@ bool RenderFrame()
     ImGui::PushFont(titleFont);
     ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.2f, 0.2f, 0.2f, 1.f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin(ICON_FA_GEAR " BO3 Practice Tool", NULL, flags);
+    ImGui::Begin("BO3 Practice Tool", NULL, flags);
     ImGui::PopStyleVar();
     ImGui::PopStyleColor();
     if (done)
@@ -424,8 +560,8 @@ bool RenderFrame()
         ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.2f, nullptr, &dock_main_id);
         ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.625f, nullptr, &dock_right_id);
 
-        ImGui::DockBuilderDockWindow("##Settings", dock_left_id);
-        ImGui::DockBuilderDockWindow("##Settings UI", dock_right_id);
+        ImGui::DockBuilderDockWindow("##Sidebar", dock_left_id);
+        ImGui::DockBuilderDockWindow("##Body", dock_right_id);
         ImGui::DockBuilderDockWindow("##Gum Context Menu", dock_down_id);
 
         ImGui::DockBuilderFinish(dock_main_id);
@@ -433,7 +569,7 @@ bool RenderFrame()
     ImGui::DockSpace(dockID, ImVec2(viewport->Size.x, viewport->Size.y), ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_PassthruCentralNode);
 
     ImGui::PopFont();
-    ImGui::Begin("##Settings", 0, dockFlags);
+    ImGui::Begin("##Sidebar", 0, dockFlags);
     {
         if (!steamPathFound || !procFound)
             ImGui::BeginDisabled();
@@ -470,10 +606,10 @@ bool RenderFrame()
             ImGui::Text("Frontend"); ImGui::Separator(3.5f);
             ImGui::PopFont();
             
-            const char* sidebarItems[] = { "Gobblegum Loadout", "Practice Patches", "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options",
+            const char* sidebarItems[] = { "Gobblegum Loadout", "Practice Patches", "Settings", "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options",
                 "Craftable Options", "Blocker Options", "Map Options", "Zombie Calculator", "Code Guides", "GK Valve Solver"};
             const char* sidebarPreview = sidebarItems[sidebarCurrentItem];
-            static int frontendItems = 2;
+            static int frontendItems = 3;
             static int inGameItems = frontendItems + 8;
             static int resourceItems = inGameItems + 3;
             // Frontend
@@ -493,7 +629,7 @@ bool RenderFrame()
             // In Game
             if (appStatus != "Status: Active" || currentMap == "core_frontend")
             {
-                if (sidebarCurrentItem > 1 && sidebarCurrentItem < 9)
+                if (sidebarCurrentItem > 2 && sidebarCurrentItem < 10)
                     sidebarCurrentItem = 0;
                 ImGui::BeginDisabled();
             }
@@ -525,25 +661,24 @@ bool RenderFrame()
     }
     ImGui::End();
 
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.25f));
-    ImGui::Begin("##Settings UI", 0, dockFlags);
-    ImGui::PopStyleColor();
+    ImGui::Begin("##Body", 0, dockFlags);
     
     //Create UI Window
     /*
         0 = Gobblegum Loadout
         1 = Practice Patches
         2 = Player Options
-        3 = Zombie Options
-        4 = Round Options
-        5 = Powerup Options
-        6 = Egg Step Options
-        7 = Craftable Options
-        8 = Blocker Options
-        9 = Map Options
-        10 = Zombie Calculator
-        11 = SOE Code Guide
-        12 = GK Valve Solver
+        3 = Settings
+        4 = Zombie Options
+        5 = Round Options
+        6 = Powerup Options
+        7 = Egg Step Options
+        8 = Craftable Options
+        9 = Blocker Options
+        10 = Map Options
+        11 = Zombie Calculator
+        12 = SOE Code Guide
+        13 = GK Valve Solver
     */
     if (!steamPathFound)
     {
@@ -578,16 +713,16 @@ bool RenderFrame()
             {
                 bo3Directory = bo3Directory.substr(0, bo3Directory.length() - 14);
                 steamPathFound = true;
-                std::ifstream inFile("settings.json");
-                bool good = inFile.good();
+                std::ifstream inFile(selfDirectory + "\\settings.json");
                 json data = json::parse(inFile);
                 inFile.close();
                 if (data.contains("Steam Path"))
                     data["Steam Path"] = bo3Directory;
-                std::ofstream outFile("settings.json");
+                std::ofstream outFile(selfDirectory + "\\settings.json");
                 outFile << std::setw(4) << data;
                 outFile.close();
                 VerifyFileStructure();
+                InitVariables();
             }
         }
 
@@ -782,7 +917,7 @@ void GobblegumLoadoutPtr()
     else
     {
         // swap gum selection menu
-        if (GetAsyncKeyState(VK_ESCAPE) & 1 && GetForegroundWindow() == hWnd)
+        if (KeyBinds::KeyPressed(VK_ESCAPE, false))
             BGB::showGumSelection = false;
         if (ImGui::BeginTabBar("Gum Type Choice"))
         {
@@ -948,6 +1083,49 @@ void PracticePatchesPtr()
                 WritePracticePatches(practicePatchIndexes);
             else
                 WritePracticePatches(inactivePracticePatchIndexes);
+        }
+    }
+    ImGui::EndGroup();
+}
+
+void SettingsPtr()
+{
+    ImGui::PushFont(titleFont);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Keybinds").x / 2);
+    ImGui::Text("Keybinds");
+    ImGui::PopFont();
+    ImGui::BeginGroup();
+    int count = 0;
+    float cursorPosY = ImGui::GetCursorPosY();
+    for (std::pair<const std::string, HotKeyBind>& hotkey : hotkeyDefs)
+    {
+        ImVec2 size = { max(150.0f, ImGui::CalcTextSize(hotkey.second.keyNames.c_str()).x), 25.0f };
+        if (count > 12)
+        {
+            ImGui::SetCursorPosX(375.0f);
+            ImGui::Text(hotkey.first.c_str());
+            SAMELINE;
+            ImGui::SetCursorPosX(575.0f);
+            if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size))
+            {
+                AssignHotKey(hotkey.first, hotkey.second);
+            }
+            count++;
+            continue;
+        }
+        ImGui::Text(hotkey.first.c_str());
+        SAMELINE;
+        ImGui::SetCursorPosX(200.0f);
+        if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size))
+        {
+            AssignHotKey(hotkey.first, hotkey.second);
+        }
+        count++;
+        if (count > 12)
+        {
+            ImGui::EndGroup();
+            ImGui::SetCursorPosY(cursorPosY);
+            ImGui::BeginGroup();
         }
     }
     ImGui::EndGroup();
@@ -2737,7 +2915,7 @@ void CodeGuidesPtr()
                 if (gameStarted)
                 {
                     std::time_t finalTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
-                    gameTime = "Time: " + ParseTimeFromMilli(finalTime);
+                    gameTime = "Time: " + ParseTimeFromMilli((int)finalTime);
                 }
             }
             ImGui::EndTabItem();
@@ -3068,14 +3246,14 @@ void GKValveSolverPtr()
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 450 - ImGui::CalcTextSize("Solutions").x / 2);
         ImGui::Text("Solutions");
         ImGui::SameLine();
-        if (!valveComboSet || greenChosen)
+        if (!passwordChosen || greenChosen)
         {
             ImGui::BeginDisabled();
         }
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2.5f);
         if (CreateButton("Evaluate Valves", ImVec2(150.0f, 25.0f)))
             showEvaluation = true;
-        if (!valveComboSet || greenChosen)
+        if (!passwordChosen || greenChosen)
         {
             ImGui::EndDisabled();
         }

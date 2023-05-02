@@ -7,6 +7,7 @@
 #include "PowerupOptions.h"
 #include "Craftables.h"
 #include "Resources.h"
+#include "KeyBinds.h"
 #include "GUIWindow.h"
 #include "../Fonts/Icons.h"
 #include "dirent.h"
@@ -14,6 +15,9 @@
 #include <direct.h>
 #include <fstream>
 #include <thread>
+#include "../nlohmann/json.hpp"
+
+using json = nlohmann::json;
 
 using namespace ImageHelp;
 using namespace BGB;
@@ -26,6 +30,7 @@ using namespace Craftables;
 using namespace ZombieCalc;
 using namespace GKValveSolver;
 using namespace IceCodePractice;
+using namespace KeyBinds;
 
 std::string ToLower(const char* str, int length);
 void LogFile(std::string text);
@@ -67,6 +72,7 @@ namespace GUIWindow
         CalcLockdownTime(1, 1);
         InitValveSolutions();
         CalcValveProbabilities();
+        InitHotKeyBinds();
     }
 
     void DummySpace(float x, float y)
@@ -226,6 +232,7 @@ namespace GUIWindow
         std::string practiceToolDirectory = bo3Directory + "\\Practice Tool";
         std::string gscDirectory = practiceToolDirectory + "\\GSC";
         std::string settingsFolder = practiceToolDirectory + "\\Settings";
+        std::ofstream(selfDirectory + "\\log.txt");
         if (!DoesPathExist(practiceToolDirectory))
             int success = _mkdir(practiceToolDirectory.c_str());
         if (!DoesPathExist(gscDirectory))
@@ -233,28 +240,22 @@ namespace GUIWindow
         if (!DoesPathExist(settingsFolder))
             int success = _mkdir(settingsFolder.c_str());
         if (!DoesPathExist(practiceToolDirectory + "\\Tool-Game Interface.txt"))
-        {
-            std::ofstream outFile(practiceToolDirectory + "\\Tool-Game Interface.txt");
-            outFile.close();
-        }
+            std::ofstream(practiceToolDirectory + "\\Tool-Game Interface.txt");
         if (!DoesPathExist(practiceToolDirectory + "\\Game-Tool Interface.txt"))
-        {
-            std::ofstream outFile(practiceToolDirectory + "\\Game-Tool Interface.txt");
-            outFile.close();
-        }
+            std::ofstream(practiceToolDirectory + "\\Game-Tool Interface.txt");
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt"))
-        {
-            std::ofstream outFile(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
-            outFile.close();
-        }
+            std::ofstream(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt"))
+            std::ofstream(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
+        if (!DoesPathExist(selfDirectory + "\\bindings.json"))
         {
-            std::ofstream outFile(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
-            outFile.close();
+            std::ofstream bindingsOutFile(selfDirectory + "\\bindings.json");
+            json data;
+            bindingsOutFile << std::setw(4) << data;
         }
-        if (DoesPathExist("\\GSC"))
+        if (DoesPathExist(selfDirectory + "\\GSC"))
         {
-            std::string startDirectory = "\\GSC";
+            std::string startDirectory = selfDirectory + "\\GSC";
             DIR* dir;
             struct dirent* ent;
             if ((dir = opendir(startDirectory.c_str())) != NULL)
@@ -317,6 +318,8 @@ namespace GUIWindow
 
     void InjectTool(bool enable)
     {
+        // REWORK THIS TO USE NAMED PIPE
+
         std::string compiler = "\"E:\\Steam\\steamapps\\common\\Call of Duty Black Ops III\\Practice Tool\\GSC\\DebugCompiler.exe\"";
         std::string gsc = "\"E:\\Steam\\steamapps\\common\\Call of Duty Black Ops III\\Practice Tool\\GSC";
         std::string ptPass = compiler + " --inject " + gsc + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
@@ -371,6 +374,7 @@ namespace GUIWindow
         zombieSpeedWalk = false;
         zombieSpeedRun = false;
         zombieSpeedSprint = false;
+        timescaleInt = 1;
     }
 }
 
@@ -386,16 +390,38 @@ std::string ToLower(const char* str, int length)
 
 void LogFile(std::string text)
 {
-    std::ofstream logFile("\\log.txt", std::ios::app);
+    std::ofstream logFile("log.txt", std::ios::app);
     logFile << text << "\n";
     logFile.close();
+}
+
+void NLog(std::string text)
+{
+    HWND notepad, edit;
+    notepad = FindWindow(NULL, "Untitled - Notepad");
+    if (!notepad)
+    {
+        notepad = FindWindow(NULL, "*Untitled - Notepad");
+    }
+    edit = FindWindowEx(notepad, NULL, "EDIT", NULL);
+    SendMessage(edit, EM_REPLACESEL, TRUE, (LPARAM)text.c_str());
+    SendMessage(edit, EM_REPLACESEL, TRUE, (LPARAM)"\n");
 }
 
 void WaitToKillCompiler(PROCESS_INFORMATION processInfo)
 {
     Sleep(3000);
-
-    TerminateProcess(processInfo.hProcess, 0);
-    CloseHandle(processInfo.hProcess);
-    CloseHandle(processInfo.hThread);
+    DWORD exited;
+    GetExitCodeProcess(processInfo.hProcess, &exited);
+    if (exited == STILL_ACTIVE)
+    {
+        TerminateProcess(processInfo.hProcess, 0);
+        CloseHandle(processInfo.hProcess);
+        CloseHandle(processInfo.hThread);
+    }
+    else
+    {
+        LogFile("Compiler process failed");
+        LogFile("Error Code: " + exited);
+    }
 }
