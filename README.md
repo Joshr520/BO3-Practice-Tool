@@ -19,3 +19,5 @@ Toggle the Practice Tool on
 ### Didn't Work?
 
 Your antivirus may be interfering with the compiler located in the GSC folder. Check to make sure all of the files are there, and if not, disable your antivirus or make an exception for it.
+
+You may also need to run the program as administrator if it won't let you toggle it on.
