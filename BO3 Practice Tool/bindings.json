@@ -1,11 +1,11 @@
 {
     "Activate Gum": "Tilde",
     "Close All Barriers": "",
-    "Decrement Timescale": "",
+    "Decrement Timescale": "U",
     "End Round": "]",
     "Freeze Zombies": "",
-    "Give All Perks": "Control+Shift+O",
-    "Global Power On": "",
+    "Give All Perks": "",
+    "Global Power On": "Ctrl+Alt+W",
     "Godmode": "",
     "Increment Timescale": "",
     "Infinite Ammo": "",
@@ -20,7 +20,7 @@
     "Take Gum": "",
     "Take Gum Charge": "",
     "Toggle Zombie Spawns": "Num -",
-    "Zombies Ignore Players": "Control+Num 7",
+    "Zombies Ignore Players": "",
     "Zombies Run": "",
     "Zombies Sprint": "",
     "Zombies Walk": "Num 5"

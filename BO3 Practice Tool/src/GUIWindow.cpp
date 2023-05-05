@@ -19,8 +19,11 @@
 #include <fstream>
 #include <functional>
 #include <Psapi.h>
+#include <unordered_set>
+#define CURL_STATICLIB
+#include <curl/curl.h>
+#include <miniz/miniz.h>
 
-#include "dirent.h"
 #include "../nlohmann/json.hpp"
 
 #define SAMELINE ImGui::SameLine()
@@ -39,6 +42,9 @@ using namespace KeyBinds;
 // Forward function declarations
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+void SearchForGame(); 
+bool UpdateAvailable();
+bool PerformUpdate();
 bool BeginFrame();
 bool RenderFrame();
 bool EndFrame();
@@ -61,6 +67,17 @@ void GKValveSolverPtr();
 void PresetSelectionFunc(int input);
 void SwapSelectionFunc(int input);
 
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
+{
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+static size_t WriteToFile(char* ptr, size_t size, size_t nmemb, void* f)
+{
+    FILE* file = (FILE*)f;
+    return fwrite(ptr, size, nmemb, file);
+}
+
 // JSON Settings
 bool steamPathFound = false;
 
@@ -80,10 +97,15 @@ ImFont* titleFont;
 static bool done = false;
 static bool mainDocked = false;
 static bool subDocked = false;
-static bool enabled = false;
-static bool inGameMonitor = false;
+static bool updateAvailable = false;
+static bool updateFailed = false;
+static bool doUpdateAvailable = false;
+static bool doUpdateFailed = false;
+static bool injectResponse = false;
 static int sidebarCurrentItem = 0;
 static ImVec4 fakeColor = { 0, 0, 0, 0 };
+static std::string internalVersion = "Beta-v0.1.0";
+static std::string downloadURL;
 
 // Gum data
 static int chooseGumPreset = 0;
@@ -137,6 +159,7 @@ namespace GUIWindow
 {
     void Setup()
     {
+        LogFile("-------------Practice Tool Startup-------------", true);
         wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), LoadIcon(hInst, MAKEINTRESOURCE(IDI_BO3PRACTICETOOL)), NULL, NULL, NULL, "BO3PT", NULL};
         RegisterClassExA(&wc);
         RECT rect;
@@ -190,29 +213,44 @@ namespace GUIWindow
         std::ifstream inFile(selfDirectory + "\\settings.json");
         json data = json::parse(inFile);
         inFile.close();
-
+        LogFile("Searching for BO3 directory");
         if (data.contains("Steam Path"))
+        {
             bo3Directory = data.at("Steam Path");
-
+            LogFile("BO3 directory found");
+        }
+        else
+            LogFile("BO3 directory not saved - prompting user for input");
         if (DoesPathExist(bo3Directory))
         {
             steamPathFound = true;
             VerifyFileStructure();
         }
-
         pID = MemHelp::GetProcessIdByName("BlackOps3.exe");
         if (pID != 0)
         {
             baseAddr = MemHelp::GetModuleBaseAddress(pID, "BlackOps3.exe");
             mapNameAddr = baseAddr + 0x179DF840 / 8;
             roundAddr = baseAddr + 0x1140DC30 / 8;
+            std::stringstream log;
+            log << "Base Address: " << baseAddr << "\n";
+            log << "Map Address: " << mapNameAddr << "\n";
+            log << "Round Address: " << roundAddr << "\n";
+            LogFile(log.str());
             pHandle = OpenProcess(PROCESS_ALL_ACCESS, false, pID);
             if (pHandle != INVALID_HANDLE_VALUE)
                 procFound = true;
         }
-
+        else
+        {
+            auto thread = std::thread(SearchForGame);
+            thread.detach();
+        }
+        LogFile("Writing presets");
         BGB::WritePresetToGame(BGB::inactivePreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
         WritePracticePatches(inactivePracticePatchIndexes);
+        updateAvailable = UpdateAvailable();
+        LogFile("Setup Finished");
     }
 
     void Run()
@@ -372,6 +410,7 @@ namespace GUIWindow
             break;
         case WM_DESTROY:
             done = true;
+            LogFile("-------------Practice Tool Ended---------------");
             ::PostQuitMessage(0);
             return 0;
         case WM_DPICHANGED:
@@ -426,6 +465,9 @@ namespace GUIWindow
                             KeyBinds::hotkeyToAssign->keyNames = "";
                             KeyBinds::hotkeyToAssign->keys = { };
                             KeyBinds::usedKeys = { };
+                            KeyBinds::totalNumKeys = 0;
+                            KeyBinds::initialKeyToRelease = 0;
+                            assignedKeys = { };
                             KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
                         }
                         // Make sure key isn't held down and we haven't hit the max combo length already
@@ -443,6 +485,9 @@ namespace GUIWindow
                                     KeyBinds::registerHotKey = false;
                                     KeyBinds::hotkeyToAssign->keyNames = KeyBinds::keyDictionary[key];
                                     KeyBinds::hotkeyToAssign->keys = { key };
+                                    KeyBinds::totalNumKeys = 0;
+                                    KeyBinds::initialKeyToRelease = 0;
+                                    assignedKeys = { };
                                     KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
                                     break;
                                 }
@@ -463,16 +508,21 @@ namespace GUIWindow
                                 if (key == VK_SHIFT || key == VK_CONTROL || key == VK_MENU)
                                 {
                                     KeyBinds::modifiersPressed++;
-                                    if (KeyBinds::modifiersPressed > 2)
+                                    KeyBinds::totalNumKeys++;
+                                    KeyBinds::hotkeyToAssign->keyNames += "+" + KeyBinds::keyDictionary[key];
+                                    KeyBinds::hotkeyToAssign->keys.push_back(key);
+                                    if (KeyBinds::modifiersPressed < 3)
                                         break;
                                 }
+                                KeyBinds::registerHotKey = false;
+                                KeyBinds::modifiersPressed = 0;
                                 KeyBinds::totalNumKeys++;
                                 KeyBinds::hotkeyToAssign->keyNames += "+" + KeyBinds::keyDictionary[key];
                                 KeyBinds::hotkeyToAssign->keys.push_back(key);
-                                if (KeyBinds::totalNumKeys > 2)
-                                {
-                                    KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
-                                }
+                                KeyBinds::totalNumKeys = 0;
+                                KeyBinds::initialKeyToRelease = 0;
+                                assignedKeys = { };
+                                KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
                             }
                         }
                     }
@@ -506,6 +556,171 @@ namespace GUIWindow
         }
         return ::DefWindowProc(hWnd, msg, wParam, lParam);
     }
+}
+
+void SearchForGame()
+{
+    HWND codHWND;
+    DWORD tempID = 0;
+    appStatus = "Status: Inactive";
+    enabled = false;
+    LogFile("Started async process - looking for BO3");
+    for (;;)
+    {
+        codHWND = FindWindow("CoDBlackOps", NULL);
+        if (codHWND != NULL)
+        {
+            char windowFilename[256] = "";
+            GetWindowThreadProcessId(codHWND, &tempID);
+            HANDLE tempHandle = OpenProcess(PROCESS_ALL_ACCESS, false, tempID);
+            GetModuleFileNameExA(tempHandle, NULL, windowFilename, 256);
+            std::string name = windowFilename;
+            if (name.find("BlackOps3.exe") != std::string::npos)
+            {
+                pID = MemHelp::GetProcessIdByName("BlackOps3.exe");
+                baseAddr = MemHelp::GetModuleBaseAddress(pID, "BlackOps3.exe");
+                mapNameAddr = baseAddr + 0x179DF840 / 8;
+                roundAddr = baseAddr + 0x1140DC30 / 8;
+                pHandle = OpenProcess(PROCESS_ALL_ACCESS, false, pID);
+                if (pHandle != INVALID_HANDLE_VALUE)
+                {
+                    procFound = true;
+                    LogFile("Ending async process - BO3 found");
+                    return;
+                }
+            }
+            CloseHandle(tempHandle);
+        }
+        Sleep(1000);
+    }
+}
+
+bool UpdateAvailable()
+{
+    LogFile("Checking for updates");
+
+    CURL* curl = curl_easy_init();
+    CURLcode res;
+    std::string buffer;
+    std::string tagName;
+    
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_URL, "https://api.github.com/repos/joshr520/BO3-Practice-Tool/releases/latest");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "BO3-Practice-Tool");
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK)
+        {
+            LogFile("curl GET failed with error code: " + res);
+            return 0;
+        }
+        json get = json::parse(buffer.begin(), buffer.end());
+        for (auto& array : get["assets"])
+            downloadURL = array["browser_download_url"];
+        tagName = get.at("tag_name");
+
+        if (!CheckVersions(tagName, internalVersion))
+        {
+            LogFile("New version not available");
+            return 0;
+        }
+        LogFile("New version detected");
+
+        curl_easy_cleanup(curl);
+    }
+
+    return 1;
+}
+
+bool PerformUpdate()
+{
+    return 0;
+
+    CURL* curl = curl_easy_init();
+    CURLcode res;
+    FILE* file;
+    std::string filename = "BO3 Practice Tool.zip";
+
+    errno_t err = fopen_s(&file, filename.c_str(), "wb");
+    if (err != 0)
+    {
+        char errorMsg[256];
+        strerror_s(errorMsg, sizeof(errorMsg), err);
+        LogFile("Opening file " + filename + " failed with error code: " + errorMsg);
+        return 0;
+    }
+    curl_easy_setopt(curl, CURLOPT_URL, downloadURL.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteToFile);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+    res = curl_easy_perform(curl);
+    if (res != CURLE_OK)
+    {
+        LogFile("curl download failed with error code: " + res);
+        return 0;
+    }
+
+    fclose(file);
+    curl_easy_cleanup(curl);
+
+    std::filesystem::path output_directory("./");
+    mz_zip_archive zip_archive;
+    mz_zip_zero_struct(&zip_archive);
+    if (!mz_zip_reader_init_file(&zip_archive, filename.c_str(), 0))
+    {
+        LogFile("Failed to open zip file: " + filename);
+        return 0;
+    }
+
+    int num_files = mz_zip_reader_get_num_files(&zip_archive);
+    LogFile("Extracting " + num_files + std::string(" files from ") + filename + " to " + output_directory.string());
+
+    for (int i = 0; i < num_files; i++)
+    {
+        mz_zip_archive_file_stat file_stat;
+        if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat))
+        {
+            LogFile("Failed to get file stat for index " + i);
+            continue;
+        }
+
+        std::filesystem::path output_file_path = output_directory / file_stat.m_filename;
+
+        std::string currentFile(file_stat.m_filename);
+        std::unordered_set<std::string_view> wantedFiles = { "BO3 Practice Tool", "GSC", "Resource Images" };
+        bool wantedFileFound = false;
+        for (const std::string_view& wantedFile : wantedFiles)
+        {
+            if (currentFile.find(wantedFile) != std::string::npos)
+            {
+                wantedFileFound = true;
+                break;
+            }
+        }
+
+        if (!wantedFileFound)
+            continue;
+
+        LogFile("Extracting " + std::string(file_stat.m_filename) + " to " + output_file_path.string());
+
+        std::filesystem::create_directories(output_file_path.parent_path());
+
+        if (mz_zip_reader_is_file_a_directory(&zip_archive, i))
+            std::filesystem::create_directory(output_file_path);
+        else
+        {
+            if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path))
+                std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.exe.old");
+            else if (std::filesystem::exists(output_file_path))
+                std::filesystem::remove(output_file_path);
+            if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0))
+                LogFile("Failed to extract file " + std::string(file_stat.m_filename));
+        }
+    }
+
+    mz_zip_reader_end(&zip_archive);
 }
 
 bool BeginFrame()
@@ -596,7 +811,7 @@ bool RenderFrame()
                     }
                     else
                         WritePracticePatches(practicePatchIndexes);
-                    InjectTool(enabled);
+                    InjectTool(enabled, injectResponse);
                 }
             }
             ImGui::Separator();
@@ -680,6 +895,54 @@ bool RenderFrame()
         12 = SOE Code Guide
         13 = GK Valve Solver
     */
+    if (updateAvailable)
+    {
+        ImGui::OpenPopup("Update Available");
+        updateAvailable = false;
+        doUpdateAvailable = true;
+    }
+    else if (updateFailed)
+    {
+        ImGui::OpenPopup("Update Failed");
+        updateFailed = false;
+        doUpdateFailed = true;
+    }
+    if (doUpdateAvailable)
+    {
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
+        if (ImGui::BeginPopupModal("Update Available", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::TextWrapped("A new update is available, would you like to update?");
+            if (ImGui::Button("OK", ImVec2(120, 0)))
+            {
+                if (!PerformUpdate())
+                    updateFailed = true;
+                ImGui::CloseCurrentPopup();
+                doUpdateAvailable = false;
+            } SAMELINE;
+            if (ImGui::Button("Exit", ImVec2(120, 0)))
+            {
+                ImGui::CloseCurrentPopup();
+                doUpdateAvailable = false;
+            }
+            ImGui::EndPopup();
+        }
+    }
+    else if (doUpdateFailed)
+    {
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
+        if (ImGui::BeginPopupModal("Update Failed", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::TextWrapped("There was an error updating the program, check log.txt for more info");
+            if (ImGui::Button("OK", ImVec2(240, 0)))
+                ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
+    }
     if (!steamPathFound)
     {
         ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Select BO3 EXE").x / 2, ImGui::GetContentRegionAvail().y / 2 - ImGui::CalcTextSize("Select BO3 EXE").y / 2 - 50.0f));
@@ -728,7 +991,9 @@ bool RenderFrame()
 
         if (bo3Directory.empty() || bo3Directory.substr(bo3Directory.length() - 14, bo3Directory.length()) != "\\BlackOps3.exe")
         {
-            ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always);
+            ImVec2 windowPos = ImGui::GetWindowPos();
+            ImVec2 windowSize = ImGui::GetWindowSize();
+            ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
             if (ImGui::BeginPopupModal("Directory Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
             {
                 ImGui::Text("Incorrect File Chosen");
@@ -745,33 +1010,7 @@ bool RenderFrame()
     ImGui::End();
     ImGui::End();
 
-    if (!procFound)
-    {
-        HWND codHWND = FindWindow("CoDBlackOps", NULL);
-        DWORD tempID = 0;
-        appStatus = "Status: Inactive";
-        enabled = false;
-        if (codHWND != NULL)
-        {
-            char windowFilename[256] = "";
-            GetWindowThreadProcessId(codHWND, &tempID);
-            HANDLE tempHandle = OpenProcess(PROCESS_ALL_ACCESS, false, tempID);
-            GetModuleFileNameExA(tempHandle, NULL, windowFilename, 256);
-            std::string name = windowFilename;
-            if (name.find("BlackOps3.exe") != std::string::npos)
-            {
-                pID = MemHelp::GetProcessIdByName("BlackOps3.exe");
-                baseAddr = MemHelp::GetModuleBaseAddress(pID, "BlackOps3.exe");
-                mapNameAddr = baseAddr + 0x179DF840 / 8;
-                roundAddr = baseAddr + 0x1140DC30 / 8;
-                pHandle = OpenProcess(PROCESS_ALL_ACCESS, false, pID);
-                if (pHandle != INVALID_HANDLE_VALUE)
-                    procFound = true;
-            }
-            CloseHandle(tempHandle);
-        }
-    }
-    else
+    if (procFound)
     {
         char* prevMap = readMap;
         int prevRound = currentRound;
@@ -780,14 +1019,16 @@ bool RenderFrame()
         {
             procFound = false;
             error = GetLastError();
+            LogFile("Failed to read game memory with error code: " + error);
             CloseHandle(pHandle);
             pHandle = NULL;
             ResetToggles();
         }
-        if (pHandle != INVALID_HANDLE_VALUE && !ReadProcessMemory(pHandle, roundAddr, &currentRound, sizeof(currentRound), NULL))
+        if (pHandle && pHandle != INVALID_HANDLE_VALUE && !ReadProcessMemory(pHandle, roundAddr, &currentRound, sizeof(currentRound), NULL))
         {
             procFound = false;
             error = GetLastError();
+            LogFile("Failed to read game memory with error code: " + error);
             CloseHandle(pHandle);
             pHandle = NULL;
             ResetToggles();
@@ -797,6 +1038,7 @@ bool RenderFrame()
         if ((strcmp(readMap, "core_frontend") && !strcmp(prevMap, "core_frontend")) || (!currentRound && prevRound))
         {
             ResetToggles();
+            LogFile("Map change or restart detected, resetting toggles");
         }
     }
 

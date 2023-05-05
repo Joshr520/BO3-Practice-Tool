@@ -4,10 +4,11 @@
 
 #include "imgui.h"
 #include "GUIWindow.h"
-#include "dirent.h"
 
 #include "PlayerOptions.h"
 #include "Resources.h"
+
+#include <filesystem>
 
 using namespace GUIWindow;
 using namespace SOECodeGuide;
@@ -64,103 +65,61 @@ namespace ImageHelp
 
     void InitImgList()
     {
-        DIR* dir;
-        struct dirent* ent;
-        if ((dir = opendir("Gum Images/Classics")) != NULL)
+        for (const auto& entry : std::filesystem::directory_iterator("Resource Images/Gum Images/Classics"))
         {
-            while ((ent = readdir(dir)) != NULL)
-            {
-                if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
-                    continue;
-                std::string name = ent->d_name;
-                if (name.find(".png") == std::string::npos)
-                    continue;
-                std::string filename = "Gum Images/Classics/";
-                filename.append(name);
-                Image gum;
-                gum.imgRelativePath = name.substr(0, name.size() - 4);
-                gum.imgDirectPath = filename;
-                gum.index = (int)bgbImgList.size() + 1;
-                bgbImgList.push_back(gum);
-            }
-            closedir(dir);
+            const std::string& name = entry.path().filename().string();
+            if (name.find(".png") == std::string::npos)
+                continue;
+            Image gum;
+            gum.imgRelativePath = name.substr(0, name.size() - 4);
+            gum.imgDirectPath = entry.path().string();
+            gum.index = (int)bgbImgList.size() + 1;
+            bgbImgList.push_back(gum);
         }
-        if ((dir = opendir("Gum Images/Megas")) != NULL)
+        for (const auto& entry : std::filesystem::directory_iterator("Resource Images/Gum Images/Megas"))
         {
-            while ((ent = readdir(dir)) != NULL)
-            {
-                if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
-                    continue;
-                std::string name = ent->d_name;
-                if (name.find(".png") == std::string::npos)
-                    continue;
-                std::string filename = "Gum Images/Megas/";
-                filename.append(name);
-                Image gum;
-                gum.imgRelativePath = name.substr(0, name.size() - 4);
-                gum.imgDirectPath = filename;
-                gum.index = (int)bgbImgList.size() + 1;
-                bgbImgList.push_back(gum);
-            }
-            closedir(dir);
+            const std::string& name = entry.path().filename().string();
+            if (name.find(".png") == std::string::npos)
+                continue;
+            Image gum;
+            gum.imgRelativePath = name.substr(0, name.size() - 4);
+            gum.imgDirectPath = entry.path().string();
+            gum.index = (int)bgbImgList.size() + 1;
+            bgbImgList.push_back(gum);
+    }
+        for (const auto& entry : std::filesystem::directory_iterator("Resource Images/Soe Code"))
+        {
+            const std::string& name = entry.path().filename().string();
+            if (name.find(".png") == std::string::npos)
+                continue;
+            Image code;
+            code.imgRelativePath = name.substr(0, name.size() - 4);
+            code.imgDirectPath = entry.path().string();
+            code.index = (int)codeImgList.size() + 1;
+            codeImgList.push_back(code);
+            soeCodeCombo.push_back(name.substr(0, name.size() - 4));
         }
-        if ((dir = opendir("Resource Images/Soe Code")) != NULL)
+        for (const auto& entry : std::filesystem::directory_iterator("Resource Images/GK Valve Solver"))
         {
-            while ((ent = readdir(dir)) != NULL)
-            {
-                if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
-                    continue;
-                std::string name = ent->d_name;
-                if (name.find(".png") == std::string::npos)
-                    continue;
-                std::string filename = "Resource Images/Soe Code/";
-                filename.append(name);
-                Image code;
-                code.imgRelativePath = name.substr(0, name.size() - 4);
-                code.imgDirectPath = filename;
-                code.index = (int)codeImgList.size() + 1;
-                codeImgList.push_back(code);
-                soeCodeCombo.push_back(name.substr(0, name.size() - 4));
-            }
-            closedir(dir);
+            const std::string& name = entry.path().filename().string();
+            if (name.find(".png") == std::string::npos)
+                continue;
+            Image valve;
+            valve.imgRelativePath = name.substr(0, name.size() - 4);
+            valve.imgDirectPath = entry.path().string();
+            valve.index = (int)valveSolverImgList.size() + 1;
+            valveSolverImgList.push_back(valve);
         }
-        if ((dir = opendir("Resource Images/GK Valve Solver")) != NULL)
+        for (const auto& entry : std::filesystem::directory_iterator("Resource Images/Ice Code"))
         {
-            while ((ent = readdir(dir)) != NULL)
-            {
-                if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
-                    continue;
-                std::string name = ent->d_name;
-                if (name.find(".png") == std::string::npos)
-                    continue;
-                std::string filename = "Resource Images/GK Valve Solver/";
-                filename.append(name);
-                Image valve;
-                valve.imgRelativePath = name.substr(0, name.size() - 4);
-                valve.imgDirectPath = filename;
-                valve.index = (int)valveSolverImgList.size() + 1;
-                valveSolverImgList.push_back(valve);
-            }
-            closedir(dir);
-        }
-        if ((dir = opendir("Resource Images/Ice Code")) != NULL)
-        {
-            while ((ent = readdir(dir)) != NULL)
-            {
-                if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
-                    continue;
-                std::string name = ent->d_name;
-                if (name.find(".png") == std::string::npos)
-                    continue;
-                std::string filename = "Resource Images/Ice Code/";
-                filename.append(name);
-                Image iceCode;
-                iceCode.imgRelativePath = name.substr(0, name.size() - 4);
-                iceCode.imgDirectPath = filename;
-                iceCode.index = (int)iceCodeImgList.size() + 1;
-                iceCodeImgList.insert({ iceCode.imgRelativePath, iceCode });
-            }
-            closedir(dir);
+            const std::string& name = entry.path().filename().string();
+            if (name.find(".png") == std::string::npos)
+                continue;
+            Image iceCode;
+            iceCode.imgRelativePath = name.substr(0, name.size() - 4);
+            iceCode.imgDirectPath = entry.path().string();
+            iceCode.index = (int)iceCodeImgList.size() + 1;
+            iceCodeImgList.insert({ iceCode.imgRelativePath, iceCode });
         }
     }
 

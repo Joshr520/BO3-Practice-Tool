@@ -3,6 +3,7 @@
 #include "PlayerOptions.h"
 #include "ZombieOptions.h"
 #include "Helper.h"
+#include "Resources.h"
 
 #include <thread>
 #include <hidusage.h>
@@ -14,6 +15,7 @@ using json = nlohmann::json;
 HHOOK keyboardHook;
 
 bool InternalKeyValidation(std::vector<int> keys);
+bool VectorSort(std::string a, std::string b) { return a < b; }
 
 namespace KeyBinds
 {
@@ -114,6 +116,37 @@ namespace KeyBinds
 			}
 			return false;
 		}
+		std::stringstream sortString(hotkey.keyNames);
+		std::string ctrl = "";
+		std::string shift = "";
+		std::string alt = "";
+		std::string activator = "";
+		std::string token;
+		while (std::getline(sortString, token, '+'))
+		{
+			switch (hashstr(token.c_str()))
+			{
+			case hashstr("Ctrl"):
+			case hashstr("L Ctrl"):
+			case hashstr("R Ctrl"):
+				ctrl = token + "+";
+				break;
+			case hashstr("Shift"):
+			case hashstr("L Shift"):
+			case hashstr("R Shift"):
+				shift = token + "+";
+				break;
+			case hashstr("Alt"):
+			case hashstr("L Alt"):
+			case hashstr("R Alt"):
+				alt = token + "+";
+				break;
+			default:
+				activator = token;
+				break;
+			}
+		}
+		hotkey.keyNames = ctrl + shift + alt + activator;
 		if (write && jsonKeyToAssign.size())
 		{
 			data[jsonKeyToAssign] = hotkey.keyNames;

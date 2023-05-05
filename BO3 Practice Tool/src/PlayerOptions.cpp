@@ -1,5 +1,4 @@
 #include "PlayerOptions.h"
-#include "dirent.h"
 #include "GUIWindow.h"
 
 #include <fstream>
@@ -142,7 +141,7 @@ namespace Weapons
 
 namespace BGB
 {
-#define PRESET_FILE "\\Gum Profiles\\GumPresets.csv"
+#define PRESET_FILE "Gum Profiles/GumPresets.csv"
 
     void InitBGBDescriptions()
     {

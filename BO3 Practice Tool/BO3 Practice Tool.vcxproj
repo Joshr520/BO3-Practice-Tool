@@ -152,7 +152,6 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
     <ClInclude Include="framework.h" />
     <ClInclude Include="headers\Blockers.h" />
     <ClInclude Include="headers\Craftables.h" />
-    <ClInclude Include="headers\dirent.h" />
     <ClInclude Include="headers\EggStepOptions.h" />
     <ClInclude Include="headers\GUIWindow.h" />
     <ClInclude Include="headers\Helper.h" />

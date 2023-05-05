@@ -1,4 +1,5 @@
 #include "memHelp.h"
+#include "Helper.h"
 
 using namespace std;
 
@@ -31,14 +32,17 @@ namespace MemHelp
         PROCESSENTRY32 pt;
         HANDLE hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         pt.dwSize = sizeof(PROCESSENTRY32);
+        LogFile("Starting Enumeration");
         if (Process32First(hsnap, &pt)) {
             do {
                 if (!_stricmp(pt.szExeFile, name)) {
+                    LogFile("BlackOps3.exe Found");
                     CloseHandle(hsnap);
                     return pt.th32ProcessID;
                 }
             } while (Process32Next(hsnap, &pt));
         }
+        LogFile("BlackOps3.exe Not Found");
         CloseHandle(hsnap);
         return 0;
     }

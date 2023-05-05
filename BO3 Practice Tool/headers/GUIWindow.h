@@ -32,6 +32,7 @@ namespace GUIWindow
 	void Run();
 	void Destroy();
 
+	inline bool enabled = false;
 	inline std::string appStatus = "Status: Inactive";
 	inline std::string currentMap = "";
 	inline std::string bo3Directory;

@@ -2,6 +2,7 @@
 
 #pragma once
 #include <unordered_map>
+#include <map>
 #include <string>
 #include <functional>
 #include <Windows.h>
@@ -24,7 +25,7 @@ namespace KeyBinds
 	inline std::string jsonKeyToAssign;
 	inline HotKeyBind* hotkeyToAssign;
 	inline std::vector<int> usedKeys;
-	inline std::unordered_map<std::string, HotKeyBind> hotkeyDefs;
+	inline std::map<std::string, HotKeyBind> hotkeyDefs;
 	inline std::unordered_map<int, bool> keyMap;
 	inline std::unordered_map<int, bool> keyMapHeld;
 	inline std::unordered_map<int, std::string> keyDictionary = { { 0x1b, "Escape" }, { 0x70, "F1" }, { 0x71, "F2" }, { 0x72, "F3" }, { 0x73, "F4" }, { 0x74, "F5" }, { 0x75, "F6" }, { 0x76, "F7" }, { 0x77, "F8" }, { 0x78, "F9" }, { 0x79, "F10" },
@@ -33,13 +34,13 @@ namespace KeyBinds
 		{ 0x08, "Backspace" }, { 0x2d, "Insert" }, { 0x24, "Home" }, { 0x21, "Page Up" }, { 0x90, "Num Lock" }, { 0x6f, "Num /" }, { 0x6a, "Num *" }, { 0x6d, "Num -" }, { 0x09, "Tab" }, { 0x51, "Q" }, { 0x57, "W" }, { 0x45, "E" }, { 0x52, "R" },
 		{ 0x54, "T" }, { 0x59, "Y" }, { 0x55, "U" }, { 0x49, "I" }, { 0x4f, "O" }, { 0x50, "P" }, { 0xdb, "[" }, { 0xdd, "]" }, { 0xdc, "\\" }, { 0x2e, "Delete" }, { 0x23, "End" }, { 0x22, "Pg Down" }, { 0x67, "Num 7" }, { 0x68, "Num 8" },
 		{ 0x69, "Num 9" }, { 0x6b, "Num + " }, { 0x14, "Caps Lock" }, { 0x41, "A" }, { 0x53, "S" }, { 0x44, "D" }, { 0x46, "F" }, { 0x47, "G" }, { 0x48, "H" }, { 0x4a, "J" }, { 0x4b, "K" }, { 0x4c, "L" }, { 0xba, "; " }, { 0xde, "'" },
-		{ 0x0d, "Enter" }, { 0x64, "Num 4" }, { 0x65, "Num 5" }, { 0x66, "Num 6" }, { 0x10, "Shift" }, { 0xa0, "Left Shift" }, { 0xa1, "Right Shift" }, { 0x5a, "Z" }, { 0x58, "X" }, { 0x43, "C" }, { 0x56, "V" }, { 0x42, "B" }, { 0x4e, "N" },
-		{ 0x4d, "M" }, { 0xbc, "," }, { 0xbe, "." }, { 0xbf, "/" }, { 0x26, "Up Arrow" }, { 0x61, "Num 1" }, { 0x62, "Num 2" }, { 0x63, "Num 3" }, { 0x11, "Control" }, { 0xa2, "Left Control" }, { 0xa3, "Right Control" }, { 0x5b, "Left Windows" },
-		{ 0x5c, "Right Windows" }, { 0x12, "Alt" }, { 0xa4, "Left Alt" }, { 0xa5, "Right Alt" }, { 0x20, "Spacebar" }, { 0x5d, "Applications" }, { 0x25, "Left Arrow" }, { 0x28, "Down Arrow" }, { 0x27, "Right Arrow" }, { 0x60, "Num 0" }, { 0x6e, "Num ." } };
+		{ 0x0d, "Enter" }, { 0x64, "Num 4" }, { 0x65, "Num 5" }, { 0x66, "Num 6" }, { 0x10, "Shift" }, { 0xa0, "L Shift" }, { 0xa1, "R Shift" }, { 0x5a, "Z" }, { 0x58, "X" }, { 0x43, "C" }, { 0x56, "V" }, { 0x42, "B" }, { 0x4e, "N" },
+		{ 0x4d, "M" }, { 0xbc, "," }, { 0xbe, "." }, { 0xbf, "/" }, { 0x26, "Up Arrow" }, { 0x61, "Num 1" }, { 0x62, "Num 2" }, { 0x63, "Num 3" }, { 0x11, "Ctrl" }, { 0xa2, "L Ctrl" }, { 0xa3, "R Ctrl" }, { 0x5b, "L Windows" },
+		{ 0x5c, "R Windows" }, { 0x12, "Alt" }, { 0xa4, "L Alt" }, { 0xa5, "R Alt" }, { 0x20, "Space" }, { 0x25, "L Arrow" }, { 0x28, "Down Arrow" }, { 0x27, "R Arrow" }, { 0x60, "Num 0" }, { 0x6e, "Num ." } };
 
 	void InitHotKeyBinds();
 	bool KeyPressed(int key, bool global = globalHotKeys);
-	void AssignHotKey(std::string key, HotKeyBind& hotkey);
+	void AssignHotKey(std::string jsonKey, HotKeyBind& hotkey);
 	bool ValidateKeybind(HotKeyBind& hotkey, bool write = false);
 	void CheckAndRunKeybind();
 	bool RegisterRawInput(HWND hTarget);

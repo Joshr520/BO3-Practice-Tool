@@ -10,11 +10,12 @@
 #include "KeyBinds.h"
 #include "GUIWindow.h"
 #include "../Fonts/Icons.h"
-#include "dirent.h"
 #include <algorithm>
 #include <direct.h>
 #include <fstream>
 #include <thread>
+#include <unordered_set>
+#
 #include "../nlohmann/json.hpp"
 
 using json = nlohmann::json;
@@ -33,7 +34,6 @@ using namespace IceCodePractice;
 using namespace KeyBinds;
 
 std::string ToLower(const char* str, int length);
-void LogFile(std::string text);
 void WaitToKillCompiler(PROCESS_INFORMATION lpExecInfo);
 
 namespace GUIWindow
@@ -223,8 +223,7 @@ namespace GUIWindow
 
     bool DoesPathExist(const std::string& s)
     {
-        struct stat buffer;
-        return (stat(s.c_str(), &buffer) == 0);
+        return std::filesystem::exists(s);
     }
 
     void VerifyFileStructure()
@@ -232,13 +231,12 @@ namespace GUIWindow
         std::string practiceToolDirectory = bo3Directory + "\\Practice Tool";
         std::string gscDirectory = practiceToolDirectory + "\\GSC";
         std::string settingsFolder = practiceToolDirectory + "\\Settings";
-        std::ofstream(selfDirectory + "\\log.txt");
         if (!DoesPathExist(practiceToolDirectory))
-            int success = _mkdir(practiceToolDirectory.c_str());
+            std::filesystem::create_directory(practiceToolDirectory);
         if (!DoesPathExist(gscDirectory))
-            int success = _mkdir(gscDirectory.c_str());
+            std::filesystem::create_directory(gscDirectory);
         if (!DoesPathExist(settingsFolder))
-            int success = _mkdir(settingsFolder.c_str());
+            std::filesystem::create_directory(settingsFolder);
         if (!DoesPathExist(practiceToolDirectory + "\\Tool-Game Interface.txt"))
             std::ofstream(practiceToolDirectory + "\\Tool-Game Interface.txt");
         if (!DoesPathExist(practiceToolDirectory + "\\Game-Tool Interface.txt"))
@@ -256,35 +254,28 @@ namespace GUIWindow
         if (DoesPathExist(selfDirectory + "\\GSC"))
         {
             std::string startDirectory = selfDirectory + "\\GSC";
-            DIR* dir;
-            struct dirent* ent;
-            if ((dir = opendir(startDirectory.c_str())) != NULL)
+            for (const auto& entry : std::filesystem::directory_iterator(startDirectory))
             {
-                while ((ent = readdir(dir)) != NULL)
+                if (entry.is_directory() || entry.path().filename().string() == "." || entry.path().filename().string() == "..")
+                    continue;
+                std::string name = entry.path().filename().string();
+                std::string oldFile = entry.path().string();
+                std::string newFile = gscDirectory + "\\" + name;
+                if (!DoesPathExist(oldFile))
+                    continue;
+                try
                 {
-                    if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
-                        continue;
-                    std::string name = ent->d_name;
-                    std::string oldFile = startDirectory + "\\" + name;
-                    std::string newFile = gscDirectory + "\\" + name;
-                    if (MoveFileEx(oldFile.c_str(), newFile.c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING) == 0)
-                    {
-                        LogFile("Move " + oldFile + " To " + newFile + " Failed");
-                        LogFile("Error Code: " + std::to_string(GetLastError()));
-                        if (remove(oldFile.c_str()) < 0)
-                        {
-                            LogFile("Couldn't Remove File: " + oldFile);
-                            LogFile("Error Code: " + errno);
-                        }
-                    }
+                    std::filesystem::rename(oldFile, newFile);
                 }
-                closedir(dir);
+                catch (const std::filesystem::filesystem_error& e)
+                {
+                    LogFile("Failed to move file " + oldFile + " to " + newFile);
+                    LogFile("Error message: " + std::string(e.what()));
+                    continue;
+                }
             }
-            if (_rmdir(startDirectory.c_str()) < 0)
-            {
-                LogFile("Couldn't Remove GSC Directory");
-                LogFile("Error Code: " + errno);
-            }
+            if (!std::filesystem::remove(startDirectory))
+                LogFile("Couldn't remove GSC directory with error code: " + std::error_code(errno, std::system_category()).message());
         }
     }
 
@@ -303,6 +294,8 @@ namespace GUIWindow
 
     void NotifyGame(std::vector<int> passList)
     {
+        // REPLACE WITH PIPE WHEN READY
+
         if (appStatus == "Status: Inactive")
             return;
         std::string outData;
@@ -316,32 +309,45 @@ namespace GUIWindow
         outFile.close();
     }
 
-    void InjectTool(bool enable)
+    void InjectTool(bool enable, bool& injectResponse)
     {
-        // REWORK THIS TO USE NAMED PIPE
-
         std::string compiler = "\"E:\\Steam\\steamapps\\common\\Call of Duty Black Ops III\\Practice Tool\\GSC\\DebugCompiler.exe\"";
         std::string gsc = "\"E:\\Steam\\steamapps\\common\\Call of Duty Black Ops III\\Practice Tool\\GSC";
         std::string ptPass = compiler + " --inject " + gsc + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
         std::string nmPass = compiler + " --inject " + gsc + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
+        std::unordered_set<std::string_view> wantedFiles = { "DebugCompiler.exe", "DebugCompiler.exe.config", "External.dll", "Ionic.Zip.dll", "Irony.dll", "No Mods.gsc", "Practice Tool.gsc", "System.Buffers.dll", "System.Collections.Immutable.dll", "System.Memory.dll",
+            "System.Numerics.Vectors.dll", "System.Reflection.Metadata.dll", "System.Runtime.CompilerServices.Unsafe.dll", "t7cinternal.dll", "T7CompilerLib.dll", "t8cinternal.dll", "T89CompilerLib.dll", "TreyarchCompiler.dll", "xdevkit.dll", "xdrpc.dll" };
+        for (const auto& entry : std::filesystem::directory_iterator(gsc))
+        {
+            if (wantedFiles.find(entry.path().filename().string()) == wantedFiles.end())
+            {
+                injectResponse = true;
+                return;
+            }
+        }
 
-        char args[1028];
-
+        LPSTR args;
         if (enable)
-            strcpy_s(args, ptPass.c_str());
+            args = &ptPass[0];
         else
-            strcpy_s(args, nmPass.c_str());
+            args = &nmPass[0];
 
         STARTUPINFO startupInfo = { sizeof(startupInfo) };
-        PROCESS_INFORMATION processInfo;
+        PROCESS_INFORMATION processInfo = { 0 };
         if (CreateProcess(NULL, args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
         {
-            std::thread checkProc(WaitToKillCompiler, processInfo);
-            checkProc.detach();
+            auto thread = std::thread(WaitToKillCompiler, processInfo);
+            thread.detach();
         }
         else
-            LogFile("Error Code: " + std::to_string(GetLastError()));
+        {
+            LogFile("Failed to inject tool with error code: " + std::to_string(GetLastError()));
+            enabled = false;
+            appStatus = "Status: Inactive";
+        }
 
+        CloseHandle(processInfo.hProcess);
+        CloseHandle(processInfo.hThread);
     }
 
     std::vector<int> GetWeaponIndex(std::string currentMap, std::string weaponSelectName)
@@ -376,6 +382,40 @@ namespace GUIWindow
         zombieSpeedSprint = false;
         timescaleInt = 1;
     }
+
+    bool CheckVersions(const std::string& newVersion, const std::string& oldVersion)
+    {
+        std::vector<int> newVersionParts;
+        std::vector<int> oldVersionParts;
+
+        std::istringstream newVersionStream(newVersion);
+        std::istringstream oldVersionStream(oldVersion);
+        std::string part;
+
+        std::getline(newVersionStream, part, 'v');
+        std::getline(oldVersionStream, part, 'v');
+
+        while (std::getline(newVersionStream, part, '.'))
+            newVersionParts.push_back(std::stoi(part));
+        while (std::getline(oldVersionStream, part, '.'))
+            oldVersionParts.push_back(std::stoi(part));
+
+        if (newVersionParts.size() != 3 || oldVersionParts.size() != 3)
+            return false;
+        if (newVersionParts[0] > oldVersionParts[0])
+            return true;
+        else if (newVersionParts[0] == oldVersionParts[0])
+        {
+            if (newVersionParts[1] > oldVersionParts[1])
+                return true;
+            else if (newVersionParts[1] == oldVersionParts[1])
+            {
+                if (newVersionParts[2] > oldVersionParts[2])
+                    return true;
+            }
+        }
+        return false;
+    }
 }
 
 std::string ToLower(const char* str, int length)
@@ -388,9 +428,13 @@ std::string ToLower(const char* str, int length)
     return newStr;
 }
 
-void LogFile(std::string text)
+void LogFile(std::string text, bool initialBoot)
 {
-    std::ofstream logFile("log.txt", std::ios::app);
+    std::ofstream logFile;
+    if (initialBoot)
+         logFile.open("log.txt");
+    else
+        logFile.open("log.txt", std::ios::app);
     logFile << text << "\n";
     logFile.close();
 }
@@ -410,18 +454,27 @@ void NLog(std::string text)
 
 void WaitToKillCompiler(PROCESS_INFORMATION processInfo)
 {
-    Sleep(3000);
-    DWORD exited;
-    GetExitCodeProcess(processInfo.hProcess, &exited);
-    if (exited == STILL_ACTIVE)
+    DWORD result = WaitForSingleObject(processInfo.hProcess, 3000);
+    if (result == WAIT_TIMEOUT)
     {
         TerminateProcess(processInfo.hProcess, 0);
         CloseHandle(processInfo.hProcess);
         CloseHandle(processInfo.hThread);
     }
-    else
+    else if (result == WAIT_OBJECT_0)
     {
-        LogFile("Compiler process failed");
-        LogFile("Error Code: " + exited);
+        DWORD exitCode;
+        if (GetExitCodeProcess(processInfo.hProcess, &exitCode))
+        {
+            if (exitCode != 0)
+            LogFile("Compiler process failed with error code: " + std::to_string(exitCode));
+        }
+        else
+            LogFile("GetExitCodeProcess failed with error code: " + std::to_string(GetLastError()));
+
+        CloseHandle(processInfo.hProcess);
+        CloseHandle(processInfo.hThread);
     }
+    else
+        LogFile("WaitForSingleObject failed with error code: " + std::to_string(GetLastError()));
 }
