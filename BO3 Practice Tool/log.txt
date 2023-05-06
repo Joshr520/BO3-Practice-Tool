@@ -8,4 +8,46 @@ Started async process - looking for BO3
 Checking for updates
 New version detected
 Setup Finished
+e files from BO3 Practice Tool.zip to ./
+Extracting BO3 Practice Tool.exe to ./BO3 Practice Tool.exe
+Extracting BO3 Practice Tool.pdb to ./BO3 Practice Tool.pdb
+Extracting GSC/DebugCompiler.exe to ./GSC/DebugCompiler.exe
+Extracting GSC/DebugCompiler.exe.config to ./GSC/DebugCompiler.exe.config
+Extracting GSC/External.dll to ./GSC/External.dll
+Extracting GSC/Ionic.Zip.dll to ./GSC/Ionic.Zip.dll
+Extracting GSC/Irony.dll to ./GSC/Irony.dll
+Extracting GSC/No Mods.gsc to ./GSC/No Mods.gsc
+Extracting GSC/Practice Tool.gsc to ./GSC/Practice Tool.gsc
+Extracting GSC/System.Buffers.dll to ./GSC/System.Buffers.dll
+Extracting GSC/System.Collections.Immutable.dll to ./GSC/System.Collections.Immutable.dll
+Extracting GSC/System.Memory.dll to ./GSC/System.Memory.dll
+Extracting GSC/System.Numerics.Vectors.dll to ./GSC/System.Numerics.Vectors.dll
+Extracting GSC/System.Reflection.Metadata.dll to ./GSC/System.Reflection.Metadata.dll
+Extracting GSC/System.Runtime.CompilerServices.Unsafe.dll to ./GSC/System.Runtime.CompilerServices.Unsafe.dll
+Extracting GSC/t7cinternal.dll to ./GSC/t7cinternal.dll
+Extracting GSC/T7CompilerLib.dll to ./GSC/T7CompilerLib.dll
+Extracting GSC/T89CompilerLib.dll to ./GSC/T89CompilerLib.dll
+Extracting GSC/t8cinternal.dll to ./GSC/t8cinternal.dll
+Extracting GSC/TreyarchCompiler.dll to ./GSC/TreyarchCompiler.dll
+Extracting GSC/xdevkit.dll to ./GSC/xdevkit.dll
+Extracting GSC/xdrpc.dll to ./GSC/xdrpc.dll
+Extracting Resource Images/GK Valve Solver/Valve Gauge.png to ./Resource Images/GK Valve Solver/Valve Gauge.png
+Extracting Resource Images/SOE Code/1 Close.png to ./Resource Images/SOE Code/1 Close.png
+Extracting Resource Images/SOE Code/1 Far.png to ./Resource Images/SOE Code/1 Far.png
+Extracting Resource Images/SOE Code/2 Close.png to ./Resource Images/SOE Code/2 Close.png
+Extracting Resource Images/SOE Code/2 Far.png to ./Resource Images/SOE Code/2 Far.png
+Extracting Resource Images/SOE Code/3 Close.png to ./Resource Images/SOE Code/3 Close.png
+Extracting Resource Images/SOE Code/3 Far.png to ./Resource Images/SOE Code/3 Far.png
+Extracting Resource Images/SOE Code/4 close.png to ./Resource Images/SOE Code/4 close.png
+Extracting Resource Images/SOE Code/4 Far.png to ./Resource Images/SOE Code/4 Far.png
+Extracting Resource Images/SOE Code/5 Close.png to ./Resource Images/SOE Code/5 Close.png
+Extracting Resource Images/SOE Code/5 Far.png to ./Resource Images/SOE Code/5 Far.png
+Extracting Resource Images/SOE Code/6 Close.png to ./Resource Images/SOE Code/6 Close.png
+Extracting Resource Images/SOE Code/6 Far.png to ./Resource Images/SOE Code/6 Far.png
+Extracting Resource Images/SOE Code/7 Close.png to ./Resource Images/SOE Code/7 Close.png
+Extracting Resource Images/SOE Code/7 Far.png to ./Resource Images/SOE Code/7 Far.png
+Extracting Resource Images/SOE Code/8 Close.png to ./Resource Images/SOE Code/8 Close.png
+Extracting Resource Images/SOE Code/8 Far.png to ./Resource Images/SOE Code/8 Far.png
+Extracting Resource Images/SOE Code/9 Close.png to ./Resource Images/SOE Code/9 Close.png
+Extracting Resource Images/SOE Code/9 Far.png to ./Resource Images/SOE Code/9 Far.png
 -------------Practice Tool Ended---------------

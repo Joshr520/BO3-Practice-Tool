@@ -34,7 +34,7 @@ using namespace IceCodePractice;
 using namespace KeyBinds;
 
 std::string ToLower(const char* str, int length);
-void WaitToKillCompiler(PROCESS_INFORMATION lpExecInfo);
+DWORD WaitToKillCompiler(PROCESS_INFORMATION lpExecInfo);
 
 namespace GUIWindow
 {
@@ -311,10 +311,10 @@ namespace GUIWindow
 
     void InjectTool(bool enable, bool& injectResponse)
     {
-        std::string compiler = "\"E:\\Steam\\steamapps\\common\\Call of Duty Black Ops III\\Practice Tool\\GSC\\DebugCompiler.exe\"";
-        std::string gsc = "\"E:\\Steam\\steamapps\\common\\Call of Duty Black Ops III\\Practice Tool\\GSC";
-        std::string ptPass = compiler + " --inject " + gsc + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
-        std::string nmPass = compiler + " --inject " + gsc + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
+        std::string gsc = bo3Directory + "/Practice Tool/GSC";
+        std::string compiler = "\"" + gsc + "/DebugCompiler.exe\"";
+        std::string ptPass = compiler + " --inject " + "\"" + gsc + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
+        std::string nmPass = compiler + " --inject " + "\"" + gsc + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
         std::unordered_set<std::string_view> wantedFiles = { "DebugCompiler.exe", "DebugCompiler.exe.config", "External.dll", "Ionic.Zip.dll", "Irony.dll", "No Mods.gsc", "Practice Tool.gsc", "System.Buffers.dll", "System.Collections.Immutable.dll", "System.Memory.dll",
             "System.Numerics.Vectors.dll", "System.Reflection.Metadata.dll", "System.Runtime.CompilerServices.Unsafe.dll", "t7cinternal.dll", "T7CompilerLib.dll", "t8cinternal.dll", "T89CompilerLib.dll", "TreyarchCompiler.dll", "xdevkit.dll", "xdrpc.dll" };
         for (const auto& entry : std::filesystem::directory_iterator(gsc))
@@ -334,10 +334,13 @@ namespace GUIWindow
 
         STARTUPINFO startupInfo = { sizeof(startupInfo) };
         PROCESS_INFORMATION processInfo = { 0 };
-        if (CreateProcess(NULL, args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
+        if (CreateProcess(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo))
         {
-            auto thread = std::thread(WaitToKillCompiler, processInfo);
-            thread.detach();
+            DWORD exitCode = WaitToKillCompiler(processInfo);
+            if (exitCode != 0)
+                LogFile("Compiler process failed with error code: " + std::to_string(exitCode));
+            CloseHandle(processInfo.hProcess);
+            CloseHandle(processInfo.hThread);
         }
         else
         {
@@ -345,9 +348,6 @@ namespace GUIWindow
             enabled = false;
             appStatus = "Status: Inactive";
         }
-
-        CloseHandle(processInfo.hProcess);
-        CloseHandle(processInfo.hThread);
     }
 
     std::vector<int> GetWeaponIndex(std::string currentMap, std::string weaponSelectName)
@@ -434,7 +434,7 @@ void LogFile(std::string text, bool initialBoot)
     if (initialBoot)
          logFile.open("log.txt");
     else
-        logFile.open("log.txt", std::ios::app);
+        logFile.open(GUIWindow::selfDirectory + "/log.txt", std::ios::app);
     logFile << text << "\n";
     logFile.close();
 }
@@ -452,29 +452,25 @@ void NLog(std::string text)
     SendMessage(edit, EM_REPLACESEL, TRUE, (LPARAM)"\n");
 }
 
-void WaitToKillCompiler(PROCESS_INFORMATION processInfo)
+DWORD WaitToKillCompiler(PROCESS_INFORMATION processInfo)
 {
+    DWORD exitCode = 0;
     DWORD result = WaitForSingleObject(processInfo.hProcess, 3000);
     if (result == WAIT_TIMEOUT)
     {
+        LogFile("Killing compiler for timeout");
         TerminateProcess(processInfo.hProcess, 0);
-        CloseHandle(processInfo.hProcess);
-        CloseHandle(processInfo.hThread);
     }
     else if (result == WAIT_OBJECT_0)
     {
-        DWORD exitCode;
-        if (GetExitCodeProcess(processInfo.hProcess, &exitCode))
+        if (!GetExitCodeProcess(processInfo.hProcess, &exitCode))
         {
-            if (exitCode != 0)
-            LogFile("Compiler process failed with error code: " + std::to_string(exitCode));
-        }
-        else
             LogFile("GetExitCodeProcess failed with error code: " + std::to_string(GetLastError()));
-
-        CloseHandle(processInfo.hProcess);
-        CloseHandle(processInfo.hThread);
+        }
     }
     else
+    {
         LogFile("WaitForSingleObject failed with error code: " + std::to_string(GetLastError()));
+    }
+    return exitCode;
 }

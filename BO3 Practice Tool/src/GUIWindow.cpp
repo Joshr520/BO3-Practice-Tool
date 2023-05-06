@@ -597,8 +597,14 @@ void SearchForGame()
 
 bool UpdateAvailable()
 {
+    if (DoesPathExist(selfDirectory + "/BO3 Practice Tool.old.exe"))
+    {
+        if (std::filesystem::remove(selfDirectory + "/BO3 Practice Tool.old.exe"))
+            LogFile("Deleting old exe");
+        else
+            LogFile("Couldn't remove old exe with error code: " + std::error_code(errno, std::system_category()).message());
+    }
     LogFile("Checking for updates");
-
     CURL* curl = curl_easy_init();
     CURLcode res;
     std::string buffer;
@@ -636,8 +642,6 @@ bool UpdateAvailable()
 
 bool PerformUpdate()
 {
-    return 0;
-
     CURL* curl = curl_easy_init();
     CURLcode res;
     FILE* file;
@@ -712,15 +716,21 @@ bool PerformUpdate()
         else
         {
             if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path))
-                std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.exe.old");
+                std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.old.exe");
             else if (std::filesystem::exists(output_file_path))
                 std::filesystem::remove(output_file_path);
             if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0))
+            {
                 LogFile("Failed to extract file " + std::string(file_stat.m_filename));
+                return 0;
+            }
         }
     }
-
     mz_zip_reader_end(&zip_archive);
+
+
+
+    return 1;
 }
 
 bool BeginFrame()
@@ -786,15 +796,15 @@ bool RenderFrame()
     ImGui::PopFont();
     ImGui::Begin("##Sidebar", 0, dockFlags);
     {
-        if (!steamPathFound || !procFound)
-            ImGui::BeginDisabled();
+        //if (!steamPathFound || !procFound)
+            //ImGui::BeginDisabled();
         // Create sidebar options
         {
             ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(appStatus.c_str()).x) / 2 + 10);
             ImGui::Text(appStatus.c_str());
             if (CreateButton("Toggle Status", ImVec2(ImGui::GetContentRegionAvail().x, 50.0f), &enabled, true))
             {
-                if (currentMap == "")
+                if (currentMap == ".")
                 {
                     enabled = false;
                     appStatus = "Status: Inactive";
@@ -811,12 +821,13 @@ bool RenderFrame()
                     }
                     else
                         WritePracticePatches(practicePatchIndexes);
-                    InjectTool(enabled, injectResponse);
+                    auto injectThread = std::thread(InjectTool, enabled, std::ref(injectResponse));
+                    injectThread.detach();
                 }
             }
             ImGui::Separator();
-            if (!steamPathFound || !procFound)
-                ImGui::EndDisabled();
+            //if (!steamPathFound || !procFound)
+                //ImGui::EndDisabled();
             ImGui::PushFont(sidebarFont);
             ImGui::Text("Frontend"); ImGui::Separator(3.5f);
             ImGui::PopFont();
