@@ -10,7 +10,7 @@ detour zm_tomb_giant_robot<scripts\zm\zm_tomb_giant_robot.gsc>::robot_cycling()
 		{
 			level flag::set("three_robot_round");
 		}
-		if(level flag::get("ee_all_staffs_placed") && !level flag::get("ee_mech_zombie_hole_opened"))
+		if(level flag::get("ee_all_staffs_placed") && !level flag::get("ee_mech_zombie_hole_opened") || level.round_number == 16)
 		{
 			level flag::set("three_robot_round");
 		}

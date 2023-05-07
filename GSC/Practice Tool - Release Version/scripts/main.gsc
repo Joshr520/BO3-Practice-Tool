@@ -10,7 +10,7 @@ init()
     level.rankedmatch = 1;
     level.var_dfc343e9 = 0;
 
-    compiler::startserver();
+    //compiler::startserver();
     level.round_sr = false;
     level.pap_sr = false;
     level.basic_timer = true;
@@ -31,6 +31,8 @@ on_player_spawned()
     if(self IsTestClient()) return;
 
     //self thread TombSoftPatch();
+    //self thread TempLineups();
+    self thread RainFireLineups();
 
     level flag::wait_till("initial_blackscreen_passed");
 }

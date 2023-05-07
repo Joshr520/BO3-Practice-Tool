@@ -22,3 +22,8 @@ WaitF8()
 {
     while(!compiler::waitkey(0x77)) wait 0.05;
 }
+
+WaitF9()
+{
+    while(!compiler::waitkey(0x78)) wait 0.05;
+}
