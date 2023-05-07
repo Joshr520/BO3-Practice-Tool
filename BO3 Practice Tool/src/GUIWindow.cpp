@@ -159,7 +159,12 @@ namespace GUIWindow
 {
     void Setup()
     {
+        TCHAR buf[256];
+        GetCurrentDirectoryA(256, buf);
+        selfDirectory = buf;
+
         LogFile("-------------Practice Tool Startup-------------", true);
+
         wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), LoadIcon(hInst, MAKEINTRESOURCE(IDI_BO3PRACTICETOOL)), NULL, NULL, NULL, "BO3PT", NULL};
         RegisterClassExA(&wc);
         RECT rect;
@@ -194,10 +199,6 @@ namespace GUIWindow
         io.Fonts->AddFontFromFileTTF("./Fonts/" FONT_ICON_FILE_NAME_FAS, 24.0f, &icons_config, icons_ranges);
         ImGui_ImplWin32_Init(hWnd);
         ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
-
-        TCHAR buf[256];
-        GetCurrentDirectoryA(256, buf);
-        selfDirectory = buf;
 
         if (!DoesPathExist(selfDirectory + "\\settings.json"))
         {
@@ -646,6 +647,7 @@ bool PerformUpdate()
     CURLcode res;
     FILE* file;
     std::string filename = "BO3 Practice Tool.zip";
+    std::string ptexe;
 
     errno_t err = fopen_s(&file, filename.c_str(), "wb");
     if (err != 0)
@@ -716,7 +718,10 @@ bool PerformUpdate()
         else
         {
             if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path))
+            {
                 std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.old.exe");
+                ptexe = output_file_path.string();
+            }
             else if (std::filesystem::exists(output_file_path))
                 std::filesystem::remove(output_file_path);
             if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0))
@@ -727,9 +732,16 @@ bool PerformUpdate()
         }
     }
     mz_zip_reader_end(&zip_archive);
+    std::filesystem::remove(filename);
 
-
-
+    STARTUPINFO startupInfo = { sizeof(startupInfo) };
+    PROCESS_INFORMATION processInfo = { 0 };
+    LPSTR args = &ptexe[0];
+    if (!CreateProcess(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo))
+        LogFile("Failed to start new practice tool exe");
+    CloseHandle(processInfo.hProcess);
+    CloseHandle(processInfo.hThread);
+    done = 1;
     return 1;
 }
 

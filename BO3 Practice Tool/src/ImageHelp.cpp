@@ -4,7 +4,7 @@
 
 #include "imgui.h"
 #include "GUIWindow.h"
-
+#include "Helper.h"
 #include "PlayerOptions.h"
 #include "Resources.h"
 
@@ -125,31 +125,31 @@ namespace ImageHelp
 
     void InitImgTextures()
     {
+        LogFile("Initializing image loading threads");
+
+        std::vector<std::thread> threads;
+
         for (Image& img : bgbImgList)
-        {
-            bool ret = LoadTextureFromFile(g_pd3dDevice, img.imgDirectPath.c_str(), &img.imgTexture, &img.imgWidth, &img.imgHeight);
-            IM_ASSERT(ret);
-        }
+            threads.emplace_back(LoadTextureFromPath, std::ref(img));
 
         for (Image& img : codeImgList)
-        {
-            bool ret = LoadTextureFromFile(g_pd3dDevice, img.imgDirectPath.c_str(), &img.imgTexture, &img.imgWidth, &img.imgHeight);
-            IM_ASSERT(ret);
-        }
+            threads.emplace_back(LoadTextureFromPath, std::ref(img));
 
         for (Image& img : valveSolverImgList)
-        {
-            bool ret = LoadTextureFromFile(g_pd3dDevice, img.imgDirectPath.c_str(), &img.imgTexture, &img.imgWidth, &img.imgHeight);
-            IM_ASSERT(ret);
-        }
+            threads.emplace_back(LoadTextureFromPath, std::ref(img));
 
-        for (std::pair<std::string, Image> img : iceCodeImgList)
-        {
-            bool ret = LoadTextureFromFile(g_pd3dDevice, img.second.imgDirectPath.c_str(), &img.second.imgTexture, &img.second.imgWidth, &img.second.imgHeight);
-            iceCodeImgList[img.first].imgTexture = img.second.imgTexture;
-            iceCodeImgList[img.first].imgWidth = img.second.imgWidth;
-            iceCodeImgList[img.first].imgHeight = img.second.imgHeight;
-            IM_ASSERT(ret);
-        }
+        for (std::pair<const std::string, Image>& img : iceCodeImgList)
+            threads.emplace_back(LoadTextureFromPath, std::ref(img.second));
+
+        for (std::thread& thread : threads)
+            thread.join();
+
+        LogFile("Image loading finished");
+    }
+
+    void LoadTextureFromPath(Image& img)
+    {
+        bool ret = ImageHelp::LoadTextureFromFile(g_pd3dDevice, img.imgDirectPath.c_str(), &img.imgTexture, &img.imgWidth, &img.imgHeight);
+        IM_ASSERT(ret);
     }
 }

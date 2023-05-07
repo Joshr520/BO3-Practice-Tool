@@ -94,7 +94,7 @@ namespace GUIWindow
         }
     }
 
-    bool CreateButton(std::string name, ImVec2 size, bool* value, bool toggle, ImVec4 color, bool inGame)
+    bool CreateButton(const std::string& name, const ImVec2& size, bool* value, bool toggle, const ImVec4& color, bool inGame)
     {
         if (toggle)
             SetToggleButtonColor(*value);
@@ -118,7 +118,7 @@ namespace GUIWindow
         return 0;
     }
 
-    void FakeButton(std::string name, ImVec2 size, ImVec4 color)
+    void FakeButton(const std::string& name, const ImVec2& size, const ImVec4& color)
     {
         ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(color.x, color.y, color.z, color.w));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(color.x, color.y, color.z, color.w));
@@ -127,10 +127,10 @@ namespace GUIWindow
         ImGui::PopStyleColor(3);
     }
 
-    bool CreateListBox(const char* name, std::vector<std::string> items, int& currentItem, ImVec2 size)
+    bool CreateListBox(const std::string& name, const std::vector<std::string>& items, int& currentItem, const ImVec2& size)
     {
         int prevItem = currentItem;
-        if (ImGui::ListBoxHeader(name, size))
+        if (ImGui::ListBoxHeader(name.c_str(), size))
         {
             for (int i = 0; i < items.size(); i++)
             {
@@ -206,18 +206,24 @@ namespace GUIWindow
         WriteGumPreset(gumPresets[currentPreset].presetGums);
     }
 
-    std::vector<int> GumSearch(std::vector<int> inGumArr, char searchText[64])
+    std::vector<int> GumSearch(const std::vector<int>& inGumArr, const std::string& searchText)
     {
-        if (!strcmp(searchText, ""))
+        if (searchText.empty())
             return inGumArr;
+
         std::vector<int> outGumArr = { };
-        for (int i = 0; i < inGumArr.size(); i++)
+        outGumArr.reserve(inGumArr.size());
+
+        std::string searchTextLower = searchText;
+        std::transform(searchTextLower.begin(), searchTextLower.end(), searchTextLower.begin(), [](char c) { return std::tolower(c); });
+
+        std::copy_if(inGumArr.begin(), inGumArr.end(), std::back_inserter(outGumArr), [&searchTextLower](int i)
         {
-            std::string inGumLower = ToLower(bgbImgList[inGumArr[i]].imgRelativePath.c_str(), (int)bgbImgList[inGumArr[i]].imgRelativePath.size());
-            std::string searchTextLower = ToLower(searchText, (int)strlen(searchText));
-            if (inGumLower.substr(0, searchTextLower.size()) == searchTextLower)
-                outGumArr.push_back(inGumArr[i]);
-        }
+            std::string inGum = bgbImgList[i].imgRelativePath;
+            std::transform(inGum.begin(), inGum.end(), inGum.begin(), [](char c) { return std::tolower(c); });
+            return inGum.find(searchTextLower) != std::string::npos;
+        });
+
         return outGumArr;
     }
 
@@ -428,14 +434,19 @@ std::string ToLower(const char* str, int length)
     return newStr;
 }
 
+std::mutex logMutex;
 void LogFile(std::string text, bool initialBoot)
 {
     std::ofstream logFile;
-    if (initialBoot)
-         logFile.open("log.txt");
-    else
-        logFile.open(GUIWindow::selfDirectory + "/log.txt", std::ios::app);
-    logFile << text << "\n";
+    {
+        std::lock_guard<std::mutex> lock(logMutex);
+        if (initialBoot)
+            logFile.open(GUIWindow::selfDirectory + "/log.txt");
+        else
+            logFile.open(GUIWindow::selfDirectory + "/log.txt", std::ios::app);
+        logFile << text << "\n";
+        logFile.flush();
+    }
     logFile.close();
 }
 

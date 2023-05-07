@@ -1,0 +1,3 @@
+[submodule "BO3 Practice Tool/deps/curl"]
+	path = BO3 Practice Tool/deps/curl
+	url = https://github.com/curl/curl.git

@@ -21,6 +21,7 @@ namespace ImageHelp
 	bool LoadTextureFromFile(ID3D11Device* g_pd3dDevice, const char* filename, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height);
 	void InitImgList();
 	void InitImgTextures();
+	void LoadTextureFromPath(Image& img);
 
 	inline std::vector<Image> bgbImgList;
 	inline std::vector<Image> codeImgList;
