@@ -32,12 +32,12 @@ namespace BGB
     void InitClassicGumsList();
     void InitMegaGumsList();
     void LoadGumProfiles();
-    void DeleteGumPreset(std::string preset);
-    void CreateNewGumPreset(std::string presetName);
+    void DeleteGumPreset(const std::string& preset);
+    void CreateNewGumPreset(const std::string& presetName);
     std::string GetCurrentPresetName();
-    bool CheckPresetExists(const char* inPreset);
-    void WriteGumPreset(std::vector<int> gumPreset);
-    void WritePresetToGame(BGBPreset gumPreset, std::string file);
+    bool CheckPresetExists(const std::string& inPreset);
+    void WriteGumPreset(const std::vector<int>& gumPreset);
+    void WritePresetToGame(BGBPreset& gumPreset, const std::string& file);
 
     inline std::vector<std::string> classicList;
     inline std::vector<std::string> megaList;

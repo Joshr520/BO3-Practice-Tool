@@ -33,7 +33,6 @@ using namespace GKValveSolver;
 using namespace IceCodePractice;
 using namespace KeyBinds;
 
-std::string ToLower(const char* str, int length);
 DWORD WaitToKillCompiler(PROCESS_INFORMATION lpExecInfo);
 
 namespace GUIWindow
@@ -147,20 +146,20 @@ namespace GUIWindow
         return false;
     }
 
-    void HelpMarker(const char* text)
+    void HelpMarker(const std::string& text)
     {
         ImGui::TextDisabled(ICON_FA_CIRCLE_QUESTION);
         if (ImGui::IsItemHovered())
         {
             ImGui::BeginTooltip();
             ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextUnformatted(text);
+            ImGui::TextUnformatted(text.c_str());
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
         }
     }
 
-    bool CreateGumImages(std::vector<int>& gumArr, ImVec2 imgSize, int numOnLine, const char* type, std::function<void(int input)> funcOnPress)
+    bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress)
     {
         ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0)); ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(25, 100, 128, 100));
         float leftPos = ImGui::GetCursorPosX();
@@ -173,7 +172,7 @@ namespace GUIWindow
         {
             if (ImGui::ImageButton(bgbImgList[gumArr[i]].imgTexture, imgSize))
             {
-                if (!strcmp(type, "Selection"))
+                if (type == "Selection")
                     funcOnPress(i);
                 else
                     funcOnPress(bgbImgList[gumArr[i]].index - 1);
@@ -285,7 +284,7 @@ namespace GUIWindow
         }
     }
 
-    void WritePracticePatches(int patch[8])
+    void WritePracticePatches(const int patch[8])
     {
         std::string outData;
         for (int i = 0; i < 8; i++)
@@ -298,7 +297,7 @@ namespace GUIWindow
         outFile.close();
     }
 
-    void NotifyGame(std::vector<int> passList)
+    void NotifyGame(const std::vector<int>& passList)
     {
         // REPLACE WITH PIPE WHEN READY
 
@@ -356,7 +355,7 @@ namespace GUIWindow
         }
     }
 
-    std::vector<int> GetWeaponIndex(std::string currentMap, std::string weaponSelectName)
+    std::vector<int> GetWeaponIndex(const std::string& currentMap, const std::string& weaponSelectName)
     {
         std::vector<std::string> weaponTypes = { "_ar", "_smg", "_lmg", "_shotgun", "_sniper", "_pistol", "_launcher", "_melee", "_special", "_equipment", "_hero" };
         int list = 0;
@@ -424,18 +423,8 @@ namespace GUIWindow
     }
 }
 
-std::string ToLower(const char* str, int length)
-{
-    std::string newStr = str;
-    for (int i = 0; i < length; i++)
-    {
-        newStr[i] = tolower(str[i]);
-    }
-    return newStr;
-}
-
 std::mutex logMutex;
-void LogFile(std::string text, bool initialBoot)
+void LogFile(const std::string& text, bool initialBoot)
 {
     std::ofstream logFile;
     {
@@ -450,7 +439,7 @@ void LogFile(std::string text, bool initialBoot)
     logFile.close();
 }
 
-void NLog(std::string text)
+void NLog(const std::string& text)
 {
     HWND notepad, edit;
     notepad = FindWindow(NULL, "Untitled - Notepad");

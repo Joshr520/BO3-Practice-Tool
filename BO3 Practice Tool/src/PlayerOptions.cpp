@@ -316,7 +316,7 @@ namespace BGB
         }
     }
 
-    void DeleteGumPreset(std::string presetName)
+    void DeleteGumPreset(const std::string& presetName)
     {
         std::string line;
         std::string outData;
@@ -339,7 +339,7 @@ namespace BGB
         LoadGumProfiles();
     }
 
-    void CreateNewGumPreset(std::string presetName)
+    void CreateNewGumPreset(const std::string& presetName)
     {
         std::string line;
         std::ifstream checkFile(PRESET_FILE);
@@ -360,7 +360,7 @@ namespace BGB
         return gumPresets[currentPreset].presetName;
     }
 
-    bool CheckPresetExists(const char* inPreset)
+    bool CheckPresetExists(const std::string& inPreset)
     {
         for (const BGBPreset& preset : gumPresets)
         {
@@ -370,7 +370,7 @@ namespace BGB
         return false;
     }
 
-    void WriteGumPreset(std::vector<int> gumPreset)
+    void WriteGumPreset(const std::vector<int>& gumPreset)
     {
         std::string line;
         std::string outData;
@@ -403,7 +403,7 @@ namespace BGB
         LoadGumProfiles();
     }
 
-    void WritePresetToGame(BGBPreset gumPreset, std::string file)
+    void WritePresetToGame(BGBPreset& gumPreset, const std::string& file)
     {
         if (gumPreset.presetName == "No Presets Available")
             gumPreset = inactivePreset;

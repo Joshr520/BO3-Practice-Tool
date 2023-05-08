@@ -11,6 +11,7 @@ namespace KeyBinds
 {
 	struct HotKeyBind
 	{
+		int index = 0;
 		std::vector<int> keys = { };
 		std::string keyNames = "";
 		std::function<void()> activatedFunc;
@@ -40,10 +41,10 @@ namespace KeyBinds
 
 	void InitHotKeyBinds();
 	bool KeyPressed(int key, bool global = globalHotKeys);
-	void AssignHotKey(std::string jsonKey, HotKeyBind& hotkey);
+	void AssignHotKey(const std::string& jsonKey, HotKeyBind& hotkey);
 	bool ValidateKeybind(HotKeyBind& hotkey, bool write = false);
 	void CheckAndRunKeybind();
-	bool RegisterRawInput(HWND hTarget);
+	bool RegisterRawInput(const HWND& hTarget);
 
 	// HotKey Functions - valid function to be called on a hotkey press
 	void GodmodeOn();

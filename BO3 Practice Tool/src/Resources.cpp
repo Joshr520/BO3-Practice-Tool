@@ -103,7 +103,7 @@ namespace ZombieCalc
         return newTime;
     }
 
-    int GetSpecialEnemySpawnRate(int playerCount, std::string specialEnemy)
+    int GetSpecialEnemySpawnRate(int playerCount, const std::string& specialEnemy)
     {
         switch (hashstr(specialEnemy.c_str()))
         {

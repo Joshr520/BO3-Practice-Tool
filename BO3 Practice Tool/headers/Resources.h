@@ -118,7 +118,7 @@ namespace ZombieCalc
 	int GetZombieHealthForRound(int round);
 	int GetZombieSpawnRateForRound(int round, int playerCount);
 	float RawSpawnRateForRound(int round, int playerCount);
-	int GetSpecialEnemySpawnRate(int playerCount, std::string specialEnemy);
+	int GetSpecialEnemySpawnRate(int playerCount, const std::string& specialEnemy);
 	std::string CalcRoundTime(int round, int playerCount, int corpseDelay = 0, bool specialEnemies = false);
 	int RoundTimeNearest50(int time);
 	std::string SpecialRoundTime(int round, int playerCount, int corpseDelay, bool soe);

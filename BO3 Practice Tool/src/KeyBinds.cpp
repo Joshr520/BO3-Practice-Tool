@@ -14,22 +14,22 @@ using json = nlohmann::json;
 
 HHOOK keyboardHook;
 
-bool InternalKeyValidation(std::vector<int> keys);
-bool VectorSort(std::string a, std::string b) { return a < b; }
+bool InternalKeyValidation(const std::vector<int>& keys);
+bool VectorSort(const std::string& a, const std::string& b) { return a < b; }
 
 namespace KeyBinds
 {
 	void InitHotKeyBinds()
 	{
-		hotkeyDefs.insert({ "Godmode", { {}, "", std::function<void()>(GodmodeOn)} }); hotkeyDefs.insert({ "Infinite Ammo", { {}, "", std::function<void()>(InfiniteAmmo)} }); hotkeyDefs.insert({ "Increment Timescale", { {}, "", std::function<void()>(TimescaleIncrease)} });
-		hotkeyDefs.insert({ "Decrement Timescale", { {}, "", std::function<void()>(TimescaleDecrease)} }); hotkeyDefs.insert({ "Max Points", { {}, "", std::function<void()>(MaxPoints)} }); hotkeyDefs.insert({ "Reset Points", { {}, "", std::function<void()>(ResetPoints)} });
-		hotkeyDefs.insert({ "Give All Perks", { {}, "", std::function<void()>(GiveAllPerks)} }); hotkeyDefs.insert({ "Take All Perks", { {}, "", std::function<void()>(TakeAllPerks)} }); hotkeyDefs.insert({ "Take Gum", { {}, "", std::function<void()>(TakeGum)} });
-		hotkeyDefs.insert({ "Take Gum Charge", { {}, "", std::function<void()>(TakeGumCharge)} }); hotkeyDefs.insert({ "Activate Gum", { {}, "", std::function<void()>(ActivateGum)} }); hotkeyDefs.insert({ "Zombies Ignore Players", { {}, "", std::function<void()>(ZombiesIgnorePlayer)} });
-		hotkeyDefs.insert({ "Kill Horde", { {}, "", std::function<void()>(KillHorde)} }); hotkeyDefs.insert({ "Freeze Zombies", { {}, "", std::function<void()>(FreezeZombies)} }); hotkeyDefs.insert({ "Toggle Zombie Spawns", { {}, "", std::function<void()>(ToggleSpawning)} });
-		hotkeyDefs.insert({ "Zombies Walk", { {}, "", std::function<void()>(ZombiesWalk)} }); hotkeyDefs.insert({ "Zombies Run", { {}, "", std::function<void()>(ZombiesRun)} }); hotkeyDefs.insert({ "Zombies Sprint", { {}, "", std::function<void()>(ZombiesSprint)} });
-		hotkeyDefs.insert({ "End Round", { {}, "", std::function<void()>(EndRound)} }); hotkeyDefs.insert({ "Restart Round", { {}, "", std::function<void()>(RestartRound)} }); hotkeyDefs.insert({ "Pickup Every Part", { {}, "", std::function<void()>(PickupEveryPart)} });
-		hotkeyDefs.insert({ "Open All Doors", { {}, "", std::function<void()>(OpenAllDoors)} }); hotkeyDefs.insert({ "Global Power On", { {}, "", std::function<void()>(GlobalPowerOn)} }); hotkeyDefs.insert({ "Open All Barriers", { {}, "", std::function<void()>(OpenAllBarriers)} });
-		hotkeyDefs.insert({ "Close All Barriers", { {}, "", std::function<void()>(CloseAllBarriers)} });
+		hotkeyDefs.insert({ "Godmode", { 0, {}, "", std::function<void()>(GodmodeOn)} }); hotkeyDefs.insert({ "Infinite Ammo", { 1, {}, "", std::function<void()>(InfiniteAmmo)} }); hotkeyDefs.insert({ "Increment Timescale", { 2, {}, "", std::function<void()>(TimescaleIncrease)} });
+		hotkeyDefs.insert({ "Decrement Timescale", { 3, {}, "", std::function<void()>(TimescaleDecrease)} }); hotkeyDefs.insert({ "Max Points", { 4, {}, "", std::function<void()>(MaxPoints)} }); hotkeyDefs.insert({ "Reset Points", { 5, {}, "", std::function<void()>(ResetPoints)} });
+		hotkeyDefs.insert({ "Give All Perks", { 6, {}, "", std::function<void()>(GiveAllPerks)} }); hotkeyDefs.insert({ "Take All Perks", { 7, {}, "", std::function<void()>(TakeAllPerks)} }); hotkeyDefs.insert({ "Take Gum", { 8, {}, "", std::function<void()>(TakeGum)} });
+		hotkeyDefs.insert({ "Take Gum Charge", { 9, {}, "", std::function<void()>(TakeGumCharge)} }); hotkeyDefs.insert({ "Activate Gum", { 10, {}, "", std::function<void()>(ActivateGum)} }); hotkeyDefs.insert({ "Zombies Ignore Players", { 11, {}, "", std::function<void()>(ZombiesIgnorePlayer)} });
+		hotkeyDefs.insert({ "Kill Horde", { 12, {}, "", std::function<void()>(KillHorde)} }); hotkeyDefs.insert({ "Freeze Zombies", { 13, {}, "", std::function<void()>(FreezeZombies)} }); hotkeyDefs.insert({ "Toggle Zombie Spawns", { 14, {}, "", std::function<void()>(ToggleSpawning)} });
+		hotkeyDefs.insert({ "Zombies Walk", { 15, {}, "", std::function<void()>(ZombiesWalk)} }); hotkeyDefs.insert({ "Zombies Run", { 16, {}, "", std::function<void()>(ZombiesRun)} }); hotkeyDefs.insert({ "Zombies Sprint", { 17, {}, "", std::function<void()>(ZombiesSprint)} });
+		hotkeyDefs.insert({ "End Round", { 18, {}, "", std::function<void()>(EndRound)} }); hotkeyDefs.insert({ "Restart Round", { 19, {}, "", std::function<void()>(RestartRound)} }); hotkeyDefs.insert({ "Pickup Every Part", { 20, {}, "", std::function<void()>(PickupEveryPart)} });
+		hotkeyDefs.insert({ "Open All Doors", { 21, {}, "", std::function<void()>(OpenAllDoors)} }); hotkeyDefs.insert({ "Global Power On", { 22, {}, "", std::function<void()>(GlobalPowerOn)} }); hotkeyDefs.insert({ "Open All Barriers", { 23, {}, "", std::function<void()>(OpenAllBarriers)} });
+		hotkeyDefs.insert({ "Close All Barriers", { 34, {}, "", std::function<void()>(CloseAllBarriers)} });
 
 		std::ifstream bindingsInFile(GUIWindow::selfDirectory + "\\bindings.json");
 		json data = json::parse(bindingsInFile);
@@ -91,7 +91,7 @@ namespace KeyBinds
 		return keyMap[key] && !keyMapHeld[key] && GetForegroundWindow() == GUIWindow::hWnd;
 	}
 
-	void AssignHotKey(std::string jsonKey, HotKeyBind& hotkey)
+	void AssignHotKey(const std::string& jsonKey, HotKeyBind& hotkey)
 	{
 		jsonKeyToAssign = jsonKey;
 		hotkeyToAssign = &hotkey;
@@ -147,6 +147,24 @@ namespace KeyBinds
 			}
 		}
 		hotkey.keyNames = ctrl + shift + alt + activator;
+		for (std::pair<const std::string, HotKeyBind>& hotkeyDef : hotkeyDefs)
+		{
+			if (hotkeyDef.second.keyNames.empty() || hotkeyDef.second.index == hotkey.index)
+				continue;
+			if (hotkeyDef.second.keyNames == hotkey.keyNames)
+			{
+				hotkeyDef.second.keyNames = "";
+				hotkeyDef.second.keys = { };
+				if (write && jsonKeyToAssign.size())
+				{
+					data[jsonKeyToAssign] = "";
+					std::ofstream bindingsOutFile(GUIWindow::selfDirectory + "\\bindings.json");
+					bindingsOutFile << std::setw(4) << data;
+					bindingsOutFile.close();
+				}
+				break;
+			}
+		}
 		if (write && jsonKeyToAssign.size())
 		{
 			data[jsonKeyToAssign] = hotkey.keyNames;
@@ -188,7 +206,7 @@ namespace KeyBinds
 		}
 	}
 
-	bool RegisterRawInput(HWND hTarget)
+	bool RegisterRawInput(const HWND& hTarget)
 	{
 		RAWINPUTDEVICE hid;
 		hid.usUsagePage = HID_USAGE_PAGE_GENERIC;
@@ -322,7 +340,7 @@ namespace KeyBinds
 	}
 }
 
-bool InternalKeyValidation(std::vector<int> keys)
+bool InternalKeyValidation(const std::vector<int>& keys)
 {
 	bool activatorFound = false;
 	bool validKeybind = true;
