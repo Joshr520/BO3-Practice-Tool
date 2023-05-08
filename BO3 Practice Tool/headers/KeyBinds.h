@@ -24,7 +24,7 @@ namespace KeyBinds
 	inline int modifiersPressed = 0;
 	inline int totalNumKeys = 0;
 	inline std::string jsonKeyToAssign;
-	inline HotKeyBind* hotkeyToAssign;
+	inline std::pair<const std::string , HotKeyBind>* hotkeyToAssign;
 	inline std::vector<int> usedKeys;
 	inline std::map<std::string, HotKeyBind> hotkeyDefs;
 	inline std::unordered_map<int, bool> keyMap;
@@ -41,8 +41,8 @@ namespace KeyBinds
 
 	void InitHotKeyBinds();
 	bool KeyPressed(int key, bool global = globalHotKeys);
-	void AssignHotKey(const std::string& jsonKey, HotKeyBind& hotkey);
-	bool ValidateKeybind(HotKeyBind& hotkey, bool write = false);
+	void AssignHotKey(const std::string& jsonKey, std::pair<const std::string, HotKeyBind>& hotkey);
+	bool ValidateKeybind(std::pair<const std::string, HotKeyBind>& hotkey, bool write = false);
 	void CheckAndRunKeybind();
 	bool RegisterRawInput(const HWND& hTarget);
 

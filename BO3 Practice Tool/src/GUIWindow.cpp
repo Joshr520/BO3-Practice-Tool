@@ -463,8 +463,8 @@ namespace GUIWindow
                         if (key == VK_ESCAPE)
                         {
                             KeyBinds::registerHotKey = false;
-                            KeyBinds::hotkeyToAssign->keyNames = "";
-                            KeyBinds::hotkeyToAssign->keys = { };
+                            KeyBinds::hotkeyToAssign->second.keyNames = "";
+                            KeyBinds::hotkeyToAssign->second.keys = { };
                             KeyBinds::usedKeys = { };
                             KeyBinds::totalNumKeys = 0;
                             KeyBinds::initialKeyToRelease = 0;
@@ -484,8 +484,8 @@ namespace GUIWindow
                                 if (key != VK_SHIFT && key != VK_CONTROL && key != VK_MENU)
                                 {
                                     KeyBinds::registerHotKey = false;
-                                    KeyBinds::hotkeyToAssign->keyNames = KeyBinds::keyDictionary[key];
-                                    KeyBinds::hotkeyToAssign->keys = { key };
+                                    KeyBinds::hotkeyToAssign->second.keyNames = KeyBinds::keyDictionary[key];
+                                    KeyBinds::hotkeyToAssign->second.keys = { key };
                                     KeyBinds::totalNumKeys = 0;
                                     KeyBinds::initialKeyToRelease = 0;
                                     assignedKeys = { };
@@ -500,8 +500,8 @@ namespace GUIWindow
                                 }
                                 if (KeyBinds::registerHotKey)
                                     KeyBinds::totalNumKeys++;
-                                KeyBinds::hotkeyToAssign->keyNames = KeyBinds::keyDictionary[key];
-                                KeyBinds::hotkeyToAssign->keys = { key };
+                                KeyBinds::hotkeyToAssign->second.keyNames = KeyBinds::keyDictionary[key];
+                                KeyBinds::hotkeyToAssign->second.keys = { key };
                             }
                             else
                             {
@@ -510,16 +510,16 @@ namespace GUIWindow
                                 {
                                     KeyBinds::modifiersPressed++;
                                     KeyBinds::totalNumKeys++;
-                                    KeyBinds::hotkeyToAssign->keyNames += "+" + KeyBinds::keyDictionary[key];
-                                    KeyBinds::hotkeyToAssign->keys.push_back(key);
+                                    KeyBinds::hotkeyToAssign->second.keyNames += "+" + KeyBinds::keyDictionary[key];
+                                    KeyBinds::hotkeyToAssign->second.keys.push_back(key);
                                     if (KeyBinds::modifiersPressed < 3)
                                         break;
                                 }
                                 KeyBinds::registerHotKey = false;
                                 KeyBinds::modifiersPressed = 0;
                                 KeyBinds::totalNumKeys++;
-                                KeyBinds::hotkeyToAssign->keyNames += "+" + KeyBinds::keyDictionary[key];
-                                KeyBinds::hotkeyToAssign->keys.push_back(key);
+                                KeyBinds::hotkeyToAssign->second.keyNames += "+" + KeyBinds::keyDictionary[key];
+                                KeyBinds::hotkeyToAssign->second.keys.push_back(key);
                                 KeyBinds::totalNumKeys = 0;
                                 KeyBinds::initialKeyToRelease = 0;
                                 assignedKeys = { };
@@ -1373,7 +1373,7 @@ void SettingsPtr()
             ImGui::SetCursorPosX(575.0f);
             if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size))
             {
-                AssignHotKey(hotkey.first, hotkey.second);
+                AssignHotKey(hotkey.first, hotkey);
             }
             count++;
             continue;
@@ -1383,7 +1383,7 @@ void SettingsPtr()
         ImGui::SetCursorPosX(200.0f);
         if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size))
         {
-            AssignHotKey(hotkey.first, hotkey.second);
+            AssignHotKey(hotkey.first, hotkey);
         }
         count++;
         if (count > 12)

@@ -61,7 +61,7 @@ namespace KeyBinds
 						hotkey.second.keys.push_back(it->first);
 				}
 
-				if (!ValidateKeybind(hotkey.second))
+				if (!ValidateKeybind(hotkey))
 				{
 					data[hotkey.first] = "";
 					valid = false;
@@ -91,22 +91,22 @@ namespace KeyBinds
 		return keyMap[key] && !keyMapHeld[key] && GetForegroundWindow() == GUIWindow::hWnd;
 	}
 
-	void AssignHotKey(const std::string& jsonKey, HotKeyBind& hotkey)
+	void AssignHotKey(const std::string& jsonKey, std::pair<const std::string, HotKeyBind>& hotkey)
 	{
 		jsonKeyToAssign = jsonKey;
 		hotkeyToAssign = &hotkey;
 		registerHotKey = true;
 	}
 
-	bool ValidateKeybind(HotKeyBind& hotkey, bool write)
+	bool ValidateKeybind(std::pair<const std::string, HotKeyBind>& hotkey, bool write)
 	{
 		std::ifstream bindingsInFile(GUIWindow::selfDirectory + "\\bindings.json");
 		json data = json::parse(bindingsInFile);
 		bindingsInFile.close();
-		if (!InternalKeyValidation(hotkey.keys))
+		if (!InternalKeyValidation(hotkey.second.keys))
 		{
-			hotkey.keyNames = "";
-			hotkey.keys = { };
+			hotkey.second.keyNames = "";
+			hotkey.second.keys = { };
 			if (write && jsonKeyToAssign.size())
 			{
 				data[jsonKeyToAssign] = "";
@@ -116,7 +116,7 @@ namespace KeyBinds
 			}
 			return false;
 		}
-		std::stringstream sortString(hotkey.keyNames);
+		std::stringstream sortString(hotkey.second.keyNames);
 		std::string ctrl = "";
 		std::string shift = "";
 		std::string alt = "";
@@ -146,28 +146,24 @@ namespace KeyBinds
 				break;
 			}
 		}
-		hotkey.keyNames = ctrl + shift + alt + activator;
+		hotkey.second.keyNames = ctrl + shift + alt + activator;
 		for (std::pair<const std::string, HotKeyBind>& hotkeyDef : hotkeyDefs)
 		{
-			if (hotkeyDef.second.keyNames.empty() || hotkeyDef.second.index == hotkey.index)
+			if (hotkeyDef.second.keyNames != hotkey.second.keyNames || hotkeyDef.first == hotkey.first)
 				continue;
-			if (hotkeyDef.second.keyNames == hotkey.keyNames)
+			hotkeyDef.second.keyNames = "";
+			hotkeyDef.second.keys = { };
+			if (write && jsonKeyToAssign.size())
 			{
-				hotkeyDef.second.keyNames = "";
-				hotkeyDef.second.keys = { };
-				if (write && jsonKeyToAssign.size())
-				{
-					data[jsonKeyToAssign] = "";
-					std::ofstream bindingsOutFile(GUIWindow::selfDirectory + "\\bindings.json");
-					bindingsOutFile << std::setw(4) << data;
-					bindingsOutFile.close();
-				}
-				break;
+				data[hotkeyDef.first] = "";
+				std::ofstream bindingsOutFile(GUIWindow::selfDirectory + "\\bindings.json");
+				bindingsOutFile << std::setw(4) << data;
+				bindingsOutFile.close();
 			}
 		}
 		if (write && jsonKeyToAssign.size())
 		{
-			data[jsonKeyToAssign] = hotkey.keyNames;
+			data[jsonKeyToAssign] = hotkey.second.keyNames;
 			std::ofstream bindingsOutFile(GUIWindow::selfDirectory + "\\bindings.json");
 			bindingsOutFile << std::setw(4) << data;
 			bindingsOutFile.close();
