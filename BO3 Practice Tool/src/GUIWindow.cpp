@@ -1207,20 +1207,41 @@ void AutosplitsPtr()
     if (appStatus != "Status: Active")
         ImGui::EndDisabled();
     ImGui::EndGroup();
-    if (ImGui::BeginTable("Splits", 3, ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_NoHostExtendX))
+    if (ImGui::BeginTable("Splits", 3, ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_Borders))
     {
         // lol idk how else to center names in a header
         ImGui::TableSetupColumn("                       Split Names", ImGuiTableColumnFlags_WidthFixed, 300.0f);
         ImGui::TableSetupColumn("     Round", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        ImGui::TableSetupColumn("Delete", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+        ImGui::TableSetupColumn("Add/Remove", ImGuiTableColumnFlags_WidthFixed, 100.0f);
         ImGui::TableHeadersRow();
 
-        for (int row = 0; row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits; row++)
+        for (int row = 0; row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits + 1; row++)
         {
             ImGui::TableNextRow();
             for (int column = 0; column < 3; column++)
             {
                 ImGui::TableSetColumnIndex(column);
+
+                if (row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits)
+                {
+                    if (column == 2)
+                    {
+                        if (ImGui::Button(ICON_FA_CIRCLE_MINUS " Remove", ImVec2(100.0f, 25.0f)))
+                        {
+
+                        }
+                    }
+                }
+                else
+                {
+                    if (column == 2)
+                    {
+                        if (ImGui::Button(ICON_FA_CIRCLE_PLUS " Add", ImVec2(100.0f, 25.0f)))
+                        {
+
+                        }
+                    }
+                }
             }
         }
 
