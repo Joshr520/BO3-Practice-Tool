@@ -8,9 +8,9 @@
 #include <thread>
 #include <hidusage.h>
 #include <fstream>
-#include "../nlohmann/json.hpp"
+#include "json.h"
 
-using json = nlohmann::json;
+using namespace JSON;
 
 HHOOK keyboardHook;
 
@@ -31,20 +31,24 @@ namespace KeyBinds
 		hotkeyDefs.insert({ "Open All Doors", { 21, {}, "", std::function<void()>(OpenAllDoors)} }); hotkeyDefs.insert({ "Global Power On", { 22, {}, "", std::function<void()>(GlobalPowerOn)} }); hotkeyDefs.insert({ "Open All Barriers", { 23, {}, "", std::function<void()>(OpenAllBarriers)} });
 		hotkeyDefs.insert({ "Close All Barriers", { 34, {}, "", std::function<void()>(CloseAllBarriers)} });
 
-		std::ifstream bindingsInFile(GUIWindow::selfDirectory + "\\bindings.json");
-		json data = json::parse(bindingsInFile);
-		bindingsInFile.close();
+		Document data = ReadJsonFromFile(GUIWindow::selfDirectory + "\\bindings.json");
 		bool valid = true;
 		for (std::pair<const std::string, HotKeyBind>& hotkey : hotkeyDefs)
 		{
-			if (!data.contains(hotkey.first))
+			if (!data.HasMember(hotkey.first.c_str()))
 			{
-				data[hotkey.first] = "";
+				ModifyJsonString(data, hotkey.first, "");
+				WriteJson(data, GUIWindow::selfDirectory + "\\bindings.json");
+				continue;
+			}
+			if (!data[hotkey.first.c_str()].IsString() || !std::strcmp(data[hotkey.first.c_str()].GetString(), ""))
+			{
+				ModifyJsonString(data, hotkey.first, "");
 				valid = false;
 			}
 			else
 			{
-				std::string ssInput = data.at(hotkey.first);
+				std::string ssInput = data[hotkey.first.c_str()].GetString();
 				std::stringstream ss(ssInput);
 				std::string token;
 				while (std::getline(ss, token, '+'))
@@ -54,7 +58,7 @@ namespace KeyBinds
 						});
 					if (it == keyDictionary.end())
 					{
-						data[hotkey.first] = "";
+						ModifyJsonString(data, hotkey.first, "");
 						valid = false;
 					}
 					else
@@ -63,7 +67,7 @@ namespace KeyBinds
 
 				if (!ValidateKeybind(hotkey))
 				{
-					data[hotkey.first] = "";
+					ModifyJsonString(data, hotkey.first, "");
 					valid = false;
 				}
 				else if (hotkey.second.keys.size())
@@ -72,11 +76,7 @@ namespace KeyBinds
 		}
 
 		if (!valid)
-		{
-			std::ofstream bindingsOutFile(GUIWindow::selfDirectory + "\\bindings.json");
-			bindingsOutFile << std::setw(4) << data;
-			bindingsOutFile.close();
-		}
+			WriteJson(data, GUIWindow::selfDirectory + "\\bindings.json");
 		
 	}
 
@@ -100,19 +100,15 @@ namespace KeyBinds
 
 	bool ValidateKeybind(std::pair<const std::string, HotKeyBind>& hotkey, bool write)
 	{
-		std::ifstream bindingsInFile(GUIWindow::selfDirectory + "\\bindings.json");
-		json data = json::parse(bindingsInFile);
-		bindingsInFile.close();
+		Document data = ReadJsonFromFile(GUIWindow::selfDirectory + "\\bindings.json");
 		if (!InternalKeyValidation(hotkey.second.keys))
 		{
 			hotkey.second.keyNames = "";
 			hotkey.second.keys = { };
 			if (write && jsonKeyToAssign.size())
 			{
-				data[jsonKeyToAssign] = "";
-				std::ofstream bindingsOutFile(GUIWindow::selfDirectory + "\\bindings.json");
-				bindingsOutFile << std::setw(4) << data;
-				bindingsOutFile.close();
+				ModifyJsonString(data, jsonKeyToAssign, "");
+				WriteJson(data, GUIWindow::selfDirectory + "\\bindings.json");
 			}
 			return false;
 		}
@@ -155,26 +151,22 @@ namespace KeyBinds
 			hotkeyDef.second.keys = { };
 			if (write && jsonKeyToAssign.size())
 			{
-				data[hotkeyDef.first] = "";
-				std::ofstream bindingsOutFile(GUIWindow::selfDirectory + "\\bindings.json");
-				bindingsOutFile << std::setw(4) << data;
-				bindingsOutFile.close();
+				ModifyJsonString(data, hotkeyDef.first, "");
+				WriteJson(data, GUIWindow::selfDirectory + "\\bindings.json");
 			}
 		}
 		if (write && jsonKeyToAssign.size())
 		{
-			data[jsonKeyToAssign] = hotkey.second.keyNames;
-			std::ofstream bindingsOutFile(GUIWindow::selfDirectory + "\\bindings.json");
-			bindingsOutFile << std::setw(4) << data;
-			bindingsOutFile.close();
+			ModifyJsonString(data, jsonKeyToAssign, hotkey.second.keyNames);
+			WriteJson(data, GUIWindow::selfDirectory + "\\bindings.json");
 		}
 		return true;
 	}
 
 	void CheckAndRunKeybind()
 	{
-		//if (registerHotKey || GUIWindow::appStatus != "Status: Active" || GUIWindow::currentMap == "core_frontend")
-			//return;
+		if (registerHotKey || GUIWindow::appStatus != "Status: Active" || GUIWindow::currentMap == "core_frontend")
+			return;
 		if (usedKeys.size() > 3 || !usedKeys.size())
 			return;
 		if (usedKeys.size() > 1)

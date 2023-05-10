@@ -12,6 +12,7 @@
 #include "Helper.h"
 #include "Memhelp.h"
 #include "KeyBinds.h"
+#include "json.h"
 #include "../Resource.h"
 
 #include <string>
@@ -24,12 +25,7 @@
 #include <curl/curl.h>
 #include <miniz/miniz.h>
 
-#include "../nlohmann/json.hpp"
-
 #define SAMELINE ImGui::SameLine()
-
-// json issue occurs if the file exists but isn't in json format. not sure how this library is supposed to account for that
-using json = nlohmann::json;
 
 using namespace GUIWindow;
 using namespace ImageHelp;
@@ -38,6 +34,7 @@ using namespace SOECodeGuide;
 using namespace GKValveSolver;
 using namespace IceCodePractice;
 using namespace KeyBinds;
+using namespace JSON;
 
 // Forward function declarations
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -50,6 +47,7 @@ bool RenderFrame();
 bool EndFrame();
 
 void GobblegumLoadoutPtr();
+void AutosplitsPtr();
 void PracticePatchesPtr();
 void SettingsPtr();
 void PlayerOptionsPtr();
@@ -72,11 +70,6 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* use
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
 }
-static size_t WriteToFile(char* ptr, size_t size, size_t nmemb, void* f)
-{
-    FILE* file = (FILE*)f;
-    return fwrite(ptr, size, nmemb, file);
-}
 
 // JSON Settings
 bool steamPathFound = false;
@@ -94,7 +87,6 @@ ImFont* sidebarFont;
 ImFont* titleFont;
 
 // Main data
-static bool done = false;
 static bool mainDocked = false;
 static bool subDocked = false;
 static bool updateAvailable = false;
@@ -102,10 +94,10 @@ static bool updateFailed = false;
 static bool doUpdateAvailable = false;
 static bool doUpdateFailed = false;
 static bool injectResponse = false;
+static bool injectResponseWait = false;
 static int sidebarCurrentItem = 0;
 static ImVec4 fakeColor = { 0, 0, 0, 0 };
 static std::string internalVersion = "Beta-v0.1.0";
-static std::string downloadURL;
 
 // Gum data
 static int chooseGumPreset = 0;
@@ -115,7 +107,7 @@ static std::vector<int> megaGumList = { 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 
                                         51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62};
 static std::vector<int> gumSearchList = { };
 static bool showGumPresetExists = false;
-static bool popupBoolCheck = false;
+static bool gumPopupBoolCheck = false;
 static const char* gumSelectMenu = "";
 
 // Practice patch data
@@ -140,6 +132,10 @@ static int pointInput = 0;
 // Round options data
 static int roundInput = 1;
 static int zombieCount = 0;
+
+// Autosplits data
+static bool showAutosplitPresetExists = false;
+static bool autosplitPopupBoolCheck = false;
 
 // Memory reading data
 DWORD pID;
@@ -201,23 +197,13 @@ namespace GUIWindow
         ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
         if (!DoesPathExist(selfDirectory + "\\settings.json"))
-        {
-            std::ofstream outFile(selfDirectory + "\\settings.json");
-
-            json j;
-            j["Steam Path"] = "";
-
-            outFile << std::setw(4) << j;
-            outFile.close();
-        }
-
-        std::ifstream inFile(selfDirectory + "\\settings.json");
-        json data = json::parse(inFile);
-        inFile.close();
+            WriteEmptyJson(selfDirectory + "\\settings.json");
+        Document doc = ReadJsonFromFile(selfDirectory + "\\settings.json");
+        
         LogFile("Searching for BO3 directory");
-        if (data.contains("Steam Path"))
+        if (doc.HasMember("Steam Path") && doc["Steam Path"].IsString())
         {
-            bo3Directory = data.at("Steam Path");
+            bo3Directory = doc["Steam Path"].GetString();
             LogFile("BO3 directory found");
         }
         else
@@ -261,34 +247,21 @@ namespace GUIWindow
             InitVariables();
         // Init function list
         {
-            auto func = std::function<void()>(GobblegumLoadoutPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(PracticePatchesPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(SettingsPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(PlayerOptionsPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(ZombieOptionsPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(RoundOptionsPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(PowerupOptionsPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(EggStepOptionsPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(CraftableOptionsPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(BlockerOptionsPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(MapOptionsPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(ZombieCalculatorPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(CodeGuidesPtr);
-            funcList.push_back(func);
-            func = std::function<void()>(GKValveSolverPtr);
-            funcList.push_back(func);
+            funcList.push_back(std::function<void()>(GobblegumLoadoutPtr));
+            funcList.push_back(std::function<void()>(AutosplitsPtr));
+            funcList.push_back(std::function<void()>(PracticePatchesPtr));
+            funcList.push_back(std::function<void()>(SettingsPtr));
+            funcList.push_back(std::function<void()>(PlayerOptionsPtr));
+            funcList.push_back(std::function<void()>(ZombieOptionsPtr));
+            funcList.push_back(std::function<void()>(RoundOptionsPtr));
+            funcList.push_back(std::function<void()>(PowerupOptionsPtr));
+            funcList.push_back(std::function<void()>(EggStepOptionsPtr));
+            funcList.push_back(std::function<void()>(CraftableOptionsPtr));
+            funcList.push_back(std::function<void()>(BlockerOptionsPtr));
+            funcList.push_back(std::function<void()>(MapOptionsPtr));
+            funcList.push_back(std::function<void()>(ZombieCalculatorPtr));
+            funcList.push_back(std::function<void()>(CodeGuidesPtr));
+            funcList.push_back(std::function<void()>(GKValveSolverPtr));
         }
 
         ShowWindow(hWnd, SW_SHOWDEFAULT);
@@ -623,10 +596,16 @@ bool UpdateAvailable()
             LogFile("curl GET failed with error code: " + res);
             return 0;
         }
-        json get = json::parse(buffer.begin(), buffer.end());
-        for (auto& array : get["assets"])
-            downloadURL = array["browser_download_url"];
-        tagName = get.at("tag_name");
+        Document get = ReadJsonFromString(buffer);
+        if (get.HasParseError())
+        {
+            LogFile("JSON returned from get invalid");
+            return 0;
+        }
+        if (!GetStringFromJsonArray("assets", "browser_download_url", get, downloadURL))
+            return 0;
+        if (GetStringFromJson("tag_name", get, tagName))
+            return 0;
 
         if (!CheckVersions(tagName, internalVersion))
         {
@@ -643,105 +622,11 @@ bool UpdateAvailable()
 
 bool PerformUpdate()
 {
-    CURL* curl = curl_easy_init();
-    CURLcode res;
-    FILE* file;
-    std::string filename = "BO3 Practice Tool.zip";
     std::string ptexe;
 
-    errno_t err = fopen_s(&file, filename.c_str(), "wb");
-    if (err != 0)
-    {
-        char errorMsg[256];
-        strerror_s(errorMsg, sizeof(errorMsg), err);
-        LogFile("Opening file " + filename + " failed with error code: " + errorMsg);
+    if (DownloadAndExtractZip({ "BO3 Practice Tool", "GSC", "Resource Images" }))
         return 0;
-    }
-    curl_easy_setopt(curl, CURLOPT_URL, downloadURL.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteToFile);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-    res = curl_easy_perform(curl);
-    if (res != CURLE_OK)
-    {
-        LogFile("curl download failed with error code: " + res);
-        return 0;
-    }
 
-    fclose(file);
-    curl_easy_cleanup(curl);
-
-    std::filesystem::path output_directory("./");
-    mz_zip_archive zip_archive;
-    mz_zip_zero_struct(&zip_archive);
-    if (!mz_zip_reader_init_file(&zip_archive, filename.c_str(), 0))
-    {
-        LogFile("Failed to open zip file: " + filename);
-        return 0;
-    }
-
-    int num_files = mz_zip_reader_get_num_files(&zip_archive);
-    LogFile("Extracting " + num_files + std::string(" files from ") + filename + " to " + output_directory.string());
-
-    for (int i = 0; i < num_files; i++)
-    {
-        mz_zip_archive_file_stat file_stat;
-        if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat))
-        {
-            LogFile("Failed to get file stat for index " + i);
-            continue;
-        }
-
-        std::filesystem::path output_file_path = output_directory / file_stat.m_filename;
-
-        std::string currentFile(file_stat.m_filename);
-        std::unordered_set<std::string_view> wantedFiles = { "BO3 Practice Tool", "GSC", "Resource Images" };
-        bool wantedFileFound = false;
-        for (const std::string_view& wantedFile : wantedFiles)
-        {
-            if (currentFile.find(wantedFile) != std::string::npos)
-            {
-                wantedFileFound = true;
-                break;
-            }
-        }
-
-        if (!wantedFileFound)
-            continue;
-
-        LogFile("Extracting " + std::string(file_stat.m_filename) + " to " + output_file_path.string());
-
-        std::filesystem::create_directories(output_file_path.parent_path());
-
-        if (mz_zip_reader_is_file_a_directory(&zip_archive, i))
-            std::filesystem::create_directory(output_file_path);
-        else
-        {
-            if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path))
-            {
-                std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.old.exe");
-                ptexe = output_file_path.string();
-            }
-            else if (std::filesystem::exists(output_file_path))
-                std::filesystem::remove(output_file_path);
-            if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0))
-            {
-                LogFile("Failed to extract file " + std::string(file_stat.m_filename));
-                return 0;
-            }
-        }
-    }
-    mz_zip_reader_end(&zip_archive);
-    std::filesystem::remove(filename);
-
-    STARTUPINFO startupInfo = { sizeof(startupInfo) };
-    PROCESS_INFORMATION processInfo = { 0 };
-    LPSTR args = &ptexe[0];
-    if (!CreateProcess(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo))
-        LogFile("Failed to start new practice tool exe");
-    CloseHandle(processInfo.hProcess);
-    CloseHandle(processInfo.hThread);
-    done = 1;
     return 1;
 }
 
@@ -808,8 +693,8 @@ bool RenderFrame()
     ImGui::PopFont();
     ImGui::Begin("##Sidebar", 0, dockFlags);
     {
-        //if (!steamPathFound || !procFound)
-            //ImGui::BeginDisabled();
+        if (!steamPathFound || !procFound)
+            ImGui::BeginDisabled();
         // Create sidebar options
         {
             ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(appStatus.c_str()).x) / 2 + 10);
@@ -838,16 +723,16 @@ bool RenderFrame()
                 }
             }
             ImGui::Separator();
-            //if (!steamPathFound || !procFound)
-                //ImGui::EndDisabled();
+            if (!steamPathFound || !procFound)
+                ImGui::EndDisabled();
             ImGui::PushFont(sidebarFont);
             ImGui::Text("Frontend"); ImGui::Separator(3.5f);
             ImGui::PopFont();
             
-            const char* sidebarItems[] = { "Gobblegum Loadout", "Practice Patches", "Settings", "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options",
+            const char* sidebarItems[] = { "Gobblegum Loadout", "Autosplits", "Practice Patches", "Settings", "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options",
                 "Craftable Options", "Blocker Options", "Map Options", "Zombie Calculator", "Code Guides", "GK Valve Solver"};
             const char* sidebarPreview = sidebarItems[sidebarCurrentItem];
-            static int frontendItems = 3;
+            static int frontendItems = 4;
             static int inGameItems = frontendItems + 8;
             static int resourceItems = inGameItems + 3;
             // Frontend
@@ -867,7 +752,7 @@ bool RenderFrame()
             // In Game
             if (appStatus != "Status: Active" || currentMap == "core_frontend")
             {
-                if (sidebarCurrentItem > 2 && sidebarCurrentItem < 10)
+                if (sidebarCurrentItem > 3 && sidebarCurrentItem < 11)
                     sidebarCurrentItem = 0;
                 ImGui::BeginDisabled();
             }
@@ -901,23 +786,6 @@ bool RenderFrame()
 
     ImGui::Begin("##Body", 0, dockFlags);
     
-    //Create UI Window
-    /*
-        0 = Gobblegum Loadout
-        1 = Practice Patches
-        2 = Player Options
-        3 = Settings
-        4 = Zombie Options
-        5 = Round Options
-        6 = Powerup Options
-        7 = Egg Step Options
-        8 = Craftable Options
-        9 = Blocker Options
-        10 = Map Options
-        11 = Zombie Calculator
-        12 = SOE Code Guide
-        13 = GK Valve Solver
-    */
     if (updateAvailable)
     {
         ImGui::OpenPopup("Update Available");
@@ -966,6 +834,35 @@ bool RenderFrame()
             ImGui::EndPopup();
         }
     }
+    if (injectResponse)
+    {
+        ImGui::OpenPopup("Injection Failed");
+        injectResponse = false;
+        injectResponseWait = true;
+    }
+    else if (injectResponseWait)
+    {
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
+        if (ImGui::BeginPopupModal("Injection Failed", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::TextWrapped("1 or more required files is missing, would you like to redownload them? (Add an exclusion in your antivirus to stop this from happening)");
+            if (ImGui::Button("Download Files", ImVec2(125, 0)))
+            {
+                injectResponseWait = false;
+                ImGui::CloseCurrentPopup();
+                DownloadAndExtractZip({ "GSC" });
+                VerifyFileStructure();
+            }  SAMELINE;
+            if (ImGui::Button("Exit", ImVec2(125, 0)))
+            {
+                injectResponseWait = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
     if (!steamPathFound)
     {
         ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Select BO3 EXE").x / 2, ImGui::GetContentRegionAvail().y / 2 - ImGui::CalcTextSize("Select BO3 EXE").y / 2 - 50.0f));
@@ -999,14 +896,9 @@ bool RenderFrame()
             {
                 bo3Directory = bo3Directory.substr(0, bo3Directory.length() - 14);
                 steamPathFound = true;
-                std::ifstream inFile(selfDirectory + "\\settings.json");
-                json data = json::parse(inFile);
-                inFile.close();
-                if (data.contains("Steam Path"))
-                    data["Steam Path"] = bo3Directory;
-                std::ofstream outFile(selfDirectory + "\\settings.json");
-                outFile << std::setw(4) << data;
-                outFile.close();
+                Document data = ReadJsonFromFile(selfDirectory + "\\settings.json");
+                ModifyJsonString(data, "Steam Path", bo3Directory);
+                WriteJson(data, selfDirectory + "\\settings.json");
                 VerifyFileStructure();
                 InitVariables();
             }
@@ -1091,7 +983,6 @@ bool EndFrame()
 
 void GobblegumLoadoutPtr()
 {
-    float topPos = ImGui::GetCursorPosY();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     if (!BGB::showGumSelection)
     {
@@ -1104,6 +995,7 @@ void GobblegumLoadoutPtr()
             if (BGB::writeGums && appStatus == "Status: Active")
                 BGB::WritePresetToGame(BGB::gumPresets[BGB::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
         } ImGui::EndGroup(); SAMELINE;
+        ImGui::PopStyleVar();
         ImGui::BeginGroup();
         // new preset creation
         if (ImGui::BeginPopup("New Gum Preset"))
@@ -1113,10 +1005,10 @@ void GobblegumLoadoutPtr()
             ImGui::SetNextItemWidth(200);
             if (ImGui::InputText("New Preset Name", presetInput, IM_ARRAYSIZE(presetInput), ImGuiInputTextFlags_EnterReturnsTrue))
             {
-                if (BGB::CheckPresetExists(presetInput))
+                if (std::string(presetInput).empty() || BGB::CheckPresetExists(presetInput))
                 {
                     showGumPresetExists = true;
-                    popupBoolCheck = true;
+                    gumPopupBoolCheck = true;
                 }
                 else
                 {
@@ -1130,10 +1022,10 @@ void GobblegumLoadoutPtr()
         }
         if (showGumPresetExists)
         {
-            if (popupBoolCheck)
+            if (gumPopupBoolCheck)
             {
                 ImGui::OpenPopup("Gum Preset Already Exists");
-                popupBoolCheck = false;
+                gumPopupBoolCheck = false;
             }
             ImGui::SetNextWindowSize(ImVec2(230.0f, 75.0f));
             if (ImGui::BeginPopupModal("Gum Preset Already Exists", &showGumPresetExists, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
@@ -1232,7 +1124,108 @@ void GobblegumLoadoutPtr()
     ImGui::TextWrapped(BGB::gumDescriptions[BGB::gumContextIndex].c_str());
     ImGui::PopFont();
     ImGui::End();
+}
+
+void AutosplitsPtr()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+    ImGui::BeginGroup();
+    if (CreateButton(ICON_FA_FILE_CIRCLE_PLUS " New Preset", ImVec2(150.0f, 25.0f)))
+        ImGui::OpenPopup("New Autosplits Preset");
+    if (CreateButton(ICON_FA_FILE_CIRCLE_MINUS " Delete Preset", ImVec2(150.0f, 25.0f)))
+    {
+        Autosplits::DeleteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset].presetName);
+        if (Autosplits::writeSplits && appStatus == "Status: Active")
+            Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+    } ImGui::EndGroup(); SAMELINE;
     ImGui::PopStyleVar();
+    ImGui::BeginGroup();
+    // new preset creation
+    if (ImGui::BeginPopup("New Autosplits Preset"))
+    {
+        ImGui::SetKeyboardFocusHere();
+        char presetInput[32] = "";
+        ImGui::SetNextItemWidth(200);
+        if (ImGui::InputText("New Preset Name", presetInput, IM_ARRAYSIZE(presetInput), ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            if (std::string(presetInput).empty() || DoesPathExist(presetInput))
+            {
+                showAutosplitPresetExists = true;
+                autosplitPopupBoolCheck = true;
+            }
+            else
+                Autosplits::CreateNewAutosplitPreset(presetInput);
+            ImGui::CloseCurrentPopup();
+        }
+        if (showAutosplitPresetExists)
+        {
+            if (autosplitPopupBoolCheck)
+            {
+                ImGui::OpenPopup("Autosplit Preset Already Exists");
+                autosplitPopupBoolCheck = false;
+            }
+            ImGui::SetNextWindowSize(ImVec2(230.0f, 75.0f));
+            if (ImGui::BeginPopupModal("Autosplit Preset Already Exists", &showAutosplitPresetExists, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
+            {
+                ImGui::Text("Autosplit Preset Already Exists");
+                if (ImGui::Button("Close", ImVec2(ImGui::GetContentRegionAvail().x, 25.0f)))
+                    ImGui::CloseCurrentPopup();
+                ImGui::EndPopup();
+            }
+        }
+        ImGui::EndPopup();
+    }
+    // presets dropdown
+    ImGui::SetNextItemWidth(250);
+    std::string previousPreset = Autosplits::splitPresets[Autosplits::currentPreset].presetName;
+    if (ImGui::BeginCombo("Autosplit Presets", Autosplits::splitPresets[Autosplits::currentPreset].presetName.c_str(), ImGuiComboFlags_HeightRegular))
+    {
+        for (int i = 0; i < Autosplits::splitPresets.size(); ++i)
+        {
+            const bool is_selected = Autosplits::currentPreset == i;
+            if (ImGui::Selectable(Autosplits::splitPresets[i].presetName.c_str(), is_selected))
+                Autosplits::currentPreset = i;
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    } SAMELINE;
+    if (previousPreset != Autosplits::splitPresets[Autosplits::currentPreset].presetName)
+    {
+        if (Autosplits::writeSplits && appStatus == "Status: Active")
+            Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+    }
+    if (appStatus != "Status: Active")
+        ImGui::BeginDisabled();
+    if (ImGui::Checkbox("Active", &Autosplits::writeSplits))
+    {
+        if (Autosplits::writeSplits && appStatus == "Status: Active")
+            Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+        else
+            Autosplits::WritePresetToGame(Autosplits::inactivePreset, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+    }
+    if (appStatus != "Status: Active")
+        ImGui::EndDisabled();
+    ImGui::EndGroup();
+    if (ImGui::BeginTable("Splits", 3, ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_NoHostExtendX))
+    {
+        // lol idk how else to center names in a header
+        ImGui::TableSetupColumn("                       Split Names", ImGuiTableColumnFlags_WidthFixed, 300.0f);
+        ImGui::TableSetupColumn("     Round", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        ImGui::TableSetupColumn("Delete", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+        ImGui::TableHeadersRow();
+
+        for (int row = 0; row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits; row++)
+        {
+            ImGui::TableNextRow();
+            for (int column = 0; column < 3; column++)
+            {
+                ImGui::TableSetColumnIndex(column);
+            }
+        }
+
+        ImGui::EndTable();
+    }
 }
 
 void PracticePatchesPtr()

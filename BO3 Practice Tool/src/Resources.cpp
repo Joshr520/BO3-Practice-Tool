@@ -2,10 +2,14 @@
 
 #include "ImageHelp.h"
 #include "Resources.h"
+#include "GUIWindow.h"
+#include "Helper.h"
 #include <limits.h>
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include <filesystem>
+#include "json.h"
 
 namespace ZombieCalc
 {
@@ -610,6 +614,67 @@ namespace IceCodePractice
         float percentage = (timesGuessed - timesMissed) / (float)timesGuessed * 100;
         ss << "Accuracy: " << percentage << "%%";
         accuracy = "Accuracy: " + ss.str();
+    }
+}
+
+namespace Autosplits
+{
+#define PRESET_DIRECTORY "/Settings/Autosplits"
+    void LoadSplitPresets()
+    {
+        splitPresets.clear();
+        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(GUIWindow::selfDirectory) / "Settings\\Autosplits"))
+        {
+            if (std::filesystem::is_regular_file(file))
+            {
+                SplitPreset preset;
+                preset.presetName = file.path().stem().string();
+                preset.splits = ParseSplitJson(file.path().string());
+                splitPresets.push_back(preset);
+            }
+        }
+
+        if (!splitPresets.size())
+            splitPresets.push_back(inactivePreset);
+    }
+
+    void WritePresetToGame(const SplitPreset& splitPreset, const std::string& file)
+    {
+
+    }
+
+    void CreateNewAutosplitPreset(const std::string& presetName)
+    {
+        JSON::WriteEmptyJson(GUIWindow::selfDirectory + PRESET_DIRECTORY + "/" + presetName + ".json");
+        SplitPreset preset = { presetName, { { "", 0} } };
+        splitPresets.push_back(preset);
+        LoadSplitPresets();
+    }
+
+    void DeleteAutosplitPreset(const std::string& preset)
+    {
+        std::string file = PRESET_DIRECTORY;
+        file += "/" + preset + ".json";
+        if (std::filesystem::exists(GUIWindow::selfDirectory + file))
+            std::filesystem::remove(GUIWindow::selfDirectory + file);
+        if (currentPreset > 0) currentPreset--;
+        LoadSplitPresets();
+    }
+
+    std::vector<std::pair<std::string, int>> ParseSplitJson(const std::string& filePath)
+    {
+        Document doc = JSON::ReadJsonFromFile(filePath);
+        std::vector<std::pair<std::string, int>> returnVec;
+
+        for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); it++)
+        {
+            if (it->name.IsString() && it->value.IsInt())
+                returnVec.push_back({ it->name.GetString(), it->value.GetInt() });
+            else
+                LogFile("Autosplits json error, incorrect typings found");
+        }
+
+        return returnVec;
     }
 }
 

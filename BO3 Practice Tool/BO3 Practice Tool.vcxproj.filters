@@ -96,6 +96,9 @@
     <ClInclude Include="headers\KeyBinds.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="headers\json.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BO3 Practice Tool.cpp">
@@ -150,6 +153,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\KeyBinds.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\json.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

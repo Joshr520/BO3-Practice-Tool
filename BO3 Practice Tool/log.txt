@@ -8,6 +8,5 @@ BlackOps3.exe Not Found
 Writing presets
 Started async process - looking for BO3
 Checking for updates
-New version detected
 Setup Finished
 -------------Practice Tool Ended---------------

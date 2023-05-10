@@ -114,7 +114,7 @@
     </Link>
     <PostBuildEvent>
       <Command>XCOPY "$(ProjectDir)Gum Images" "$(TargetDir)Gum Images" /s /i /y
-XCOPY "$(ProjectDir)Gum Profiles" "$(TargetDir)Gum Profiles" /s /i /y
+XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /i /y
 XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /i /y
 XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /i /y
 XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
@@ -141,7 +141,7 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY "$(ProjectDir)Gum Images" "$(TargetDir)Gum Images" /s /i /y
-XCOPY "$(ProjectDir)Gum Profiles" "$(TargetDir)Gum Profiles" /s /i /y
+XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /i /y
 XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /i /y
 XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /i /y
 XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
@@ -156,6 +156,7 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
     <ClInclude Include="headers\GUIWindow.h" />
     <ClInclude Include="headers\Helper.h" />
     <ClInclude Include="headers\ImageHelp.h" />
+    <ClInclude Include="headers\json.h" />
     <ClInclude Include="headers\KeyBinds.h" />
     <ClInclude Include="headers\MapOptions.h" />
     <ClInclude Include="headers\Memhelp.h" />
@@ -190,6 +191,7 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
     <ClCompile Include="src\GUIWindow.cpp" />
     <ClCompile Include="src\Helper.cpp" />
     <ClCompile Include="src\ImageHelp.cpp" />
+    <ClCompile Include="src\json.cpp" />
     <ClCompile Include="src\KeyBinds.cpp" />
     <ClCompile Include="src\Memhelp.cpp" />
     <ClCompile Include="src\PlayerOptions.cpp" />

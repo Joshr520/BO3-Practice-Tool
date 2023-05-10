@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <unordered_set>
+#include <filesystem>
 #include "imgui.h"
 
 namespace GUIWindow
@@ -25,6 +27,7 @@ namespace GUIWindow
 	std::vector<int> GetWeaponIndex(const std::string& currentMap, const std::string& weaponSelectName);
 	void ResetToggles();
 	bool CheckVersions(const std::string& newVersion, const std::string& oldVersion);
+	bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles);
 }
 
 void LogFile(const std::string& text, bool initialBoot = false);

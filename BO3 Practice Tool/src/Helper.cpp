@@ -8,6 +8,7 @@
 #include "Craftables.h"
 #include "Resources.h"
 #include "KeyBinds.h"
+#include "json.h"
 #include "GUIWindow.h"
 #include "../Fonts/Icons.h"
 #include <algorithm>
@@ -15,10 +16,15 @@
 #include <fstream>
 #include <thread>
 #include <unordered_set>
-#
-#include "../nlohmann/json.hpp"
+#define CURL_STATICLIB
+#include <curl/curl.h>
+#include <miniz/miniz.h>
 
-using json = nlohmann::json;
+static size_t WriteToFile(char* ptr, size_t size, size_t nmemb, void* f)
+{
+    FILE* file = (FILE*)f;
+    return fwrite(ptr, size, nmemb, file);
+}
 
 using namespace ImageHelp;
 using namespace BGB;
@@ -32,6 +38,8 @@ using namespace ZombieCalc;
 using namespace GKValveSolver;
 using namespace IceCodePractice;
 using namespace KeyBinds;
+using namespace Autosplits;
+using namespace JSON;
 
 DWORD WaitToKillCompiler(PROCESS_INFORMATION lpExecInfo);
 
@@ -43,6 +51,7 @@ namespace GUIWindow
         InitClassicGumsList();
         InitMegaGumsList();
         LoadGumProfiles();
+        LoadSplitPresets();
         InitWeaponsList();
         InitPerksList();
         InitPowerupList();
@@ -193,16 +202,16 @@ namespace GUIWindow
 
     void SwapGumSelection(int newGum, int gumSlot)
     {
-        for (int i = 0; i < gumPresets[currentPreset].presetGums.size(); i++)
+        for (int i = 0; i < gumPresets[BGB::currentPreset].presetGums.size(); i++)
         {
-            if (gumPresets[currentPreset].presetGums[i] == newGum)
+            if (gumPresets[BGB::currentPreset].presetGums[i] == newGum)
             {
-                gumPresets[currentPreset].presetGums[i] = gumPresets[currentPreset].presetGums[gumSlot];
+                gumPresets[BGB::currentPreset].presetGums[i] = gumPresets[BGB::currentPreset].presetGums[gumSlot];
                 break;
             }
         }
-        gumPresets[currentPreset].presetGums[gumSlot] = newGum;
-        WriteGumPreset(gumPresets[currentPreset].presetGums);
+        gumPresets[BGB::currentPreset].presetGums[gumSlot] = newGum;
+        WriteGumPreset(gumPresets[BGB::currentPreset].presetGums);
     }
 
     std::vector<int> GumSearch(const std::vector<int>& inGumArr, const std::string& searchText)
@@ -248,14 +257,16 @@ namespace GUIWindow
             std::ofstream(practiceToolDirectory + "\\Game-Tool Interface.txt");
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt"))
             std::ofstream(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.txt"))
+            std::ofstream(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.txt");
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt"))
             std::ofstream(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
         if (!DoesPathExist(selfDirectory + "\\bindings.json"))
-        {
-            std::ofstream bindingsOutFile(selfDirectory + "\\bindings.json");
-            json data;
-            bindingsOutFile << std::setw(4) << data;
-        }
+            WriteEmptyJson(selfDirectory + "\\bindings.json");
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Autosplits"))
+            std::filesystem::create_directory(selfDirectory + "\\Settings\\Autosplits");
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Gum Profiles"))
+            std::filesystem::create_directory(selfDirectory + "\\Settings\\Gum Profiles");
         if (DoesPathExist(selfDirectory + "\\GSC"))
         {
             std::string startDirectory = selfDirectory + "\\GSC";
@@ -276,7 +287,7 @@ namespace GUIWindow
                 {
                     LogFile("Failed to move file " + oldFile + " to " + newFile);
                     LogFile("Error message: " + std::string(e.what()));
-                    continue;
+                    std::filesystem::remove(oldFile);
                 }
             }
             if (!std::filesystem::remove(startDirectory))
@@ -322,10 +333,13 @@ namespace GUIWindow
         std::string nmPass = compiler + " --inject " + "\"" + gsc + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
         std::unordered_set<std::string_view> wantedFiles = { "DebugCompiler.exe", "DebugCompiler.exe.config", "External.dll", "Ionic.Zip.dll", "Irony.dll", "No Mods.gsc", "Practice Tool.gsc", "System.Buffers.dll", "System.Collections.Immutable.dll", "System.Memory.dll",
             "System.Numerics.Vectors.dll", "System.Reflection.Metadata.dll", "System.Runtime.CompilerServices.Unsafe.dll", "t7cinternal.dll", "T7CompilerLib.dll", "t8cinternal.dll", "T89CompilerLib.dll", "TreyarchCompiler.dll", "xdevkit.dll", "xdrpc.dll" };
-        for (const auto& entry : std::filesystem::directory_iterator(gsc))
+        for (const auto& fileName : wantedFiles)
         {
-            if (wantedFiles.find(entry.path().filename().string()) == wantedFiles.end())
+            std::filesystem::path path(std::filesystem::path(gsc) / fileName);
+            if (!std::filesystem::exists(path))
             {
+                enabled = false;
+                appStatus = "Status: Inactive";
                 injectResponse = true;
                 return;
             }
@@ -420,6 +434,112 @@ namespace GUIWindow
             }
         }
         return false;
+    }
+
+    bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles)
+    {
+        CURL* curl = curl_easy_init();
+        CURLcode res;
+        FILE* file;
+        std::string filename = "BO3 Practice Tool.zip";
+        std::string ptexe;
+
+        errno_t err = fopen_s(&file, filename.c_str(), "wb");
+        if (err != 0)
+        {
+            char errorMsg[256];
+            strerror_s(errorMsg, sizeof(errorMsg), err);
+            LogFile("Opening file " + filename + " failed with error code: " + errorMsg);
+            return 0;
+        }
+        curl_easy_setopt(curl, CURLOPT_URL, downloadURL.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteToFile);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK)
+        {
+            LogFile("curl download failed with error code: " + res);
+            return 0;
+        }
+
+        fclose(file);
+        curl_easy_cleanup(curl);
+
+        std::filesystem::path output_directory("./");
+        mz_zip_archive zip_archive;
+        mz_zip_zero_struct(&zip_archive);
+        if (!mz_zip_reader_init_file(&zip_archive, filename.c_str(), 0))
+        {
+            LogFile("Failed to open zip file: " + filename);
+            return 0;
+        }
+
+        int num_files = mz_zip_reader_get_num_files(&zip_archive);
+        LogFile("Extracting " + num_files + std::string(" files from ") + filename + " to " + output_directory.string());
+
+        for (int i = 0; i < num_files; i++)
+        {
+            mz_zip_archive_file_stat file_stat;
+            if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat))
+            {
+                LogFile("Failed to get file stat for index " + i);
+                continue;
+            }
+
+            std::filesystem::path output_file_path = output_directory / file_stat.m_filename;
+
+            std::string currentFile(file_stat.m_filename);
+            bool wantedFileFound = false;
+            for (const std::string_view& wantedFile : wantedFiles)
+            {
+                if (currentFile.find(wantedFile) != std::string::npos)
+                {
+                    wantedFileFound = true;
+                    break;
+                }
+            }
+
+            if (!wantedFileFound)
+                continue;
+
+            LogFile("Extracting " + std::string(file_stat.m_filename) + " to " + output_file_path.string());
+
+            std::filesystem::create_directories(output_file_path.parent_path());
+
+            if (mz_zip_reader_is_file_a_directory(&zip_archive, i))
+                std::filesystem::create_directory(output_file_path);
+            else
+            {
+                if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path))
+                {
+                    std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.old.exe");
+                    ptexe = output_file_path.string();
+                }
+                else if (std::filesystem::exists(output_file_path))
+                    std::filesystem::remove(output_file_path);
+                if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0))
+                {
+                    LogFile("Failed to extract file " + std::string(file_stat.m_filename));
+                    return 0;
+                }
+            }
+        }
+        mz_zip_reader_end(&zip_archive);
+        std::filesystem::remove(filename);
+
+        if (!ptexe.empty())
+        {
+            STARTUPINFO startupInfo = { sizeof(startupInfo) };
+            PROCESS_INFORMATION processInfo = { 0 };
+            LPSTR args = &ptexe[0];
+            if (!CreateProcess(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo))
+                LogFile("Failed to start new practice tool exe");
+            CloseHandle(processInfo.hProcess);
+            CloseHandle(processInfo.hThread);
+            done = 1;
+        }
+        return 1;
     }
 }
 

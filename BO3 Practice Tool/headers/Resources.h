@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <tuple>
 #include <chrono>
+#include <set>
+#include <fstream>
 
 #include "ImageHelp.h"
 
@@ -191,6 +193,32 @@ namespace IceCodePractice
 	void InitIceCodePairs();
 	void RandomizeCodes();
 	void ProgressGame(bool success, int numCode);
+}
+
+namespace Autosplits
+{
+	// A SplitPreset will contain the name of the preset and a vector of pairs containing a string and int
+	// The string represents the name of the split, which is also used to create the split logic, while the int determines if the split is tied to a specific round
+	// Examples: { "Rift: Waterfront", 3 } will activate once you enter the waterfront rift, and it waits for the current round to be >= 3
+	// { "Crackle", 0 } 0 is used to represent the current round, so once you finish crackle, the game will split when the current round ends
+	// { "Skull Pickup", -1 } -1 is used to represent no round attachment, so the split will activate immediately when picking up the skullmnnnn
+	struct SplitPreset
+	{
+		std::string presetName;
+		std::vector<std::pair<std::string, int>> splits;
+		int numSplits = 0;
+	};
+
+	inline bool writeSplits = false;
+	inline int currentPreset = 0;
+	inline std::vector<SplitPreset> splitPresets;
+	inline SplitPreset inactivePreset = { "No Presets Available", { { "", 0} } };
+
+	void LoadSplitPresets();
+	void WritePresetToGame(const SplitPreset& splitPreset, const std::string& file);
+	void CreateNewAutosplitPreset(const std::string& presetName);
+	void DeleteAutosplitPreset(const std::string& preset);
+	std::vector<std::pair<std::string, int>> ParseSplitJson(const std::string& filePath);
 }
 
 std::string ParseTimeFromMilli(int milliseconds);
