@@ -68,7 +68,7 @@ namespace ImageHelp
         for (const auto& entry : std::filesystem::directory_iterator("Resource Images/Gum Images/Classics"))
         {
             const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == std::string::npos)
+            if (name.find(".png") == name.npos)
                 continue;
             Image gum;
             gum.imgRelativePath = name.substr(0, name.size() - 4);
@@ -79,7 +79,7 @@ namespace ImageHelp
         for (const auto& entry : std::filesystem::directory_iterator("Resource Images/Gum Images/Megas"))
         {
             const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == std::string::npos)
+            if (name.find(".png") == name.npos)
                 continue;
             Image gum;
             gum.imgRelativePath = name.substr(0, name.size() - 4);
@@ -90,7 +90,7 @@ namespace ImageHelp
         for (const auto& entry : std::filesystem::directory_iterator("Resource Images/Soe Code"))
         {
             const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == std::string::npos)
+            if (name.find(".png") == name.npos)
                 continue;
             Image code;
             code.imgRelativePath = name.substr(0, name.size() - 4);
@@ -102,7 +102,7 @@ namespace ImageHelp
         for (const auto& entry : std::filesystem::directory_iterator("Resource Images/GK Valve Solver"))
         {
             const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == std::string::npos)
+            if (name.find(".png") == name.npos)
                 continue;
             Image valve;
             valve.imgRelativePath = name.substr(0, name.size() - 4);
@@ -113,7 +113,7 @@ namespace ImageHelp
         for (const auto& entry : std::filesystem::directory_iterator("Resource Images/Ice Code"))
         {
             const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == std::string::npos)
+            if (name.find(".png") == name.npos)
                 continue;
             Image iceCode;
             iceCode.imgRelativePath = name.substr(0, name.size() - 4);

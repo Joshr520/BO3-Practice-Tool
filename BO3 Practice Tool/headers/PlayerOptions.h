@@ -48,7 +48,7 @@ namespace BGB
     inline int gumContextIndex = 0;
     inline bool showGumSelection = false;
     inline bool writeGums = false;
-    inline BGBPreset inactivePreset = { "No Presets Available", { 0, 1, 2, 3, 4 } };
+    inline BGBPreset inactivePreset = { "No Presets Available", { -1, -1, -1, -1, -1 } };
 }
 
 namespace Perks

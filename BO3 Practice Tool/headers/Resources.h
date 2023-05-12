@@ -206,7 +206,12 @@ namespace Autosplits
 	{
 		std::string presetName;
 		std::vector<std::pair<std::string, int>> splits;
+		bool igt = false;
+		bool igrt = false;
 		int numSplits = 0;
+		int map = 0;
+		int splitType = 0;
+		int roundInterval = 1;
 	};
 
 	inline bool writeSplits = false;
@@ -215,10 +220,11 @@ namespace Autosplits
 	inline SplitPreset inactivePreset = { "No Presets Available", { { "", 0} } };
 
 	void LoadSplitPresets();
+	void WriteAutosplitPreset(const SplitPreset& preset);
 	void WritePresetToGame(const SplitPreset& splitPreset, const std::string& file);
 	void CreateNewAutosplitPreset(const std::string& presetName);
 	void DeleteAutosplitPreset(const std::string& preset);
-	std::vector<std::pair<std::string, int>> ParseSplitJson(const std::string& filePath);
+	SplitPreset ParseSplitJson(const std::string& filePath);
 }
 
 std::string ParseTimeFromMilli(int milliseconds);

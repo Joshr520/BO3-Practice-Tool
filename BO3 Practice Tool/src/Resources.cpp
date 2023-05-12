@@ -627,15 +627,42 @@ namespace Autosplits
         {
             if (std::filesystem::is_regular_file(file))
             {
-                SplitPreset preset;
+                SplitPreset preset = ParseSplitJson(file.path().string());
                 preset.presetName = file.path().stem().string();
-                preset.splits = ParseSplitJson(file.path().string());
                 splitPresets.push_back(preset);
             }
         }
 
         if (!splitPresets.size())
             splitPresets.push_back(inactivePreset);
+    }
+
+    void WriteAutosplitPreset(const SplitPreset& preset)
+    {
+        std::string filename = GUIWindow::selfDirectory + PRESET_DIRECTORY + "/" + preset.presetName + ".json";
+        Document doc;
+        doc.SetObject();
+
+        Value settings(kObjectType);
+        settings.AddMember("In Game Timer", preset.igt, doc.GetAllocator());
+        settings.AddMember("In Game Round Timer", preset.igrt, doc.GetAllocator());
+        settings.AddMember("Amount of Splits", preset.numSplits, doc.GetAllocator());
+        settings.AddMember("Map Index", preset.map, doc.GetAllocator());
+        settings.AddMember("Split Type", preset.splitType, doc.GetAllocator());
+        settings.AddMember("Round Interval", preset.roundInterval, doc.GetAllocator());
+
+        Value splitData(kObjectType);
+        for (std::pair<std::string, int> pair : preset.splits)
+        {
+            Value key(StringRef(pair.first.c_str()), doc.GetAllocator());
+            Value value(pair.second);
+            splitData.AddMember(key, value, doc.GetAllocator());
+        }
+
+        doc.AddMember("Settings", settings, doc.GetAllocator());
+        doc.AddMember("Split Data", splitData, doc.GetAllocator());
+
+        JSON::WriteJson(doc, filename);
     }
 
     void WritePresetToGame(const SplitPreset& splitPreset, const std::string& file)
@@ -645,9 +672,24 @@ namespace Autosplits
 
     void CreateNewAutosplitPreset(const std::string& presetName)
     {
-        JSON::WriteEmptyJson(GUIWindow::selfDirectory + PRESET_DIRECTORY + "/" + presetName + ".json");
-        SplitPreset preset = { presetName, { { "", 0} } };
-        splitPresets.push_back(preset);
+        std::string filename = GUIWindow::selfDirectory + PRESET_DIRECTORY + "/" + presetName + ".json";
+        Document doc;
+        doc.SetObject();
+
+        Value settings(kObjectType);
+        settings.AddMember("In Game Timer", false, doc.GetAllocator());
+        settings.AddMember("In Game Round Timer", true, doc.GetAllocator());
+        settings.AddMember("Amount of Splits", 0, doc.GetAllocator());
+        settings.AddMember("Map Index", 0, doc.GetAllocator());
+        settings.AddMember("Split Type", 0, doc.GetAllocator());
+        settings.AddMember("Round Interval", 1, doc.GetAllocator());
+
+        Value splitData(kObjectType);
+
+        doc.AddMember("Settings", settings, doc.GetAllocator());
+        doc.AddMember("Split Data", splitData, doc.GetAllocator());
+
+        JSON::WriteJson(doc, filename);
         LoadSplitPresets();
     }
 
@@ -661,20 +703,66 @@ namespace Autosplits
         LoadSplitPresets();
     }
 
-    std::vector<std::pair<std::string, int>> ParseSplitJson(const std::string& filePath)
+    SplitPreset ParseSplitJson(const std::string& filePath)
     {
+        SplitPreset returnPreset;
         Document doc = JSON::ReadJsonFromFile(filePath);
-        std::vector<std::pair<std::string, int>> returnVec;
 
-        for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); it++)
+        if (doc.HasMember("Settings") && doc["Settings"].IsObject())
         {
-            if (it->name.IsString() && it->value.IsInt())
-                returnVec.push_back({ it->name.GetString(), it->value.GetInt() });
-            else
-                LogFile("Autosplits json error, incorrect typings found");
+            const Value& settings = doc["Settings"];
+
+            for (Value::ConstMemberIterator it = settings.MemberBegin(); it != settings.MemberEnd(); it++)
+            {
+                const std::string& key = it->name.GetString();
+                const Value& value = it->value;
+
+                switch (hashstr(key.c_str()))
+                {
+                case hashstr("In Game Timer"):
+                    if (value.IsBool())
+                        returnPreset.igt = value.GetBool();
+                    break;
+                case hashstr("In Game Round Timer"):
+                    if (value.IsBool())
+                        returnPreset.igrt = value.GetBool();
+                    break;
+                case hashstr("Amount of Splits"):
+                    if (value.IsInt())
+                        returnPreset.numSplits = value.GetInt();
+                    break;
+                case hashstr("Map Index"):
+                    if (value.IsInt())
+                        returnPreset.map = value.GetInt();
+                    break;
+                case hashstr("Split Type"):
+                    if (value.IsInt())
+                        returnPreset.splitType = value.GetInt();
+                    break;
+                case hashstr("Round Interval"):
+                    if (value.IsInt())
+                        returnPreset.roundInterval = value.GetInt();
+                    break;
+                }
+            }
+        }
+        if (doc.HasMember("Split Data") && doc["Split Data"].IsObject())
+        {
+            const Value& splitData = doc["Split Data"];
+
+            for (Value::ConstMemberIterator it = splitData.MemberBegin(); it != splitData.MemberEnd(); it++)
+            {
+                if (it->name.IsString() && it->value.IsInt())
+                {
+                    returnPreset.splits.push_back({ it->name.GetString(), it->value.GetInt() });
+                    //returnPreset.numSplits++;
+                }
+                else
+                    LogFile("Autosplits json error: Incorrect typings found at key " + std::string(it->name.GetString()));
+            }
         }
 
-        return returnVec;
+        return returnPreset;
     }
 }
 

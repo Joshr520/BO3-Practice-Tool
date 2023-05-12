@@ -121,6 +121,11 @@ namespace GUIWindow
             ImGui::PopStyleColor(2);
             return 1;
         }
+        if (name.find(ICON_FA_ARROW_LEFT) != name.npos && KeyBinds::KeyPressed(VK_ESCAPE, false))
+        {
+            ImGui::PopStyleColor(2);
+            return 1;
+        }
 
         ImGui::PopStyleColor(2);
         return 0;
@@ -162,7 +167,7 @@ namespace GUIWindow
         {
             ImGui::BeginTooltip();
             ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextUnformatted(text.c_str());
+            ImGui::TextWrapped(text.c_str());
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
         }
@@ -179,6 +184,11 @@ namespace GUIWindow
 
         for (int i = 0; i < gumArr.size(); i++)
         {
+            if (gumArr[i] < 0)
+            {
+                ImGui::PopStyleColor(2);
+                return 0;
+            }
             if (ImGui::ImageButton(bgbImgList[gumArr[i]].imgTexture, imgSize))
             {
                 if (type == "Selection")
@@ -229,7 +239,7 @@ namespace GUIWindow
         {
             std::string inGum = bgbImgList[i].imgRelativePath;
             std::transform(inGum.begin(), inGum.end(), inGum.begin(), [](char c) { return std::tolower(c); });
-            return inGum.find(searchTextLower) != std::string::npos;
+            return inGum.find(searchTextLower) != inGum.npos;
         });
 
         return outGumArr;
@@ -438,6 +448,7 @@ namespace GUIWindow
 
     bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles)
     {
+        curl_global_init(CURL_GLOBAL_ALL);
         CURL* curl = curl_easy_init();
         CURLcode res;
         FILE* file;
@@ -457,6 +468,8 @@ namespace GUIWindow
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
         res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+        curl_global_cleanup();
         if (res != CURLE_OK)
         {
             LogFile("curl download failed with error code: " + res);
@@ -464,7 +477,6 @@ namespace GUIWindow
         }
 
         fclose(file);
-        curl_easy_cleanup(curl);
 
         std::filesystem::path output_directory("./");
         mz_zip_archive zip_archive;
@@ -493,7 +505,7 @@ namespace GUIWindow
             bool wantedFileFound = false;
             for (const std::string_view& wantedFile : wantedFiles)
             {
-                if (currentFile.find(wantedFile) != std::string::npos)
+                if (currentFile.find(wantedFile) != currentFile.npos)
                 {
                     wantedFileFound = true;
                     break;
@@ -546,16 +558,15 @@ namespace GUIWindow
 std::mutex logMutex;
 void LogFile(const std::string& text, bool initialBoot)
 {
+    std::lock_guard<std::mutex> lock(logMutex);
+
     std::ofstream logFile;
-    {
-        std::lock_guard<std::mutex> lock(logMutex);
-        if (initialBoot)
-            logFile.open(GUIWindow::selfDirectory + "/log.txt");
-        else
-            logFile.open(GUIWindow::selfDirectory + "/log.txt", std::ios::app);
-        logFile << text << "\n";
-        logFile.flush();
-    }
+    if (initialBoot)
+        logFile.open(GUIWindow::selfDirectory + "/log.txt");
+    else
+        logFile.open(GUIWindow::selfDirectory + "/log.txt", std::ios::app);
+    logFile << text << "\n";
+    logFile.flush();
     logFile.close();
 }
 

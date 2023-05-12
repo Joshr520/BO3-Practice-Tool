@@ -97,7 +97,7 @@ static bool injectResponse = false;
 static bool injectResponseWait = false;
 static int sidebarCurrentItem = 0;
 static ImVec4 fakeColor = { 0, 0, 0, 0 };
-static std::string internalVersion = "Beta-v0.1.0";
+static std::string internalVersion = "Beta-v0.2.0";
 
 // Gum data
 static int chooseGumPreset = 0;
@@ -136,6 +136,12 @@ static int zombieCount = 0;
 // Autosplits data
 static bool showAutosplitPresetExists = false;
 static bool autosplitPopupBoolCheck = false;
+static bool addSplitView = false;
+static int currentAddSplitIndex = 0;
+static int addSplitRound = -1;
+static int soeSplits[5] = { 0, 0, 0, 0, 0 };
+static std::vector<std::string> generalSplitData = { "Egg Autosplit", "Split on every X round ends", "Song Autosplit", "PAP Autosplit"};
+static std::vector<std::string> soeRitualSplits = { "Magician Ritual", "Femme Ritual", "Detective Ritual", "Boxer Ritual", "PAP Ritual" };
 
 // Memory reading data
 DWORD pID;
@@ -549,7 +555,7 @@ void SearchForGame()
             HANDLE tempHandle = OpenProcess(PROCESS_ALL_ACCESS, false, tempID);
             GetModuleFileNameExA(tempHandle, NULL, windowFilename, 256);
             std::string name = windowFilename;
-            if (name.find("BlackOps3.exe") != std::string::npos)
+            if (name.find("BlackOps3.exe") != name.npos)
             {
                 pID = MemHelp::GetProcessIdByName("BlackOps3.exe");
                 baseAddr = MemHelp::GetModuleBaseAddress(pID, "BlackOps3.exe");
@@ -579,6 +585,7 @@ bool UpdateAvailable()
             LogFile("Couldn't remove old exe with error code: " + std::error_code(errno, std::system_category()).message());
     }
     LogFile("Checking for updates");
+
     CURL* curl = curl_easy_init();
     CURLcode res;
     std::string buffer;
@@ -591,9 +598,10 @@ bool UpdateAvailable()
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "BO3-Practice-Tool");
         res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
         if (res != CURLE_OK)
         {
-            LogFile("curl GET failed with error code: " + res);
+            LogFile("curl GET failed with error code: " + std::to_string(res));
             return 0;
         }
         Document get = ReadJsonFromString(buffer);
@@ -604,7 +612,7 @@ bool UpdateAvailable()
         }
         if (!GetStringFromJsonArray("assets", "browser_download_url", get, downloadURL))
             return 0;
-        if (GetStringFromJson("tag_name", get, tagName))
+        if (!GetStringFromJson("tag_name", get, tagName))
             return 0;
 
         if (!CheckVersions(tagName, internalVersion))
@@ -613,8 +621,6 @@ bool UpdateAvailable()
             return 0;
         }
         LogFile("New version detected");
-
-        curl_easy_cleanup(curl);
     }
 
     return 1;
@@ -626,7 +632,6 @@ bool PerformUpdate()
 
     if (DownloadAndExtractZip({ "BO3 Practice Tool", "GSC", "Resource Images" }))
         return 0;
-
     return 1;
 }
 
@@ -994,7 +999,8 @@ void GobblegumLoadoutPtr()
             BGB::DeleteGumPreset(BGB::gumPresets[BGB::currentPreset].presetName);
             if (BGB::writeGums && appStatus == "Status: Active")
                 BGB::WritePresetToGame(BGB::gumPresets[BGB::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
-        } ImGui::EndGroup(); SAMELINE;
+        } ImGui::EndGroup();
+        SAMELINE;
         ImGui::PopStyleVar();
         ImGui::BeginGroup();
         // new preset creation
@@ -1041,7 +1047,7 @@ void GobblegumLoadoutPtr()
         std::string previousPreset = BGB::gumPresets[BGB::currentPreset].presetName;
         if (ImGui::BeginCombo("Gum Presets", BGB::gumPresets[BGB::currentPreset].presetName.c_str(), ImGuiComboFlags_HeightRegular))
         {
-            for (int i = 0; i < BGB::gumPresets.size(); ++i)
+            for (int i = 0; i < BGB::gumPresets.size(); i++)
             {
                 const bool is_selected = BGB::currentPreset == i;
                 if (ImGui::Selectable(BGB::gumPresets[i].presetName.c_str(), is_selected))
@@ -1073,9 +1079,11 @@ void GobblegumLoadoutPtr()
     }
     else
     {
+        ImGui::PopStyleVar();
         // swap gum selection menu
-        if (KeyBinds::KeyPressed(VK_ESCAPE, false))
+        if (CreateButton(ICON_FA_ARROW_LEFT, ImVec2(50.0f, 25.0f)))
             BGB::showGumSelection = false;
+        SAMELINE;
         if (ImGui::BeginTabBar("Gum Type Choice"))
         {
             if (ImGui::BeginTabItem("Classics"))
@@ -1128,124 +1136,347 @@ void GobblegumLoadoutPtr()
 
 void AutosplitsPtr()
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-    ImGui::BeginGroup();
-    if (CreateButton(ICON_FA_FILE_CIRCLE_PLUS " New Preset", ImVec2(150.0f, 25.0f)))
-        ImGui::OpenPopup("New Autosplits Preset");
-    if (CreateButton(ICON_FA_FILE_CIRCLE_MINUS " Delete Preset", ImVec2(150.0f, 25.0f)))
+    if (addSplitView)
     {
-        Autosplits::DeleteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset].presetName);
-        if (Autosplits::writeSplits && appStatus == "Status: Active")
-            Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
-    } ImGui::EndGroup(); SAMELINE;
-    ImGui::PopStyleVar();
-    ImGui::BeginGroup();
-    // new preset creation
-    if (ImGui::BeginPopup("New Autosplits Preset"))
-    {
-        ImGui::SetKeyboardFocusHere();
-        char presetInput[32] = "";
+        if (CreateButton(ICON_FA_ARROW_LEFT, ImVec2(50.0f, 25.0f)))
+            addSplitView = false;
+        SAMELINE;
         ImGui::SetNextItemWidth(200);
-        if (ImGui::InputText("New Preset Name", presetInput, IM_ARRAYSIZE(presetInput), ImGuiInputTextFlags_EnterReturnsTrue))
+        if (ImGui::InputInt("Round to split", &addSplitRound))
         {
-            if (std::string(presetInput).empty() || DoesPathExist(presetInput))
-            {
-                showAutosplitPresetExists = true;
-                autosplitPopupBoolCheck = true;
-            }
-            else
-                Autosplits::CreateNewAutosplitPreset(presetInput);
-            ImGui::CloseCurrentPopup();
+            if (addSplitRound < -1)
+                addSplitRound = -1;
+            else if (addSplitRound > 255)
+                addSplitRound = 255;
         }
-        if (showAutosplitPresetExists)
-        {
-            if (autosplitPopupBoolCheck)
-            {
-                ImGui::OpenPopup("Autosplit Preset Already Exists");
-                autosplitPopupBoolCheck = false;
-            }
-            ImGui::SetNextWindowSize(ImVec2(230.0f, 75.0f));
-            if (ImGui::BeginPopupModal("Autosplit Preset Already Exists", &showAutosplitPresetExists, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
-            {
-                ImGui::Text("Autosplit Preset Already Exists");
-                if (ImGui::Button("Close", ImVec2(ImGui::GetContentRegionAvail().x, 25.0f)))
-                    ImGui::CloseCurrentPopup();
-                ImGui::EndPopup();
-            }
-        }
-        ImGui::EndPopup();
-    }
-    // presets dropdown
-    ImGui::SetNextItemWidth(250);
-    std::string previousPreset = Autosplits::splitPresets[Autosplits::currentPreset].presetName;
-    if (ImGui::BeginCombo("Autosplit Presets", Autosplits::splitPresets[Autosplits::currentPreset].presetName.c_str(), ImGuiComboFlags_HeightRegular))
-    {
-        for (int i = 0; i < Autosplits::splitPresets.size(); ++i)
-        {
-            const bool is_selected = Autosplits::currentPreset == i;
-            if (ImGui::Selectable(Autosplits::splitPresets[i].presetName.c_str(), is_selected))
-                Autosplits::currentPreset = i;
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    } SAMELINE;
-    if (previousPreset != Autosplits::splitPresets[Autosplits::currentPreset].presetName)
-    {
-        if (Autosplits::writeSplits && appStatus == "Status: Active")
-            Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
-    }
-    if (appStatus != "Status: Active")
-        ImGui::BeginDisabled();
-    if (ImGui::Checkbox("Active", &Autosplits::writeSplits))
-    {
-        if (Autosplits::writeSplits && appStatus == "Status: Active")
-            Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
-        else
-            Autosplits::WritePresetToGame(Autosplits::inactivePreset, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
-    }
-    if (appStatus != "Status: Active")
-        ImGui::EndDisabled();
-    ImGui::EndGroup();
-    if (ImGui::BeginTable("Splits", 3, ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_Borders))
-    {
-        // lol idk how else to center names in a header
-        ImGui::TableSetupColumn("                       Split Names", ImGuiTableColumnFlags_WidthFixed, 300.0f);
-        ImGui::TableSetupColumn("     Round", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        ImGui::TableSetupColumn("Add/Remove", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        ImGui::TableHeadersRow();
+        SAMELINE;
+        HelpMarker(R"(How to use:
+- Select an item to add to your layout
+- Input a number from -1-255 in the "Round to split" input box.
+    - -1 means the split will complete when the task is completed, with no attachment to any round
+    - 0 means the split will wait for the task to complete, and then wait for the current round to end
+    - 1-255 means the split will wait for the task to complete, and then wait for the given round to pass
+- Click the "Add Split" button to add the split to your layout)");
 
-        for (int row = 0; row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits + 1; row++)
+        switch (Autosplits::splitPresets[Autosplits::currentPreset].map)
         {
-            ImGui::TableNextRow();
-            for (int column = 0; column < 3; column++)
+        case 0:
+        {
+            if (CreateListBox("##Ritual Splits", soeRitualSplits, soeSplits[0], ImVec2(150.0f, 126.0f)))
             {
-                ImGui::TableSetColumnIndex(column);
 
-                if (row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits)
+            }
+            SAMELINE;
+            if (CreateButton("Add Split", ImVec2(100.0f, 25.0f)))
+            {
+                Autosplits::splitPresets[Autosplits::currentPreset].splits.push_back({ soeRitualSplits[soeSplits[0]], addSplitRound });
+                Autosplits::splitPresets[Autosplits::currentPreset].numSplits++;
+                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                addSplitView = false;
+            }
+            break;
+        }
+        case 1:
+        {
+            break;
+        }
+        case 2:
+        {
+            break;
+        }
+        case 3:
+        {
+            break;
+        }
+        case 4:
+        {
+            break;
+        }
+        case 5:
+        {
+            break;
+        }
+        case 6:
+        {
+            break;
+        }
+        case 7:
+        {
+            break;
+        }
+        case 8:
+        {
+            break;
+        }
+        case 9:
+        {
+            break;
+        }
+        case 10:
+        {
+            break;
+        }
+        case 11:
+        {
+            break;
+        }
+        case 12:
+        {
+            break;
+        }
+        case 13:
+        {
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    else
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+        ImGui::BeginGroup();
+        if (CreateButton(ICON_FA_FILE_CIRCLE_PLUS " New Preset", ImVec2(150.0f, 25.0f)))
+            ImGui::OpenPopup("New Autosplits Preset");
+        if (CreateButton(ICON_FA_FILE_CIRCLE_MINUS " Delete Preset", ImVec2(150.0f, 25.0f)))
+        {
+            Autosplits::DeleteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset].presetName);
+            if (Autosplits::writeSplits && appStatus == "Status: Active")
+                Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+        } ImGui::EndGroup();
+        SAMELINE;
+        ImGui::PopStyleVar();
+        ImGui::BeginGroup();
+        // new preset creation
+        if (ImGui::BeginPopup("New Autosplits Preset"))
+        {
+            ImGui::SetKeyboardFocusHere();
+            char presetInput[32] = "";
+            ImGui::SetNextItemWidth(200);
+            if (ImGui::InputText("New Preset Name", presetInput, IM_ARRAYSIZE(presetInput), ImGuiInputTextFlags_EnterReturnsTrue))
+            {
+                if (std::string(presetInput).empty() || DoesPathExist(presetInput))
                 {
-                    if (column == 2)
-                    {
-                        if (ImGui::Button(ICON_FA_CIRCLE_MINUS " Remove", ImVec2(100.0f, 25.0f)))
-                        {
-
-                        }
-                    }
+                    showAutosplitPresetExists = true;
+                    autosplitPopupBoolCheck = true;
                 }
                 else
+                    Autosplits::CreateNewAutosplitPreset(presetInput);
+                ImGui::CloseCurrentPopup();
+            }
+            if (showAutosplitPresetExists)
+            {
+                if (autosplitPopupBoolCheck)
                 {
-                    if (column == 2)
-                    {
-                        if (ImGui::Button(ICON_FA_CIRCLE_PLUS " Add", ImVec2(100.0f, 25.0f)))
-                        {
+                    ImGui::OpenPopup("Autosplit Preset Already Exists");
+                    autosplitPopupBoolCheck = false;
+                }
+                ImGui::SetNextWindowSize(ImVec2(230.0f, 75.0f));
+                if (ImGui::BeginPopupModal("Autosplit Preset Already Exists", &showAutosplitPresetExists, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
+                {
+                    ImGui::Text("Autosplit Preset Already Exists");
+                    if (ImGui::Button("Close", ImVec2(ImGui::GetContentRegionAvail().x, 25.0f)))
+                        ImGui::CloseCurrentPopup();
+                    ImGui::EndPopup();
+                }
+            }
+            ImGui::EndPopup();
+        }
+        // presets dropdown
+        ImGui::SetNextItemWidth(250);
+        std::string previousPreset = Autosplits::splitPresets[Autosplits::currentPreset].presetName;
+        if (ImGui::BeginCombo("Autosplit Presets", Autosplits::splitPresets[Autosplits::currentPreset].presetName.c_str(), ImGuiComboFlags_HeightRegular))
+        {
+            for (int i = 0; i < Autosplits::splitPresets.size(); i++)
+            {
+                const bool is_selected = Autosplits::currentPreset == i;
+                if (ImGui::Selectable(Autosplits::splitPresets[i].presetName.c_str(), is_selected))
+                    Autosplits::currentPreset = i;
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+        SAMELINE;
+        if (previousPreset != Autosplits::splitPresets[Autosplits::currentPreset].presetName)
+        {
+            if (Autosplits::writeSplits && appStatus == "Status: Active")
+                Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+        }
+        if (appStatus != "Status: Active")
+            ImGui::BeginDisabled();
+        if (ImGui::Checkbox("Active", &Autosplits::writeSplits))
+        {
+            if (Autosplits::writeSplits && appStatus == "Status: Active")
+                Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            else
+                Autosplits::WritePresetToGame(Autosplits::inactivePreset, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+        }
+        if (appStatus != "Status: Active")
+            ImGui::EndDisabled();
+        ImGui::EndGroup();
+        if (Autosplits::splitPresets[0].presetName != "No Presets Available")
+        {
+            SAMELINE;
+            if (ImGui::Checkbox("In Game Timer", &Autosplits::splitPresets[Autosplits::currentPreset].igt))
+            {
+                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+            }
+            ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 160.0f, ImGui::GetCursorPosY() - 30.0f));
+            ImGui::BeginGroup();
+            if (ImGui::Checkbox("In Game Round Timer", &Autosplits::splitPresets[Autosplits::currentPreset].igrt))
+            {
+                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+            }
+            SAMELINE;
+            ImGui::SetNextItemWidth(200);
+            int previousMap = Autosplits::splitPresets[Autosplits::currentPreset].map;
+            if (ImGui::BeginCombo("##Select A Map", MapOptions::mapList[Autosplits::splitPresets[Autosplits::currentPreset].map].c_str()))
+            {
+                for (int i = 0; i < MapOptions::mapList.size(); i++)
+                {
+                    const bool is_selected = Autosplits::splitPresets[Autosplits::currentPreset].map == i;
+                    if (ImGui::Selectable(MapOptions::mapList[i].c_str(), is_selected))
+                        Autosplits::splitPresets[Autosplits::currentPreset].map = i;
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+            if (previousMap != Autosplits::splitPresets[Autosplits::currentPreset].map)
+                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+            SAMELINE;
+            ImGui::SetNextItemWidth(250);
+            int previousType = Autosplits::splitPresets[Autosplits::currentPreset].splitType;
+            if (ImGui::BeginCombo("##Select Split Type", generalSplitData[Autosplits::splitPresets[Autosplits::currentPreset].splitType].c_str()))
+            {
+                for (int i = 0; i < generalSplitData.size(); i++)
+                {
+                    const bool is_selected = Autosplits::splitPresets[Autosplits::currentPreset].splitType == i;
+                    if (ImGui::Selectable(generalSplitData[i].c_str(), is_selected))
+                        Autosplits::splitPresets[Autosplits::currentPreset].splitType = i;
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+            if (previousType != Autosplits::splitPresets[Autosplits::currentPreset].splitType)
+                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+            SAMELINE;
 
+            HelpMarker(R"(How to use:
+- Select if you want an in game timer (displays total game time with precision down to the second)
+- Select if you want an in game round timer (displays current round time in seconds::milliseconds)
+- Select the map to choose the splits for (defaults to SOE)
+- Select the type of autosplits you want to setup. This determines the ending point of the splits. If you choose "Egg Autosplit" and add no other splits, it will only split once the egg is completed
+- If you've selected "Split on every X Round", a text box will appear for you to type the interval into)");
+
+            ImGui::EndGroup();
+            if (ImGui::BeginTable("Splits", 4, ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_Borders))
+            {
+                // lol idk how else to center names in a header
+                ImGui::TableSetupColumn("                       Split Names", ImGuiTableColumnFlags_WidthFixed, 300.0f);
+                ImGui::TableSetupColumn("     Round", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableSetupColumn("Add/Remove", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableSetupColumn("Move Layer", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableHeadersRow();
+
+                for (int row = 0; row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits + 1; row++)
+                {
+                    ImGui::TableNextRow();
+                    for (int column = 0; column < 4; column++)
+                    {
+                        ImGui::TableSetColumnIndex(column);
+
+                        if (row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits)
+                        {
+                            switch (column)
+                            {
+                            case 0:
+                            {
+                                ImGui::Text(Autosplits::splitPresets[Autosplits::currentPreset].splits[row].first.c_str());
+                                break;
+                            }
+                            case 1:
+                            {
+                                ImGui::Text(std::to_string(Autosplits::splitPresets[Autosplits::currentPreset].splits[row].second).c_str());
+                                break;
+                            }
+                            case 2:
+                            {
+                                if (ImGui::Button(std::string(ICON_FA_CIRCLE_MINUS " Remove##" + std::to_string(row)).c_str(), ImVec2(100.0f, 25.0f)))
+                                {
+                                    Autosplits::splitPresets[Autosplits::currentPreset].splits.erase(Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row);
+                                    Autosplits::splitPresets[Autosplits::currentPreset].numSplits--;
+                                    Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                                    row--;
+                                }
+                                break;
+                            }
+                            case 3:
+                            {
+                                if (row != Autosplits::splitPresets[Autosplits::currentPreset].numSplits - 1)
+                                {
+                                    if (ImGui::Button(std::string(ICON_FA_CIRCLE_ARROW_DOWN "##MoveSplit" + std::to_string(row)).c_str(), ImVec2(45.0f, 25.0f)))
+                                    {
+                                        std::iter_swap(Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row, Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row + 1);
+                                        Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                                    }
+                                    SAMELINE;
+                                }
+                                if (row != 0)
+                                {
+                                    if (ImGui::Button(std::string(ICON_FA_CIRCLE_ARROW_UP "##MoveSplit" + std::to_string(row)).c_str(), ImVec2(45.0f, 25.0f)))
+                                    {
+                                        std::iter_swap(Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row, Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row - 1);
+                                        Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                                    }
+                                }
+                                break;
+                            }
+                            default:
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            switch (column)
+                            {
+                            case 0:
+                            case 1:
+                            {
+                                break;
+                            }
+                            case 2:
+                            {
+                                if (ImGui::Button(std::string(ICON_FA_CIRCLE_PLUS " Add##" + std::to_string(row)).c_str(), ImVec2(100.0f, 25.0f)))
+                                {
+                                    addSplitView = true;
+                                }
+                            }
+                            default:
+                                break;
+                            }
                         }
                     }
                 }
+
+                ImGui::EndTable();
+            }
+            if (Autosplits::splitPresets[Autosplits::currentPreset].splitType == 1)
+            {
+                SAMELINE;
+                ImGui::SetNextItemWidth(150);
+                if (ImGui::InputInt("Interval", &Autosplits::splitPresets[Autosplits::currentPreset].roundInterval))
+                {
+                    if (Autosplits::splitPresets[Autosplits::currentPreset].roundInterval < 1)
+                        Autosplits::splitPresets[Autosplits::currentPreset].roundInterval = 1;
+                    else if (Autosplits::splitPresets[Autosplits::currentPreset].roundInterval > 255)
+                        Autosplits::splitPresets[Autosplits::currentPreset].roundInterval = 255;
+                    Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                }
             }
         }
-
-        ImGui::EndTable();
     }
 }
 
@@ -2476,7 +2707,7 @@ void ZombieCalculatorPtr()
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 - ImGui::CalcTextSize("Map").x / 2 + 10);
                 if (ImGui::BeginCombo("Map", specialEnemiesMapCombo[currentSpecialEnemyMap].c_str(), ImGuiComboFlags_HeightRegular))
                 {
-                    for (int i = 0; i < specialEnemiesMapCombo.size(); ++i)
+                    for (int i = 0; i < specialEnemiesMapCombo.size(); i++)
                     {
                         const bool is_selected = currentSpecialEnemyMap == i;
                         if (ImGui::Selectable(specialEnemiesMapCombo[i].c_str(), is_selected))
@@ -2566,7 +2797,7 @@ void ZombieCalculatorPtr()
                     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 - ImGui::CalcTextSize("# of Dog Rounds").x / 2 + 10);
                     if (ImGui::BeginCombo("# of Dog Rounds", dogRoundCountCombo[numDogRounds - 1].c_str(), ImGuiComboFlags_HeightRegular))
                     {
-                        for (int i = 1; i < dogRoundCountCombo.size() + 1; ++i)
+                        for (int i = 1; i < dogRoundCountCombo.size() + 1; i++)
                         {
                             const bool is_selected = numDogRounds == i;
                             if (ImGui::Selectable(dogRoundCountCombo[i - 1].c_str(), is_selected))
@@ -2905,7 +3136,7 @@ void CodeGuidesPtr()
             ImGui::SetNextItemWidth(130.0f);
             if (ImGui::BeginCombo("Code 1", soeCodeCombo[codeIndex_1].c_str(), ImGuiComboFlags_HeightRegular))
             {
-                for (int i = 0; i < soeCodeCombo.size(); ++i)
+                for (int i = 0; i < soeCodeCombo.size(); i++)
                 {
                     const bool is_selected = codeIndex_1 == i;
                     if (ImGui::Selectable(soeCodeCombo[i].c_str(), is_selected))
@@ -2918,7 +3149,7 @@ void CodeGuidesPtr()
             ImGui::SetNextItemWidth(130.0f);
             if (ImGui::BeginCombo("Code 2", soeCodeCombo[codeIndex_2].c_str(), ImGuiComboFlags_HeightRegular))
             {
-                for (int i = 0; i < soeCodeCombo.size(); ++i)
+                for (int i = 0; i < soeCodeCombo.size(); i++)
                 {
                     const bool is_selected = codeIndex_2 == i;
                     if (ImGui::Selectable(soeCodeCombo[i].c_str(), is_selected))
