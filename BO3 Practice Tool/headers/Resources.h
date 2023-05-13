@@ -225,6 +225,49 @@ namespace Autosplits
 	void CreateNewAutosplitPreset(const std::string& presetName);
 	void DeleteAutosplitPreset(const std::string& preset);
 	SplitPreset ParseSplitJson(const std::string& filePath);
+
+	inline std::vector<std::string> generalSplitData = { "Egg Autosplit", "Split on every X round ends", "Song Autosplit", "PAP Autosplit" };
+
+	inline int soeSplits[4] = { 0 };
+	inline std::vector<std::string> soeRitualSplits = { "Magician Ritual", "Femme Ritual", "Detective Ritual", "Boxer Ritual", "PAP Ritual" };
+	inline std::vector<std::string> soeEggSplits = { "Canals Egg", "Footlight Egg", "Waterfront Egg", "Rift Egg", "Pickup Sword" };
+	inline std::vector<std::string> soeOvumSplits = { "Junction Ovum", "Canals Ovum", "Footlight Ovum", "Waterfront Ovum" };
+	inline std::vector<std::string> soeFlagSplits = { "Pickup Upgraded Sword", "Activate Book", "Flag 1", "Flag 2", "Flag 3", "Flag 4" };
+
+	inline int deSplits[9] = { 0 };
+	inline std::vector<std::string> deDragonSplits = { "Dragon 1", "Dragon 2", "Dragon 3", "Pickup Bow" };
+	inline std::vector<std::string> deLightningBowSplits = { "Pickup Arrow", "Bonfires Shot", "Wall Ride", "Crackle", "Upgrade Lightning" };
+	inline std::vector<std::string> deFireBowSplits = { "Pickup Arrow", "Obelisk Shot", "Circles Filled", "Golf", "Upgrade Fire "};
+	inline std::vector<std::string> deVoidBowSplits = { "Pickup Arrow", "Activate Urn", "Pickup Skulls", "Crawler Kills", "Runes", "Upgrade Void" };
+	inline std::vector<std::string> deWolfBowSplits = { "Pickup Arrow", "Shrine Shot", "Wolf Souls Filled", "Arrow Forged", "Upgrade Wolf" };
+	inline std::vector<std::string> deWispSplits = { "Time Travel 1", "Time Travel 2" };
+	inline std::vector<std::string> deSimonSplits = { "Safe Code Entered", "Simon 1", "Simon 2"};
+	inline std::vector<std::string> deKeeperSplits = { "Keeper Spawned", "Keeper 1", "Keeper 2", "Keeper 3", "Keeper 4", "Keeper Trapped" };
+	inline std::vector<std::string> deBossSplits = { "Boss Enter", "Boss Exit" };
+
+	inline int znsSplits[4] = { 0 };
+	inline std::vector<std::string> znsSkullSplits = { "Skull 1", "Skull 2", "Skull 3", "Skull 4", "Skull Ritual" };
+	inline std::vector<std::string> znsBlockerSplits = { "Bunker Open", "Power On" };
+	inline std::vector<std::string> znsWWSplits = { "KT-4", "Masamune" };
+	inline std::vector<std::string> znsEESplits = { "Poster", "Bullet", "Plane Shot", "Elevator On", "Boss Enter" };
+
+	inline int gkSplits[5] = { 0 };
+	inline std::vector<std::string> gkPAPSplits = { "Groph 1", "Groph 2", "Groph 3" };
+	inline std::vector<std::string> gkGauntletSplits = { "Pickup Egg", "Egg On Fire", "Incubation Start", "Pickup Gauntlet"};
+	inline std::vector<std::string> gkDragonSplits = { "Fly 1", "Fly 2", "Fly 3" };
+	inline std::vector<std::string> gkLockdownSplits = { "Lockdown Start", "Lockdown End" };
+	inline std::vector<std::string> gkChallengeSplits = { "Start Challenges", "Start Download", "Boss Enter" };
+
+	inline int revSplits[5] = { 0 };
+	inline std::vector<std::string> revStartSplits = { "Gen 1", "Gen 2", "Gen 3", "Gen 4", "Keeper Start" };
+	inline std::vector<std::string> revReelSplits = { "Pickup Reel 1", "Place Reel 1", "Pickup Reel 2", "Place Reel 2", "Pickup Reel 3", "Place Reel 3" };
+	inline std::vector<std::string> revEggSplits = { "Sophia TP", "Egg 1 Fill", "Egg 2 Fill", "Egg 3 Fill", "Egg 4 Fill" };
+	inline std::vector<std::string> revRuneSplits = { "Rune 1 Grab", "Rune 2 Grab", "Rune 3 Grab", "Rune 4 Grab", "Boss 1 Enter" };
+	inline std::vector<std::string> revEndSplits = { "Symbols", "Boss Rush Finish", "Basketball Finish" };
+
+	inline int tombSplits[2] = { 0 };
+	inline std::vector<std::string> tombStaffSplits = { "Ice Craft", "Wind Craft", "Fire Craft", "Lightning Craft" };
+	inline std::vector<std::string> tombEndSplits = { "Upgrade Leave", "4 Boxes Done", "Fists Done" };
 }
 
 std::string ParseTimeFromMilli(int milliseconds);

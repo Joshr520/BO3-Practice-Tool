@@ -3,14 +3,14 @@
         "In Game Timer": true,
         "In Game Round Timer": true,
         "Amount of Splits": 4,
-        "Map Index": 0,
-        "Split Type": 3,
-        "Round Interval": 255
+        "Map Index": 13,
+        "Split Type": 0,
+        "Round Interval": 1
     },
     "Split Data": {
-        "PAP Ritual": -1,
-        "Boxer Ritual": -1,
-        "Detective Ritual": -1,
-        "Magician Ritual": -1
+        "Ice Craft": -1,
+        "Wind Craft": -1,
+        "Lightning Craft": 0,
+        "4 Boxes Done": -1
     }
 }

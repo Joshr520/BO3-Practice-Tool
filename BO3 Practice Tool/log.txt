@@ -10,3 +10,4 @@ Started async process - looking for BO3
 Checking for updates
 New version not available
 Setup Finished
+-------------Practice Tool Ended---------------

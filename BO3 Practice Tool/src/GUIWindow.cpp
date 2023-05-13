@@ -35,6 +35,7 @@ using namespace GKValveSolver;
 using namespace IceCodePractice;
 using namespace KeyBinds;
 using namespace JSON;
+using namespace Autosplits;
 
 // Forward function declarations
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -137,11 +138,10 @@ static int zombieCount = 0;
 static bool showAutosplitPresetExists = false;
 static bool autosplitPopupBoolCheck = false;
 static bool addSplitView = false;
+static bool showChangeMapError = false;
 static int currentAddSplitIndex = 0;
 static int addSplitRound = -1;
-static int soeSplits[5] = { 0, 0, 0, 0, 0 };
-static std::vector<std::string> generalSplitData = { "Egg Autosplit", "Split on every X round ends", "Song Autosplit", "PAP Autosplit"};
-static std::vector<std::string> soeRitualSplits = { "Magician Ritual", "Femme Ritual", "Detective Ritual", "Boxer Ritual", "PAP Ritual" };
+static int mapError = 0;
 
 // Memory reading data
 DWORD pID;
@@ -916,7 +916,7 @@ bool RenderFrame()
             ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
             if (ImGui::BeginPopupModal("Directory Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
             {
-                ImGui::Text("Incorrect File Chosen");
+                ImGui::TextWrapped("Incorrect File Chosen");
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::CalcTextSize("Incorrect File Chosen").x / 2 - 60);
                 if (ImGui::Button("OK", ImVec2(120, 0)))
                     ImGui::CloseCurrentPopup();
@@ -1033,11 +1033,13 @@ void GobblegumLoadoutPtr()
                 ImGui::OpenPopup("Gum Preset Already Exists");
                 gumPopupBoolCheck = false;
             }
-            ImGui::SetNextWindowSize(ImVec2(230.0f, 75.0f));
-            if (ImGui::BeginPopupModal("Gum Preset Already Exists", &showGumPresetExists, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
+            ImVec2 windowPos = ImGui::GetWindowPos();
+            ImVec2 windowSize = ImGui::GetWindowSize();
+            ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
+            if (ImGui::BeginPopupModal("Gum Preset Already Exists", &showGumPresetExists, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
             {
-                ImGui::Text("Gum Preset Already Exists");
-                if (ImGui::Button("Close", ImVec2(ImGui::GetContentRegionAvail().x, 25.0f)))
+                ImGui::TextWrapped("Gum Preset Already Exists");
+                if (ImGui::Button("Close", ImVec2(120.0f, 25.0f)))
                     ImGui::CloseCurrentPopup();
                 ImGui::EndPopup();
             }
@@ -1158,77 +1160,620 @@ void AutosplitsPtr()
     - 1-255 means the split will wait for the task to complete, and then wait for the given round to pass
 - Click the "Add Split" button to add the split to your layout)");
 
-        switch (Autosplits::splitPresets[Autosplits::currentPreset].map)
+        switch (splitPresets[currentPreset].map)
         {
         case 0:
         {
-            if (CreateListBox("##Ritual Splits", soeRitualSplits, soeSplits[0], ImVec2(150.0f, 126.0f)))
+            // row 1
             {
+                if (CreateListBox("##Ritual Splits", soeRitualSplits, soeSplits[0], ImVec2(150.0f, 126.0f)))
+                {
 
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Rituals", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == soeRitualSplits[soeSplits[0]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ soeRitualSplits[soeSplits[0]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Egg Splits", soeEggSplits, soeSplits[1], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Eggs", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == soeEggSplits[soeSplits[1]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ soeEggSplits[soeSplits[1]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
             }
-            SAMELINE;
-            if (CreateButton("Add Split", ImVec2(100.0f, 25.0f)))
+            DummySpace(0.0f, 25.0f);
+            // row 2
             {
-                Autosplits::splitPresets[Autosplits::currentPreset].splits.push_back({ soeRitualSplits[soeSplits[0]], addSplitRound });
-                Autosplits::splitPresets[Autosplits::currentPreset].numSplits++;
-                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
-                addSplitView = false;
+                if (CreateListBox("##Ovum Splits", soeOvumSplits, soeSplits[2], ImVec2(150.0f, 101.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Ovums", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == soeOvumSplits[soeSplits[2]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ soeOvumSplits[soeSplits[2]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Flag Splits", soeFlagSplits, soeSplits[3], ImVec2(200.0f, 151.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Flags", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == soeFlagSplits[soeSplits[3]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ soeFlagSplits[soeSplits[3]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
             }
-            break;
-        }
-        case 1:
-        {
             break;
         }
         case 2:
         {
+            // row 1
+            {
+                if (CreateListBox("##Dragon Splits", deDragonSplits, deSplits[0], ImVec2(150.0f, 101.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Dragon", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == deDragonSplits[deSplits[0]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ deDragonSplits[deSplits[0]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Lightning Bow Splits", deLightningBowSplits, deSplits[1], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Lightning Bow", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == deLightningBowSplits[deSplits[1]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ deLightningBowSplits[deSplits[1]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Fire Bow Splits", deFireBowSplits, deSplits[2], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Fire Bow", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == deFireBowSplits[deSplits[2]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ deFireBowSplits[deSplits[2]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
+            DummySpace(0.0f, 25.0f);
+            // row 2
+            {
+                if (CreateListBox("##Void Bow Splits", deVoidBowSplits, deSplits[3], ImVec2(150.0f, 151.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Void Bow", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == deVoidBowSplits[deSplits[3]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ deVoidBowSplits[deSplits[3]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Wolf Bow Splits", deWolfBowSplits, deSplits[4], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Wolf Bow", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == deWolfBowSplits[deSplits[4]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ deWolfBowSplits[deSplits[4]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Wisp Splits", deWispSplits, deSplits[5], ImVec2(150.0f, 51.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Wisp", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == deWispSplits[deSplits[5]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ deWispSplits[deSplits[5]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
+            DummySpace(0.0f, 25.0f);
+            // row 3
+            {
+                if (CreateListBox("##Simon Splits", deSimonSplits, deSplits[6], ImVec2(150.0f, 151.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Simon", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == deSimonSplits[deSplits[6]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ deSimonSplits[deSplits[6]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Keeper Splits", deKeeperSplits, deSplits[7], ImVec2(150.0f, 151.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Keeper", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == deKeeperSplits[deSplits[7]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ deKeeperSplits[deSplits[7]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Boss Splits", deBossSplits, deSplits[8], ImVec2(150.0f, 51.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Boss", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == deBossSplits[deSplits[8]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ deBossSplits[deSplits[8]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
             break;
         }
         case 3:
         {
+            // row 1
+            {
+                if (CreateListBox("##Skull Splits", znsSkullSplits, znsSplits[0], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Skull", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == znsSkullSplits[znsSplits[0]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ znsSkullSplits[znsSplits[0]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##ZNS Blocker Splits", znsBlockerSplits, znsSplits[1], ImVec2(150.0f, 51.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##ZNS Blocker", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == znsBlockerSplits[znsSplits[1]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ znsBlockerSplits[znsSplits[1]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##ZNS WW Splits", znsWWSplits, znsSplits[2], ImVec2(150.0f, 51.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##ZNS WW", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == znsWWSplits[znsSplits[2]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ znsWWSplits[znsSplits[2]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
+            DummySpace(0.0f, 25.0f);
+            // row 2
+            {
+                if (CreateListBox("##ZNS EE Splits", znsEESplits, znsSplits[3], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##ZNS EE", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == znsEESplits[znsSplits[3]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ znsEESplits[znsSplits[3]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
             break;
         }
         case 4:
         {
+            // row 1
+            {
+                if (CreateListBox("##GK PAP Splits", gkPAPSplits, gkSplits[0], ImVec2(150.0f, 76.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##GK PAP", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == gkPAPSplits[gkSplits[0]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ gkPAPSplits[gkSplits[0]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Gauntlet Splits", gkGauntletSplits, gkSplits[1], ImVec2(150.0f, 101.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Gauntlet", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == gkGauntletSplits[gkSplits[1]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ gkGauntletSplits[gkSplits[1]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##ZNS WW Splits", gkDragonSplits, gkSplits[2], ImVec2(150.0f, 76.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##ZNS WW", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == gkDragonSplits[gkSplits[2]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ gkDragonSplits[gkSplits[2]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
+            DummySpace(0.0f, 25.0f);
+            // row 2
+            {
+                if (CreateListBox("##GK Lockdown Splits", gkLockdownSplits, gkSplits[3], ImVec2(150.0f, 51.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##GK Lockdown", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == gkLockdownSplits[gkSplits[3]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ gkLockdownSplits[gkSplits[3]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##GK Challenge Splits", gkChallengeSplits, gkSplits[4], ImVec2(150.0f, 76.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##GK Challenge", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == gkChallengeSplits[gkSplits[4]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ gkChallengeSplits[gkSplits[4]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
             break;
         }
         case 5:
         {
-            break;
-        }
-        case 6:
-        {
-            break;
-        }
-        case 7:
-        {
-            break;
-        }
-        case 8:
-        {
-            break;
-        }
-        case 9:
-        {
-            break;
-        }
-        case 10:
-        {
-            break;
-        }
-        case 11:
-        {
+            // row 1
+            {
+                if (CreateListBox("##Rev Start Splits", revStartSplits, revSplits[0], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Rev Start", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == revStartSplits[revSplits[0]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ revStartSplits[revSplits[0]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Reel Splits", revReelSplits, revSplits[1], ImVec2(150.0f, 151.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Reel", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == revReelSplits[revSplits[1]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ revReelSplits[revSplits[1]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Rev Egg Splits", revEggSplits, revSplits[2], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Rev Egg", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == revEggSplits[revSplits[2]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ revEggSplits[revSplits[2]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
+            DummySpace(0.0f, 25.0f);
+            // row 2
+            {
+                if (CreateListBox("##Rev Rune Splits", revRuneSplits, revSplits[3], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Rev Rune", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == revRuneSplits[revSplits[3]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ revRuneSplits[revSplits[3]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Rev End Splits", revEndSplits, revSplits[4], ImVec2(150.0f, 76.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Rev End", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == revEndSplits[revSplits[4]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ revEndSplits[revSplits[4]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
             break;
         }
         case 12:
         {
+            ImGui::Text("Coming Soon");
             break;
         }
         case 13:
         {
+            // row 1
+            {
+                if (CreateListBox("##Tomb Staff Splits", tombStaffSplits, tombSplits[0], ImVec2(150.0f, 101.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Tomb Staff", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == tombStaffSplits[tombSplits[0]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ tombStaffSplits[tombSplits[0]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Tomb End Splits", tombEndSplits, tombSplits[1], ImVec2(150.0f, 76.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Tomb End", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentPreset].splits.begin(), splitPresets[currentPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == tombEndSplits[tombSplits[1]];
+                        }) == splitPresets[currentPreset].splits.end())
+                    {
+                        splitPresets[currentPreset].splits.push_back({ tombEndSplits[tombSplits[1]], addSplitRound });
+                        splitPresets[currentPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        addSplitView = false;
+                    }
+                }
+            }
             break;
         }
         default:
+            ImGui::Text("No additional splits supported for this map");
             break;
         }
     }
@@ -1240,9 +1785,9 @@ void AutosplitsPtr()
             ImGui::OpenPopup("New Autosplits Preset");
         if (CreateButton(ICON_FA_FILE_CIRCLE_MINUS " Delete Preset", ImVec2(150.0f, 25.0f)))
         {
-            Autosplits::DeleteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset].presetName);
-            if (Autosplits::writeSplits && appStatus == "Status: Active")
-                Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            DeleteAutosplitPreset(splitPresets[currentPreset].presetName);
+            if (writeSplits && appStatus == "Status: Active")
+                WritePresetToGame(splitPresets[currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
         } ImGui::EndGroup();
         SAMELINE;
         ImGui::PopStyleVar();
@@ -1261,7 +1806,7 @@ void AutosplitsPtr()
                     autosplitPopupBoolCheck = true;
                 }
                 else
-                    Autosplits::CreateNewAutosplitPreset(presetInput);
+                    CreateNewAutosplitPreset(presetInput);
                 ImGui::CloseCurrentPopup();
             }
             if (showAutosplitPresetExists)
@@ -1271,11 +1816,13 @@ void AutosplitsPtr()
                     ImGui::OpenPopup("Autosplit Preset Already Exists");
                     autosplitPopupBoolCheck = false;
                 }
-                ImGui::SetNextWindowSize(ImVec2(230.0f, 75.0f));
-                if (ImGui::BeginPopupModal("Autosplit Preset Already Exists", &showAutosplitPresetExists, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
+                ImVec2 windowPos = ImGui::GetWindowPos();
+                ImVec2 windowSize = ImGui::GetWindowSize();
+                ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
+                if (ImGui::BeginPopupModal("Autosplit Preset Already Exists", &showAutosplitPresetExists, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
                 {
-                    ImGui::Text("Autosplit Preset Already Exists");
-                    if (ImGui::Button("Close", ImVec2(ImGui::GetContentRegionAvail().x, 25.0f)))
+                    ImGui::TextWrapped("Autosplit Preset Already Exists");
+                    if (ImGui::Button("Close", ImVec2(120.0f, 25.0f)))
                         ImGui::CloseCurrentPopup();
                     ImGui::EndPopup();
                 }
@@ -1284,84 +1831,94 @@ void AutosplitsPtr()
         }
         // presets dropdown
         ImGui::SetNextItemWidth(250);
-        std::string previousPreset = Autosplits::splitPresets[Autosplits::currentPreset].presetName;
-        if (ImGui::BeginCombo("Autosplit Presets", Autosplits::splitPresets[Autosplits::currentPreset].presetName.c_str(), ImGuiComboFlags_HeightRegular))
+        std::string previousPreset = splitPresets[currentPreset].presetName;
+        if (ImGui::BeginCombo("Autosplit Presets", splitPresets[currentPreset].presetName.c_str(), ImGuiComboFlags_HeightRegular))
         {
-            for (int i = 0; i < Autosplits::splitPresets.size(); i++)
+            for (int i = 0; i < splitPresets.size(); i++)
             {
-                const bool is_selected = Autosplits::currentPreset == i;
-                if (ImGui::Selectable(Autosplits::splitPresets[i].presetName.c_str(), is_selected))
-                    Autosplits::currentPreset = i;
+                const bool is_selected = currentPreset == i;
+                if (ImGui::Selectable(splitPresets[i].presetName.c_str(), is_selected))
+                    currentPreset = i;
                 if (is_selected)
                     ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
         SAMELINE;
-        if (previousPreset != Autosplits::splitPresets[Autosplits::currentPreset].presetName)
+        if (previousPreset != splitPresets[currentPreset].presetName)
         {
-            if (Autosplits::writeSplits && appStatus == "Status: Active")
-                Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            if (writeSplits && appStatus == "Status: Active")
+                WritePresetToGame(splitPresets[currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
         }
         if (appStatus != "Status: Active")
             ImGui::BeginDisabled();
-        if (ImGui::Checkbox("Active", &Autosplits::writeSplits))
+        if (ImGui::Checkbox("Active", &writeSplits))
         {
-            if (Autosplits::writeSplits && appStatus == "Status: Active")
-                Autosplits::WritePresetToGame(Autosplits::splitPresets[Autosplits::currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            if (writeSplits && appStatus == "Status: Active")
+                WritePresetToGame(splitPresets[currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
             else
-                Autosplits::WritePresetToGame(Autosplits::inactivePreset, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+                WritePresetToGame(inactivePreset, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
         }
         if (appStatus != "Status: Active")
             ImGui::EndDisabled();
         ImGui::EndGroup();
-        if (Autosplits::splitPresets[0].presetName != "No Presets Available")
+        if (splitPresets[0].presetName != "No Presets Available")
         {
             SAMELINE;
-            if (ImGui::Checkbox("In Game Timer", &Autosplits::splitPresets[Autosplits::currentPreset].igt))
+            if (ImGui::Checkbox("In Game Timer", &splitPresets[currentPreset].igt))
             {
-                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                WriteAutosplitPreset(splitPresets[currentPreset]);
             }
             ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 160.0f, ImGui::GetCursorPosY() - 30.0f));
             ImGui::BeginGroup();
-            if (ImGui::Checkbox("In Game Round Timer", &Autosplits::splitPresets[Autosplits::currentPreset].igrt))
+            if (ImGui::Checkbox("In Game Round Timer", &splitPresets[currentPreset].igrt))
             {
-                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                WriteAutosplitPreset(splitPresets[currentPreset]);
             }
             SAMELINE;
             ImGui::SetNextItemWidth(200);
-            int previousMap = Autosplits::splitPresets[Autosplits::currentPreset].map;
-            if (ImGui::BeginCombo("##Select A Map", MapOptions::mapList[Autosplits::splitPresets[Autosplits::currentPreset].map].c_str()))
+            int previousMap = splitPresets[currentPreset].map;
+            if (ImGui::BeginCombo("##Select A Map", MapOptions::mapList[splitPresets[currentPreset].map].c_str()))
             {
                 for (int i = 0; i < MapOptions::mapList.size(); i++)
                 {
-                    const bool is_selected = Autosplits::splitPresets[Autosplits::currentPreset].map == i;
+                    const bool is_selected = splitPresets[currentPreset].map == i;
                     if (ImGui::Selectable(MapOptions::mapList[i].c_str(), is_selected))
-                        Autosplits::splitPresets[Autosplits::currentPreset].map = i;
+                        splitPresets[currentPreset].map = i;
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();
                 }
                 ImGui::EndCombo();
             }
-            if (previousMap != Autosplits::splitPresets[Autosplits::currentPreset].map)
-                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+            if (previousMap != splitPresets[currentPreset].map)
+            {
+                if (splitPresets[currentPreset].splits.size())
+                {
+                    showChangeMapError = true;
+                    mapError = splitPresets[currentPreset].map;
+                    splitPresets[currentPreset].map = previousMap;
+                    ImGui::OpenPopup("Change Map Error");
+                }
+                else
+                    WriteAutosplitPreset(splitPresets[currentPreset]);
+            }
             SAMELINE;
             ImGui::SetNextItemWidth(250);
-            int previousType = Autosplits::splitPresets[Autosplits::currentPreset].splitType;
-            if (ImGui::BeginCombo("##Select Split Type", generalSplitData[Autosplits::splitPresets[Autosplits::currentPreset].splitType].c_str()))
+            int previousType = splitPresets[currentPreset].splitType;
+            if (ImGui::BeginCombo("##Select Split Type", generalSplitData[splitPresets[currentPreset].splitType].c_str()))
             {
                 for (int i = 0; i < generalSplitData.size(); i++)
                 {
-                    const bool is_selected = Autosplits::splitPresets[Autosplits::currentPreset].splitType == i;
+                    const bool is_selected = splitPresets[currentPreset].splitType == i;
                     if (ImGui::Selectable(generalSplitData[i].c_str(), is_selected))
-                        Autosplits::splitPresets[Autosplits::currentPreset].splitType = i;
+                        splitPresets[currentPreset].splitType = i;
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();
                 }
                 ImGui::EndCombo();
             }
-            if (previousType != Autosplits::splitPresets[Autosplits::currentPreset].splitType)
-                Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+            if (previousType != splitPresets[currentPreset].splitType)
+                WriteAutosplitPreset(splitPresets[currentPreset]);
             SAMELINE;
 
             HelpMarker(R"(How to use:
@@ -1370,6 +1927,29 @@ void AutosplitsPtr()
 - Select the map to choose the splits for (defaults to SOE)
 - Select the type of autosplits you want to setup. This determines the ending point of the splits. If you choose "Egg Autosplit" and add no other splits, it will only split once the egg is completed
 - If you've selected "Split on every X Round", a text box will appear for you to type the interval into)");
+
+            if (showChangeMapError)
+            {
+                ImVec2 windowPos = ImGui::GetWindowPos();
+                ImVec2 windowSize = ImGui::GetWindowSize();
+                ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
+                if (ImGui::BeginPopupModal("Change Map Error", &showChangeMapError, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    ImGui::TextWrapped("Changing the map will invalidate the current selected extra splits. Press continue to delete the current splits or press close and create a new layout instead.");
+                    if (ImGui::Button("Continue", ImVec2(120.0f, 25.0f)))
+                    {
+                        splitPresets[currentPreset].map = mapError;
+                        splitPresets[currentPreset].splits = {  };
+                        splitPresets[currentPreset].numSplits = 0;
+                        WriteAutosplitPreset(splitPresets[currentPreset]);
+                        ImGui::CloseCurrentPopup();
+                    }
+                    SAMELINE;
+                    if (ImGui::Button("Close", ImVec2(120.0f, 25.0f)))
+                        ImGui::CloseCurrentPopup();
+                    ImGui::EndPopup();
+                }
+            }
 
             ImGui::EndGroup();
             if (ImGui::BeginTable("Splits", 4, ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_Borders))
@@ -1381,55 +1961,62 @@ void AutosplitsPtr()
                 ImGui::TableSetupColumn("Move Layer", ImGuiTableColumnFlags_WidthFixed, 100.0f);
                 ImGui::TableHeadersRow();
 
-                for (int row = 0; row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits + 1; row++)
+                for (int row = 0; row < splitPresets[currentPreset].numSplits + 1; row++)
                 {
                     ImGui::TableNextRow();
                     for (int column = 0; column < 4; column++)
                     {
                         ImGui::TableSetColumnIndex(column);
 
-                        if (row < Autosplits::splitPresets[Autosplits::currentPreset].numSplits)
+                        if (row < splitPresets[currentPreset].numSplits)
                         {
                             switch (column)
                             {
                             case 0:
                             {
-                                ImGui::Text(Autosplits::splitPresets[Autosplits::currentPreset].splits[row].first.c_str());
+                                ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(splitPresets[currentPreset].splits[row].first.c_str()).x / 2, ImGui::GetCursorPosY() + 2.5f));
+                                ImGui::Text(splitPresets[currentPreset].splits[row].first.c_str());
                                 break;
                             }
                             case 1:
                             {
-                                ImGui::Text(std::to_string(Autosplits::splitPresets[Autosplits::currentPreset].splits[row].second).c_str());
+                                ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(std::to_string(splitPresets[currentPreset].splits[row].second).c_str()).x / 2, ImGui::GetCursorPosY() + 2.5f));
+                                ImGui::Text(std::to_string(splitPresets[currentPreset].splits[row].second).c_str());
                                 break;
                             }
                             case 2:
                             {
                                 if (ImGui::Button(std::string(ICON_FA_CIRCLE_MINUS " Remove##" + std::to_string(row)).c_str(), ImVec2(100.0f, 25.0f)))
                                 {
-                                    Autosplits::splitPresets[Autosplits::currentPreset].splits.erase(Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row);
-                                    Autosplits::splitPresets[Autosplits::currentPreset].numSplits--;
-                                    Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                                    splitPresets[currentPreset].splits.erase(splitPresets[currentPreset].splits.begin() + row);
+                                    splitPresets[currentPreset].numSplits--;
+                                    WriteAutosplitPreset(splitPresets[currentPreset]);
                                     row--;
                                 }
                                 break;
                             }
                             case 3:
                             {
-                                if (row != Autosplits::splitPresets[Autosplits::currentPreset].numSplits - 1)
+                                if (row != splitPresets[currentPreset].numSplits - 1)
                                 {
                                     if (ImGui::Button(std::string(ICON_FA_CIRCLE_ARROW_DOWN "##MoveSplit" + std::to_string(row)).c_str(), ImVec2(45.0f, 25.0f)))
                                     {
-                                        std::iter_swap(Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row, Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row + 1);
-                                        Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                                        std::iter_swap(splitPresets[currentPreset].splits.begin() + row, splitPresets[currentPreset].splits.begin() + row + 1);
+                                        WriteAutosplitPreset(splitPresets[currentPreset]);
                                     }
                                     SAMELINE;
                                 }
                                 if (row != 0)
                                 {
+                                    if (row == splitPresets[currentPreset].numSplits - 1)
+                                    {
+                                        DummySpace(45.0f, 0.0f);
+                                        SAMELINE;
+                                    }
                                     if (ImGui::Button(std::string(ICON_FA_CIRCLE_ARROW_UP "##MoveSplit" + std::to_string(row)).c_str(), ImVec2(45.0f, 25.0f)))
                                     {
-                                        std::iter_swap(Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row, Autosplits::splitPresets[Autosplits::currentPreset].splits.begin() + row - 1);
-                                        Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                                        std::iter_swap(splitPresets[currentPreset].splits.begin() + row, splitPresets[currentPreset].splits.begin() + row - 1);
+                                        WriteAutosplitPreset(splitPresets[currentPreset]);
                                     }
                                 }
                                 break;
@@ -1442,11 +2029,6 @@ void AutosplitsPtr()
                         {
                             switch (column)
                             {
-                            case 0:
-                            case 1:
-                            {
-                                break;
-                            }
                             case 2:
                             {
                                 if (ImGui::Button(std::string(ICON_FA_CIRCLE_PLUS " Add##" + std::to_string(row)).c_str(), ImVec2(100.0f, 25.0f)))
@@ -1463,17 +2045,17 @@ void AutosplitsPtr()
 
                 ImGui::EndTable();
             }
-            if (Autosplits::splitPresets[Autosplits::currentPreset].splitType == 1)
+            if (splitPresets[currentPreset].splitType == 1)
             {
                 SAMELINE;
                 ImGui::SetNextItemWidth(150);
-                if (ImGui::InputInt("Interval", &Autosplits::splitPresets[Autosplits::currentPreset].roundInterval))
+                if (ImGui::InputInt("Interval", &splitPresets[currentPreset].roundInterval))
                 {
-                    if (Autosplits::splitPresets[Autosplits::currentPreset].roundInterval < 1)
-                        Autosplits::splitPresets[Autosplits::currentPreset].roundInterval = 1;
-                    else if (Autosplits::splitPresets[Autosplits::currentPreset].roundInterval > 255)
-                        Autosplits::splitPresets[Autosplits::currentPreset].roundInterval = 255;
-                    Autosplits::WriteAutosplitPreset(Autosplits::splitPresets[Autosplits::currentPreset]);
+                    if (splitPresets[currentPreset].roundInterval < 1)
+                        splitPresets[currentPreset].roundInterval = 1;
+                    else if (splitPresets[currentPreset].roundInterval > 255)
+                        splitPresets[currentPreset].roundInterval = 255;
+                    WriteAutosplitPreset(splitPresets[currentPreset]);
                 }
             }
         }
