@@ -280,7 +280,8 @@ namespace GUIWindow
         style.WindowBorderSize = 0.0f;
         style.Colors[2].w = 0.6f;
 
-        KeyBinds::keyboardRegistered = KeyBinds::RegisterRawInput(hWnd);
+        keyboardRegistered = RegisterRawInput(hWnd, 0x06);
+        keyboardRegistered = RegisterRawInput(hWnd, 0x02);
 
         while (!done)
         {
@@ -401,7 +402,7 @@ namespace GUIWindow
             }
             break;
         case WM_INPUT:
-            UINT dwSize;
+            UINT dwSize = 0;
             GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
             LPBYTE lpb = new BYTE[dwSize];
             if (lpb == NULL)
@@ -409,6 +410,7 @@ namespace GUIWindow
             if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
                 NLog("GetRawInputData does not return correct size!");
             RAWINPUT* raw = (RAWINPUT*)lpb;
+            // handle keyboard input
             if (raw->header.dwType == RIM_TYPEKEYBOARD)
             {
                 int key = raw->data.keyboard.VKey;
@@ -418,91 +420,102 @@ namespace GUIWindow
                 // Check key pressed or released
                 if (raw->data.keyboard.Message == WM_KEYDOWN || raw->data.keyboard.Message == WM_SYSKEYDOWN)
                 {
-                    if (KeyBinds::keyMap[key])
-                        KeyBinds::keyMapHeld[key] = true;
-                    KeyBinds::keyMap[key] = true;
-                    if (!KeyBinds::keyMapHeld[key])
-                        KeyBinds::usedKeys.push_back(key);
+                    if (keyMap[key])
+                        keyMapHeld[key] = true;
+                    keyMap[key] = true;
+                    if (!keyMapHeld[key])
+                        usedKeys.push_back(key);
                 }
                 else if (raw->data.keyboard.Message == WM_KEYUP || raw->data.keyboard.Message == WM_SYSKEYUP)
                 {
-                    KeyBinds::keyMapHeld[key] = false;
-                    KeyBinds::keyMap[key] = false;
-                    KeyBinds::usedKeys.erase(std::remove(KeyBinds::usedKeys.begin(), KeyBinds::usedKeys.end(), key), KeyBinds::usedKeys.end());
+                    keyMapHeld[key] = false;
+                    keyMap[key] = false;
+                    usedKeys.erase(std::remove(usedKeys.begin(), usedKeys.end(), key), usedKeys.end());
                 }
                 else
                     break;
                 // New hotkey registration
-                if (KeyBinds::registerHotKey)
+                if (registerHotKey)
                 {
                     // Catch system key press events
                     if (raw->data.keyboard.Message == WM_KEYDOWN || raw->data.keyboard.Message == WM_SYSKEYDOWN)
                     {
+                        // If user was inputting mouse controls, override it with keyboard controls. This should never actually happen because mouse buttons can't be chained
+                        if (hotkeyToAssign->second.type)
+                        {
+                            hotkeyToAssign->second.type = 0;
+                            hotkeyToAssign->second.keyNames = "";
+                            hotkeyToAssign->second.keys = { };
+                            usedKeys = { };
+                            totalNumKeys = 0;
+                            initialKeyToRelease = 0;
+                            assignedKeys = { };
+                        }
                         // Escape clears the current hotkey
                         if (key == VK_ESCAPE)
                         {
-                            KeyBinds::registerHotKey = false;
-                            KeyBinds::hotkeyToAssign->second.keyNames = "";
-                            KeyBinds::hotkeyToAssign->second.keys = { };
-                            KeyBinds::usedKeys = { };
-                            KeyBinds::totalNumKeys = 0;
-                            KeyBinds::initialKeyToRelease = 0;
+                            registerHotKey = false;
+                            hotkeyToAssign->second.keyNames = "";
+                            hotkeyToAssign->second.keys = { };
+                            usedKeys = { };
+                            totalNumKeys = 0;
+                            initialKeyToRelease = 0;
                             assignedKeys = { };
-                            KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
+                            ValidateKeybind(*hotkeyToAssign, true);
                         }
                         // Make sure key isn't held down and we haven't hit the max combo length already
-                        else if (!KeyBinds::keyMapHeld[key] && KeyBinds::totalNumKeys < 3)
+                        else if (!keyMapHeld[key] && totalNumKeys < 3)
                         {
                             // Check to make sure key isn't already used in the sequence
                             if (std::find(assignedKeys.begin(), assignedKeys.end(), key) != assignedKeys.end())
                                 break;
                             // Check if this is the first key in the sequence
-                            if (!KeyBinds::initialKeyToRelease)
+                            if (!initialKeyToRelease)
                             {
                                 // Check for modifier key
                                 if (key != VK_SHIFT && key != VK_CONTROL && key != VK_MENU)
                                 {
-                                    KeyBinds::registerHotKey = false;
-                                    KeyBinds::hotkeyToAssign->second.keyNames = KeyBinds::keyDictionary[key];
-                                    KeyBinds::hotkeyToAssign->second.keys = { key };
-                                    KeyBinds::totalNumKeys = 0;
-                                    KeyBinds::initialKeyToRelease = 0;
+                                    registerHotKey = false;
+                                    hotkeyToAssign->second.keyNames = keyDictionary[key];
+                                    hotkeyToAssign->second.keys = { key };
+                                    totalNumKeys = 0;
+                                    initialKeyToRelease = 0;
                                     assignedKeys = { };
-                                    KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
+                                    ValidateKeybind(*hotkeyToAssign, true);
                                     break;
                                 }
                                 else
                                 {
-                                    KeyBinds::modifiersPressed++;
-                                    KeyBinds::initialKeyToRelease = key;
+                                    modifiersPressed++;
+                                    initialKeyToRelease = key;
                                     assignedKeys.push_back(key);
                                 }
-                                if (KeyBinds::registerHotKey)
-                                    KeyBinds::totalNumKeys++;
-                                KeyBinds::hotkeyToAssign->second.keyNames = KeyBinds::keyDictionary[key];
-                                KeyBinds::hotkeyToAssign->second.keys = { key };
+                                if (registerHotKey)
+                                    totalNumKeys++;
+                                hotkeyToAssign->second.keyNames = keyDictionary[key];
+                                hotkeyToAssign->second.keys = { key };
                             }
                             else
                             {
                                 // Check for modifier key to limit ctrl + shift + alt as a keybind - max length we're supporting is 3
                                 if (key == VK_SHIFT || key == VK_CONTROL || key == VK_MENU)
                                 {
-                                    KeyBinds::modifiersPressed++;
-                                    KeyBinds::totalNumKeys++;
-                                    KeyBinds::hotkeyToAssign->second.keyNames += "+" + KeyBinds::keyDictionary[key];
-                                    KeyBinds::hotkeyToAssign->second.keys.push_back(key);
-                                    if (KeyBinds::modifiersPressed < 3)
+                                    modifiersPressed++;
+                                    totalNumKeys++;
+                                    hotkeyToAssign->second.keyNames += "+" + keyDictionary[key];
+                                    hotkeyToAssign->second.keys.push_back(key);
+                                    if (modifiersPressed < 3)
                                         break;
                                 }
-                                KeyBinds::registerHotKey = false;
-                                KeyBinds::modifiersPressed = 0;
-                                KeyBinds::totalNumKeys++;
-                                KeyBinds::hotkeyToAssign->second.keyNames += "+" + KeyBinds::keyDictionary[key];
-                                KeyBinds::hotkeyToAssign->second.keys.push_back(key);
-                                KeyBinds::totalNumKeys = 0;
-                                KeyBinds::initialKeyToRelease = 0;
+                                registerHotKey = false;
+                                modifiersPressed = 0;
+                                totalNumKeys++;
+                                hotkeyToAssign->second.keyNames += "+" + keyDictionary[key];
+                                hotkeyToAssign->second.keys.push_back(key);
+                                totalNumKeys = 0;
+                                initialKeyToRelease = 0;
                                 assignedKeys = { };
-                                KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
+                                ValidateKeybind(*hotkeyToAssign, true);
                             }
                         }
                     }
@@ -510,27 +523,83 @@ namespace GUIWindow
                     else if (raw->data.keyboard.Message == WM_KEYUP || raw->data.keyboard.Message == WM_SYSKEYUP)
                     {
                         // Wait for first key in the sequence to be released, signaling the end of the hotkey - only triggered if modifier keys are detected
-                        if (key == KeyBinds::initialKeyToRelease)
+                        if (key == initialKeyToRelease)
                         {
-                            KeyBinds::registerHotKey = false;
-                            KeyBinds::initialKeyToRelease = 0;
-                            KeyBinds::modifiersPressed = 0;
-                            KeyBinds::totalNumKeys = 0;
-                            for (const int& usedKey : KeyBinds::usedKeys)
+                            registerHotKey = false;
+                            initialKeyToRelease = 0;
+                            modifiersPressed = 0;
+                            totalNumKeys = 0;
+                            for (const int& usedKey : usedKeys)
                             {
-                                KeyBinds::keyMap[usedKey] = false;
-                                KeyBinds::keyMapHeld[usedKey] = false;
+                                keyMap[usedKey] = false;
+                                keyMapHeld[usedKey] = false;
                             }
                             assignedKeys = { };
-                            KeyBinds::ValidateKeybind(*KeyBinds::hotkeyToAssign, true);
+                            ValidateKeybind(*hotkeyToAssign, true);
                         }
                     }
                     break;
                 }
                 // If we make it here, we can safely assume that we have received a key press or release event, and that a new keybind is not being registered
                 // Therefore, we can check if the newest key was pressed, and run a keybind event to search for a match given the pressed keys
-                if (KeyBinds::keyMap[key] && !KeyBinds::keyMapHeld[key])
-                    KeyBinds::CheckAndRunKeybind();
+                if (keyMap[key] && !keyMapHeld[key])
+                    CheckAndRunKeybind(0);
+            }
+            // handle mouse input
+            else if (raw->header.dwType == RIM_TYPEMOUSE && raw->data.mouse.usButtonFlags)
+            {
+                int key = raw->data.mouse.usButtonFlags;
+                if (key == 0x400 || key == 0x800)
+                {
+                    if (((short)(unsigned short)raw->data.mouse.usButtonData) < 0)
+                        key *= -1;
+                }
+                bool down = true;
+                // Check if the mouse button is in the supported button dictionaries, else break the check
+                if (buttonDictionaryDown.find(key) != buttonDictionaryDown.end())
+                {
+                    buttonMap[key] = true;
+                    usedButtons.push_back(key);
+                }
+                else if (buttonDictionaryUp.find(key) != buttonDictionaryUp.end())
+                {
+                    buttonMap[key / 2] = false;
+                    buttonMapHeld[key / 2] = false;
+                    usedButtons.erase(std::remove(usedButtons.begin(), usedButtons.end(), key), usedButtons.end());
+                    down = false;
+                }
+                else
+                    break;
+                // New
+                if (registerHotKey)
+                {
+                    // If user was inputting keyboard controls, override it with mouse controls
+                    if (!hotkeyToAssign->second.type)
+                    {
+                        hotkeyToAssign->second.type = 1;
+                        hotkeyToAssign->second.keyNames = "";
+                        hotkeyToAssign->second.keys = { };
+                        usedKeys = { };
+                        totalNumKeys = 0;
+                        initialKeyToRelease = 0;
+                        assignedKeys = { };
+                    }
+                    // If button pressed, assign that to the current hotkey being changed. We don't need to handle button up events because the max length of a mouse keybind is 1
+                    if (down)
+                    {
+                        registerHotKey = false;
+                        hotkeyToAssign->second.keyNames = buttonDictionaryDown[key];
+                        hotkeyToAssign->second.keys = { key };
+                        totalNumKeys = 0;
+                        initialKeyToRelease = 0;
+                        assignedKeys = { };
+                        ValidateKeybind(*hotkeyToAssign, true);
+                        break;
+                    }
+                }
+                // Check for a matching keybind
+                if (buttonMap[key] && !buttonMapHeld[key])
+                    CheckAndRunKeybind(1);
             }
             break;
         }
@@ -1786,8 +1855,7 @@ void AutosplitsPtr()
         if (CreateButton(ICON_FA_FILE_CIRCLE_MINUS " Delete Preset", ImVec2(150.0f, 25.0f)))
         {
             DeleteAutosplitPreset(splitPresets[currentPreset].presetName);
-            if (writeSplits && appStatus == "Status: Active")
-                WritePresetToGame(splitPresets[currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            WriteAutosplitPreset(splitPresets[currentPreset]);
         } ImGui::EndGroup();
         SAMELINE;
         ImGui::PopStyleVar();
@@ -1846,18 +1914,12 @@ void AutosplitsPtr()
         }
         SAMELINE;
         if (previousPreset != splitPresets[currentPreset].presetName)
-        {
-            if (writeSplits && appStatus == "Status: Active")
-                WritePresetToGame(splitPresets[currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
-        }
+            WriteAutosplitPreset(splitPresets[currentPreset]);
         if (appStatus != "Status: Active")
             ImGui::BeginDisabled();
         if (ImGui::Checkbox("Active", &writeSplits))
         {
-            if (writeSplits && appStatus == "Status: Active")
-                WritePresetToGame(splitPresets[currentPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
-            else
-                WritePresetToGame(inactivePreset, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            WriteAutosplitPreset(splitPresets[currentPreset]);
         }
         if (appStatus != "Status: Active")
             ImGui::EndDisabled();
@@ -2198,7 +2260,7 @@ void SettingsPtr()
             ImGui::Text(hotkey.first.c_str());
             SAMELINE;
             ImGui::SetCursorPosX(575.0f);
-            if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size))
+            if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size) && !registerHotKey)
             {
                 AssignHotKey(hotkey.first, hotkey);
             }
@@ -2208,7 +2270,7 @@ void SettingsPtr()
         ImGui::Text(hotkey.first.c_str());
         SAMELINE;
         ImGui::SetCursorPosX(200.0f);
-        if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size))
+        if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size) && !registerHotKey)
         {
             AssignHotKey(hotkey.first, hotkey);
         }

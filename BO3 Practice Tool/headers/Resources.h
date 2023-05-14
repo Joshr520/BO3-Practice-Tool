@@ -221,7 +221,6 @@ namespace Autosplits
 
 	void LoadSplitPresets();
 	void WriteAutosplitPreset(const SplitPreset& preset);
-	void WritePresetToGame(const SplitPreset& splitPreset, const std::string& file);
 	void CreateNewAutosplitPreset(const std::string& presetName);
 	void DeleteAutosplitPreset(const std::string& preset);
 	SplitPreset ParseSplitJson(const std::string& filePath);

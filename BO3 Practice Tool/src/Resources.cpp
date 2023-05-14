@@ -663,11 +663,10 @@ namespace Autosplits
         doc.AddMember("Split Data", splitData, doc.GetAllocator());
 
         JSON::WriteJson(doc, filename);
-    }
-
-    void WritePresetToGame(const SplitPreset& splitPreset, const std::string& file)
-    {
-
+        if (writeSplits && GUIWindow::appStatus == "Status: Active")
+            JSON::WriteJson(doc, GUIWindow::bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+        else
+            JSON::WriteJson({ }, GUIWindow::bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
     }
 
     void CreateNewAutosplitPreset(const std::string& presetName)

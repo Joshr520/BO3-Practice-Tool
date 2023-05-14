@@ -14,7 +14,7 @@ using namespace JSON;
 
 HHOOK keyboardHook;
 
-bool InternalKeyValidation(const std::vector<int>& keys);
+bool InternalKeyValidation(const std::vector<int>& keys, int type);
 bool VectorSort(const std::string& a, const std::string& b) { return a < b; }
 
 namespace KeyBinds
@@ -53,16 +53,28 @@ namespace KeyBinds
 				std::string token;
 				while (std::getline(ss, token, '+'))
 				{
-					auto it = std::find_if(keyDictionary.begin(), keyDictionary.end(), [&token](auto&& pair) {
+					auto itKey = std::find_if(keyDictionary.begin(), keyDictionary.end(), [&token](auto&& pair) {
 						return pair.second == token;
 						});
-					if (it == keyDictionary.end())
+					auto itButton = std::find_if(buttonDictionaryDown.begin(), buttonDictionaryDown.end(), [&token](auto&& pair) {
+						return pair.second == token;
+						});
+					if (itKey == keyDictionary.end() && itButton == buttonDictionaryDown.end())
 					{
 						ModifyJsonString(data, hotkey.first, "");
 						valid = false;
 					}
 					else
-						hotkey.second.keys.push_back(it->first);
+						if (itKey != keyDictionary.end())
+						{
+							hotkey.second.keys.push_back(itKey->first);
+							hotkey.second.type = 0;
+						}
+						else
+						{
+							hotkey.second.keys.push_back(itButton->first);
+							hotkey.second.type = 1;
+						}
 				}
 
 				if (!ValidateKeybind(hotkey))
@@ -101,7 +113,7 @@ namespace KeyBinds
 	bool ValidateKeybind(std::pair<const std::string, HotKeyBind>& hotkey, bool write)
 	{
 		Document data = ReadJsonFromFile(GUIWindow::selfDirectory + "\\bindings.json");
-		if (!InternalKeyValidation(hotkey.second.keys))
+		if (!InternalKeyValidation(hotkey.second.keys, hotkey.second.type))
 		{
 			hotkey.second.keyNames = "";
 			hotkey.second.keys = { };
@@ -163,7 +175,7 @@ namespace KeyBinds
 		return true;
 	}
 
-	void CheckAndRunKeybind()
+	void CheckAndRunKeybind(int type)
 	{
 		if (registerHotKey || GUIWindow::appStatus != "Status: Active" || GUIWindow::currentMap == "core_frontend")
 			return;
@@ -171,34 +183,55 @@ namespace KeyBinds
 			return;
 		if (usedKeys.size() > 1)
 		{
-			if (!InternalKeyValidation(usedKeys))
+			if (!InternalKeyValidation(usedKeys, type))
 				return;
 		}
 		for (std::pair<std::string, HotKeyBind> hotkey : hotkeyDefs)
 		{
-			if (usedKeys.size() != hotkey.second.keys.size())
-				continue;
-			bool skip = false;
-			for (const int& key : usedKeys)
+			if (!hotkey.second.type)
 			{
-				if (std::find(hotkey.second.keys.begin(), hotkey.second.keys.end(), key) == hotkey.second.keys.end())
+				if (usedKeys.size() != hotkey.second.keys.size())
+					continue;
+				bool skip = false;
+				for (const int& key : usedKeys)
 				{
-					skip = true;
-					break;
+					if (std::find(hotkey.second.keys.begin(), hotkey.second.keys.end(), key) == hotkey.second.keys.end())
+					{
+						skip = true;
+						break;
+					}
 				}
+				if (skip)
+					continue;
+				hotkey.second.activatedFunc();
+				break;
 			}
-			if (skip)
-				continue;
-			hotkey.second.activatedFunc();
-			break;
+			else
+			{
+				if (usedButtons.size() != hotkey.second.keys.size())
+					continue;
+				bool skip = false;
+				for (const int& key : usedButtons)
+				{
+					if (std::find(hotkey.second.keys.begin(), hotkey.second.keys.end(), key) == hotkey.second.keys.end())
+					{
+						skip = true;
+						break;
+					}
+				}
+				if (skip)
+					continue;
+				hotkey.second.activatedFunc();
+				break;
+			}
 		}
 	}
 
-	bool RegisterRawInput(const HWND& hTarget)
+	bool RegisterRawInput(const HWND& hTarget, USHORT usage)
 	{
 		RAWINPUTDEVICE hid;
 		hid.usUsagePage = HID_USAGE_PAGE_GENERIC;
-		hid.usUsage = HID_USAGE_GENERIC_KEYBOARD;
+		hid.usUsage = usage;
 		hid.dwFlags = RIDEV_INPUTSINK;
 		hid.hwndTarget = hTarget;
 
@@ -328,20 +361,24 @@ namespace KeyBinds
 	}
 }
 
-bool InternalKeyValidation(const std::vector<int>& keys)
+bool InternalKeyValidation(const std::vector<int>& keys, int type)
 {
-	bool activatorFound = false;
-	bool validKeybind = true;
-	for (const int& key : keys)
+	if (!type)
 	{
-		if (key == VK_CONTROL || key == VK_LCONTROL || key == VK_RCONTROL || key == VK_SHIFT || key == VK_LSHIFT || key == VK_RSHIFT || key == VK_MENU || key == VK_LMENU || key == VK_RMENU)
+		bool activatorFound = false;
+		bool validKeybind = true;
+		for (const int& key : keys)
 		{
-			if (activatorFound)
-				validKeybind = false;
-			continue;
+			if (key == VK_CONTROL || key == VK_LCONTROL || key == VK_RCONTROL || key == VK_SHIFT || key == VK_LSHIFT || key == VK_RSHIFT || key == VK_MENU || key == VK_LMENU || key == VK_RMENU)
+			{
+				if (activatorFound)
+					validKeybind = false;
+				continue;
+			}
+			else if (KeyBinds::keyDictionary.contains(key))
+				activatorFound = true;
 		}
-		else if (KeyBinds::keyDictionary.contains(key))
-			activatorFound = true;
+		return validKeybind && activatorFound;
 	}
-	return validKeybind && activatorFound;
+	return true;
 }
