@@ -1,5 +1,5 @@
 #include "PlayerOptions.h"
-#include "GUIWindow.h"
+#include "GUIFunctions.h"
 
 #include <fstream>
 #include <sstream>
@@ -287,7 +287,7 @@ namespace BGB
         gumPresets.clear();
 
         std::string line;
-        std::ifstream file(GUIWindow::selfDirectory + PRESET_FILE);
+        std::ifstream file(selfDirectory + PRESET_FILE);
 
         while (getline(file, line))
         {
@@ -306,16 +306,16 @@ namespace BGB
         file.close();
 
         if (gumPresets.size())
-            gumContextIndex = gumPresets[currentPreset].presetGums[0];
+            gumContextIndex = gumPresets[currentGumPreset].presetGums[0];
         else
-            gumPresets.push_back(inactivePreset);
+            gumPresets.push_back(inactiveGumPreset);
     }
 
     void DeleteGumPreset(const std::string& presetName)
     {
         std::string line;
         std::string outData;
-        std::ifstream inFile(GUIWindow::selfDirectory + PRESET_FILE);
+        std::ifstream inFile(selfDirectory + PRESET_FILE);
 
         while (getline(inFile, line))
         {
@@ -327,32 +327,32 @@ namespace BGB
         }
         inFile.close();
 
-        std::ofstream outFile(GUIWindow::selfDirectory + PRESET_FILE);
+        std::ofstream outFile(selfDirectory + PRESET_FILE);
         outFile << outData;
         outFile.close();
-        if (currentPreset > 0) currentPreset--;
+        if (currentGumPreset > 0) currentGumPreset--;
         LoadGumProfiles();
     }
 
     void CreateNewGumPreset(const std::string& presetName)
     {
         std::string line;
-        std::ifstream checkFile(GUIWindow::selfDirectory + PRESET_FILE);
+        std::ifstream checkFile(selfDirectory + PRESET_FILE);
         while (getline(checkFile, line));
 
-        std::ofstream file(GUIWindow::selfDirectory + PRESET_FILE, std::ios::app);
+        std::ofstream file(selfDirectory + PRESET_FILE, std::ios::app);
         if (line != "")
             file << "\n";
         checkFile.close();
         file << presetName << ",0,1,2,3,4\n";
         file.close();
         LoadGumProfiles();
-        currentPreset = (int)gumPresets.size() - 1;
+        currentGumPreset = (int)gumPresets.size() - 1;
     }
 
     std::string GetCurrentPresetName()
     {
-        return gumPresets[currentPreset].presetName;
+        return gumPresets[currentGumPreset].presetName;
     }
 
     bool CheckPresetExists(const std::string& inPreset)
@@ -369,7 +369,7 @@ namespace BGB
     {
         std::string line;
         std::string outData;
-        std::ifstream inFile(GUIWindow::selfDirectory + PRESET_FILE);
+        std::ifstream inFile(selfDirectory + PRESET_FILE);
 
         while (getline(inFile, line))
         {
@@ -391,7 +391,7 @@ namespace BGB
         }
         inFile.close();
 
-        std::ofstream outFile(GUIWindow::selfDirectory + PRESET_FILE);
+        std::ofstream outFile(selfDirectory + PRESET_FILE);
         outFile << outData;
         outFile.close();
 

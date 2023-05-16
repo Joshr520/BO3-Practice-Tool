@@ -1,5 +1,5 @@
 #include "json.h"
-#include "Helper.h"
+#include "GUIFunctions.h"
 
 namespace JSON
 {

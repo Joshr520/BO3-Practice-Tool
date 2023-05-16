@@ -19,9 +19,6 @@
 #include <filesystem>
 #include <iostream>
 
-// Emedded font
-#include "ImGui/Roboto-Regular.embed"
-
 extern bool g_ApplicationRunning;
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
@@ -492,7 +489,6 @@ namespace Walnut {
 		// Load default font
 		ImFontConfig fontConfig;
 		fontConfig.FontDataOwnedByAtlas = false;
-		ImFont* robotoFont = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoRegular, sizeof(g_RobotoRegular), 20.0f, &fontConfig);
 		mainFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSans.ttf", 20);
 		ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
 		static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };

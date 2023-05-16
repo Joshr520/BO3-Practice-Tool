@@ -43,14 +43,14 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -104,20 +104,22 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./imgui;./headers;./src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;imgui;headers;glfw/include;%VULKAN_SDK%\include;.\</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%VULKAN_SDK%\Lib;glfw\lib-vc2010-64</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY "$(ProjectDir)Gum Images" "$(TargetDir)Gum Images" /s /i /y
-XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /i /y
+      <Command>XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /i /y
 XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /i /y
 XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /i /y
-XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
+XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y
+COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -129,7 +131,7 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>./imgui;./headers;./src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;imgui;headers;glfw/include;%VULKAN_SDK%\include;.\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -137,27 +139,28 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%VULKAN_SDK%\Lib;glfw\lib-vc2010-64</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY "$(ProjectDir)Gum Images" "$(TargetDir)Gum Images" /s /i /y
-XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /i /y
+      <Command>XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /i /y
 XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /i /y
 XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /i /y
-XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
+XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y
+COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BO3 Practice Tool.h" />
+    <ClInclude Include="Fonts\Icons.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="glfw\include\GLFW\glfw3.h" />
+    <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
     <ClInclude Include="headers\Blockers.h" />
     <ClInclude Include="headers\Craftables.h" />
     <ClInclude Include="headers\EggStepOptions.h" />
-    <ClInclude Include="headers\GUIWindow.h" />
-    <ClInclude Include="headers\Helper.h" />
-    <ClInclude Include="headers\ImageHelp.h" />
+    <ClInclude Include="headers\GUIFunctions.h" />
     <ClInclude Include="headers\json.h" />
-    <ClInclude Include="headers\KeyBinds.h" />
     <ClInclude Include="headers\MapOptions.h" />
     <ClInclude Include="headers\Memhelp.h" />
     <ClInclude Include="headers\PlayerOptions.h" />
@@ -168,7 +171,8 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
     <ClInclude Include="imgui\fonts\Icons.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
-    <ClInclude Include="imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="imgui\imgui_impl_vulkan.h" />
     <ClInclude Include="imgui\imgui_impl_win32.h" />
     <ClInclude Include="imgui\imgui_internal.h" />
     <ClInclude Include="imgui\imstb_rectpack.h" />
@@ -176,6 +180,13 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Walnut\Application.h" />
+    <ClInclude Include="Walnut\Image.h" />
+    <ClInclude Include="Walnut\Input\Input.h" />
+    <ClInclude Include="Walnut\Input\KeyCodes.h" />
+    <ClInclude Include="Walnut\Layer.h" />
+    <ClInclude Include="Walnut\Random.h" />
+    <ClInclude Include="Walnut\Timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BO3 Practice Tool.cpp" />
@@ -183,27 +194,28 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
-    <ClCompile Include="imgui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\Craftables.cpp" />
-    <ClCompile Include="src\GUIWindow.cpp" />
-    <ClCompile Include="src\Helper.cpp" />
-    <ClCompile Include="src\ImageHelp.cpp" />
+    <ClCompile Include="src\GUIFunctions.cpp" />
     <ClCompile Include="src\json.cpp" />
-    <ClCompile Include="src\KeyBinds.cpp" />
     <ClCompile Include="src\Memhelp.cpp" />
     <ClCompile Include="src\PlayerOptions.cpp" />
     <ClCompile Include="src\PowerupOptions.cpp" />
     <ClCompile Include="src\Resources.cpp" />
+    <ClCompile Include="Walnut\Application.cpp" />
+    <ClCompile Include="Walnut\Image.cpp" />
+    <ClCompile Include="Walnut\Input\Input.cpp" />
+    <ClCompile Include="Walnut\Random.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BO3 Practice Tool.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="BO3 Practice Tool.ico" />
-    <Image Include="small.ico" />
+    <Image Include="Icon.ico" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -212,10 +224,4 @@ XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y</Command>
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\directxtk12_desktop_2019.2023.2.7.1\build\native\directxtk12_desktop_2019.targets" Condition="Exists('..\packages\directxtk12_desktop_2019.2023.2.7.1\build\native\directxtk12_desktop_2019.targets')" />
   </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\directxtk12_desktop_2019.2023.2.7.1\build\native\directxtk12_desktop_2019.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk12_desktop_2019.2023.2.7.1\build\native\directxtk12_desktop_2019.targets'))" />
-  </Target>
 </Project>

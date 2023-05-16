@@ -1,9 +1,7 @@
 #pragma warning( disable : 4244 ) 
 
-#include "ImageHelp.h"
 #include "Resources.h"
-#include "GUIWindow.h"
-#include "Helper.h"
+#include "GUIFunctions.h"
 #include <limits.h>
 #include <algorithm>
 #include <random>
@@ -544,18 +542,18 @@ namespace IceCodePractice
 {
     void InitIceCodePairs()
     {
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["dot-digit"], ImageHelp::iceCodeImgList["dot-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-digit"], ImageHelp::iceCodeImgList["i-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-digit"], ImageHelp::iceCodeImgList["l-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["f-digit"], ImageHelp::iceCodeImgList["f-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-dot-digit"], ImageHelp::iceCodeImgList["i-dot-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-i-digit"], ImageHelp::iceCodeImgList["i-i-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-l-digit"], ImageHelp::iceCodeImgList["i-l-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["i-f-digit"], ImageHelp::iceCodeImgList["i-f-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-dot-digit"], ImageHelp::iceCodeImgList["l-dot-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-i-digit"], ImageHelp::iceCodeImgList["l-i-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-l-digit"], ImageHelp::iceCodeImgList["l-l-symbol"] }));
-        iceCodePairs.push_back(IceCodePair({ ImageHelp::iceCodeImgList["l-f-digit"], ImageHelp::iceCodeImgList["l-f-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["dot-digit"], iceCodeImgList["dot-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["i-digit"], iceCodeImgList["i-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["l-digit"], iceCodeImgList["l-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["f-digit"], iceCodeImgList["f-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["i-dot-digit"], iceCodeImgList["i-dot-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["i-i-digit"], iceCodeImgList["i-i-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["i-l-digit"], iceCodeImgList["i-l-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["i-f-digit"], iceCodeImgList["i-f-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["l-dot-digit"], iceCodeImgList["l-dot-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["l-i-digit"], iceCodeImgList["l-i-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["l-l-digit"], iceCodeImgList["l-l-symbol"] }));
+        iceCodePairs.push_back(IceCodePair({ iceCodeImgList["l-f-digit"], iceCodeImgList["l-f-symbol"] }));
 
         randomIceCodePairs = iceCodePairs;
 
@@ -623,7 +621,7 @@ namespace Autosplits
     void LoadSplitPresets()
     {
         splitPresets.clear();
-        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(GUIWindow::selfDirectory) / "Settings\\Autosplits"))
+        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Autosplits"))
         {
             if (std::filesystem::is_regular_file(file))
             {
@@ -634,12 +632,12 @@ namespace Autosplits
         }
 
         if (!splitPresets.size())
-            splitPresets.push_back(inactivePreset);
+            splitPresets.push_back(inactiveSplitPreset);
     }
 
     void WriteAutosplitPreset(const SplitPreset& preset)
     {
-        std::string filename = GUIWindow::selfDirectory + PRESET_DIRECTORY + "/" + preset.presetName + ".json";
+        std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + preset.presetName + ".json";
         Document doc;
         doc.SetObject();
 
@@ -663,15 +661,15 @@ namespace Autosplits
         doc.AddMember("Split Data", splitData, doc.GetAllocator());
 
         JSON::WriteJson(doc, filename);
-        if (writeSplits && GUIWindow::appStatus == "Status: Active")
-            JSON::WriteJson(doc, GUIWindow::bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+        if (writeSplits && appStatus == "Status: Active")
+            JSON::WriteJson(doc, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
         else
-            JSON::WriteJson({ }, GUIWindow::bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            JSON::WriteJson({ }, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
     }
 
     void CreateNewAutosplitPreset(const std::string& presetName)
     {
-        std::string filename = GUIWindow::selfDirectory + PRESET_DIRECTORY + "/" + presetName + ".json";
+        std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + presetName + ".json";
         Document doc;
         doc.SetObject();
 
@@ -696,9 +694,9 @@ namespace Autosplits
     {
         std::string file = PRESET_DIRECTORY;
         file += "/" + preset + ".json";
-        if (std::filesystem::exists(GUIWindow::selfDirectory + file))
-            std::filesystem::remove(GUIWindow::selfDirectory + file);
-        if (currentPreset > 0) currentPreset--;
+        if (std::filesystem::exists(selfDirectory + file))
+            std::filesystem::remove(selfDirectory + file);
+        if (currentSplitPreset > 0) currentSplitPreset--;
         LoadSplitPresets();
     }
 

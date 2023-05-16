@@ -54,15 +54,6 @@
     <ClInclude Include="headers\EggStepOptions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="headers\GUIWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\Helper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\ImageHelp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="headers\PlayerOptions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -73,9 +64,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="headers\Resources.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_dx11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="headers\Craftables.h">
@@ -93,24 +81,51 @@
     <ClInclude Include="headers\MapOptions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="headers\KeyBinds.h">
+    <ClInclude Include="headers\json.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="headers\json.h">
+    <ClInclude Include="glfw\include\GLFW\glfw3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glfw\include\GLFW\glfw3native.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Walnut\Input\Input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Walnut\Input\KeyCodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Walnut\Application.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Walnut\Image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Walnut\Layer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Walnut\Random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Walnut\Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui_impl_glfw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui_impl_vulkan.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\GUIFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fonts\Icons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BO3 Practice Tool.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\GUIWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Helper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ImageHelp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\PlayerOptions.cpp">
@@ -143,19 +158,34 @@
     <ClCompile Include="src\Resources.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_impl_dx11.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Craftables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Memhelp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\KeyBinds.cpp">
+    <ClCompile Include="src\json.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\json.cpp">
+    <ClCompile Include="src\GUIFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Walnut\Input\Input.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Walnut\Application.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Walnut\Image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Walnut\Random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_impl_glfw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_impl_vulkan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -165,10 +195,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="small.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="BO3 Practice Tool.ico">
+    <Image Include="Icon.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

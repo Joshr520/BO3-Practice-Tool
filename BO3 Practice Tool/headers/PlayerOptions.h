@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "ImageHelp.h"
 
 namespace Points
 {
@@ -43,12 +42,12 @@ namespace BGB
     inline std::vector<std::string> megaList;
     inline std::vector<std::string> gumDescriptions;
     inline std::vector<BGBPreset> gumPresets;
-    inline int currentPreset = 0;
+    inline int currentGumPreset = 0;
     inline int gumSelectIndex = 0;
     inline int gumContextIndex = 0;
     inline bool showGumSelection = false;
     inline bool writeGums = false;
-    inline BGBPreset inactivePreset = { "No Presets Available", { -1, -1, -1, -1, -1 } };
+    inline BGBPreset inactiveGumPreset = { "No Presets Available", { -1, -1, -1, -1, -1 } };
 }
 
 namespace Perks

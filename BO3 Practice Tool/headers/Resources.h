@@ -7,7 +7,7 @@
 #include <set>
 #include <fstream>
 
-#include "ImageHelp.h"
+#include "Walnut/Image.h"
 
 constexpr unsigned long hashstr(const char* str, int h = 0)
 {
@@ -173,8 +173,8 @@ namespace IceCodePractice
 {
 	struct IceCodePair
 	{
-		ImageHelp::Image digitImage;
-		ImageHelp::Image symbolImage;
+		Walnut::Image* digitImage;
+		Walnut::Image* symbolImage;
 	};
 
 	inline bool showSolution = false;
@@ -215,9 +215,9 @@ namespace Autosplits
 	};
 
 	inline bool writeSplits = false;
-	inline int currentPreset = 0;
+	inline int currentSplitPreset = 0;
 	inline std::vector<SplitPreset> splitPresets;
-	inline SplitPreset inactivePreset = { "No Presets Available", { { "", 0} } };
+	inline SplitPreset inactiveSplitPreset = { "No Presets Available", { { "", 0} } };
 
 	void LoadSplitPresets();
 	void WriteAutosplitPreset(const SplitPreset& preset);

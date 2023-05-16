@@ -1,6 +1,4 @@
 -------------Practice Tool Startup-------------
-Initializing image loading threads
-Image loading finished
 Searching for BO3 directory
 BO3 directory found
 Starting Enumeration
@@ -10,4 +8,3 @@ Started async process - looking for BO3
 Checking for updates
 New version not available
 Setup Finished
--------------Practice Tool Ended---------------
