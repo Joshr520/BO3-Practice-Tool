@@ -151,7 +151,6 @@ COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BO3 Practice Tool.h" />
     <ClInclude Include="Fonts\Icons.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="glfw\include\GLFW\glfw3.h" />

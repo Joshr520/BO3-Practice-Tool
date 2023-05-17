@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "Walnut/Image.h"
+#include "Walnut/Timer.h"
 
 constexpr unsigned long hashstr(const char* str, int h = 0)
 {
@@ -45,7 +46,7 @@ namespace ZombieCalc
 	inline int moonRound = 1;
 	inline int moonEarthTravels = 0;
 	inline int moonRoundSkips = 0;
-	inline int customZombiesLeft = 0;
+	inline int customZombiesLeft = 1;
 	inline int customZombiesLeftRound = 1;
 	inline int customZombiesLeftPlayerCount = 1;
 	inline int gkLockdownRound = 1;
@@ -186,7 +187,7 @@ namespace IceCodePractice
 	inline int randomList[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 	inline std::vector<IceCodePair> iceCodePairs;
 	inline std::vector<IceCodePair> randomIceCodePairs;
-	inline std::time_t startTime;
+	inline Walnut::Timer gameTimer;
 	inline std::string gameTime = "Time: ";
 	inline std::string accuracy = "Accuracy: ";
 
@@ -270,3 +271,35 @@ namespace Autosplits
 }
 
 std::string ParseTimeFromMilli(int milliseconds);
+
+template <typename T>
+std::string CommifyNumString(T value)
+{
+	std::stringstream ss;
+	ss << std::fixed << std::setprecision(3) << value;
+
+	std::string str = ss.str();
+	std::locale locale;
+	std::stringstream result;
+
+	bool isNegative = false;
+	if (str[0] == '-')
+	{
+		isNegative = true;
+		result << '-';
+		str.erase(0, 1);
+	}
+
+	size_t decimalPos = str.find('.');
+	if (decimalPos == std::string::npos)
+		decimalPos = str.length();
+
+	for (size_t i = 0; i < str.length(); ++i)
+	{
+		if (i > 0 && i < decimalPos && (decimalPos - i) % 3 == 0)
+			result << std::use_facet<std::numpunct<char>>(locale).thousands_sep();
+		result << str[i];
+	}
+
+	return result.str();
+}

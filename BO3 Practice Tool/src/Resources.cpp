@@ -4,10 +4,12 @@
 #include "GUIFunctions.h"
 #include <limits.h>
 #include <algorithm>
-#include <random>
 #include <chrono>
 #include <filesystem>
+#include <locale>
 #include "json.h"
+
+#include "Walnut/Random.h"
 
 namespace ZombieCalc
 {
@@ -562,12 +564,12 @@ namespace IceCodePractice
 
     void RandomizeCodes()
     {
-        unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-        std::shuffle(iceCodePairs.begin(), iceCodePairs.end(), std::default_random_engine(seed));
-        seed /= 2;
-        std::shuffle(randomIceCodePairs.begin(), randomIceCodePairs.end(), std::default_random_engine(seed));
-        seed /= 2;
-        std::shuffle(&randomList[0], &randomList[11], std::default_random_engine(seed));
+        Walnut::Random::Init();
+        std::shuffle(iceCodePairs.begin(), iceCodePairs.end(), std::default_random_engine(Walnut::Random::UInt()));
+        Walnut::Random::Init();
+        std::shuffle(randomIceCodePairs.begin(), randomIceCodePairs.end(), std::default_random_engine(Walnut::Random::UInt()));
+        Walnut::Random::Init();
+        std::shuffle(&randomList[0], &randomList[11], std::default_random_engine(Walnut::Random::UInt()));
     }
 
     void ProgressGame(bool success, int numCode)
@@ -575,7 +577,7 @@ namespace IceCodePractice
         if (!gameStarted)
         {
             gameStarted = true;
-            startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            gameTimer.Reset();
         }
         if (success)
         {
@@ -584,8 +586,7 @@ namespace IceCodePractice
                 checked = false;
             if (gameProgress >= 12)
             {
-                std::time_t finalTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
-                gameTime = "Time: " + ParseTimeFromMilli(finalTime);
+                gameTime = "Time: " + ParseTimeFromMilli(gameTimer.Elapsed());
                 std::stringstream ss;
                 ss.precision(4);
                 float percentage = (timesGuessed - timesMissed) / (float)timesGuessed * 100;
@@ -598,8 +599,8 @@ namespace IceCodePractice
                 RandomizeCodes();
                 return;
             }
-            unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-            std::shuffle(randomIceCodePairs.begin(), randomIceCodePairs.end(), std::default_random_engine(seed));
+            Walnut::Random::Init();
+            std::shuffle(randomIceCodePairs.begin(), randomIceCodePairs.end(), std::default_random_engine(Walnut::Random::UInt()));
         }
         else if (!gameChecked[numCode])
         {

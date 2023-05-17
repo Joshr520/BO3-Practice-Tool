@@ -19,19 +19,14 @@ namespace Walnut {
 			m_Start = std::chrono::high_resolution_clock::now();
 		}
 
-		float Started()
+		int Started()
 		{
-			return std::chrono::duration_cast<std::chrono::milliseconds>(m_Start.time_since_epoch()).count() * 1.0f;
+			return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(m_Start.time_since_epoch()).count());
 		}
 
-		float Elapsed()
+		int Elapsed()
 		{
-			return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - m_Start).count() * 0.001f * 0.001f * 0.001f;
-		}
-
-		float ElapsedMillis()
-		{
-			return Elapsed() * 1000.0f;
+			return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - m_Start).count());
 		}
 
 	private:
@@ -45,7 +40,7 @@ namespace Walnut {
 			: m_Name(name) {}
 		~ScopedTimer()
 		{
-			float time = m_Timer.ElapsedMillis();
+			int time = m_Timer.Elapsed();
 			std::cout << "[TIMER] " << m_Name << " - " << time << "ms\n";
 		}
 	private:

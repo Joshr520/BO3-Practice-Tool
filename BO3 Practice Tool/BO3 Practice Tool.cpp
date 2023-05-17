@@ -92,9 +92,12 @@ static bool doUpdateAvailable = false;
 static bool doUpdateFailed = false;
 static bool injectResponse = false;
 static bool injectResponseWait = false;
+static bool discordPopup = false;
+static bool showDiscordModal = false;
 static int sidebarCurrentItem = 0;
 static ImVec4 fakeColor = { 0, 0, 0, 0 };
 static std::string internalVersion = "Beta-v0.2.0";
+static Walnut::Image* discordIcon;
 
 // Gum data
 static int chooseGumPreset = 0;
@@ -229,6 +232,8 @@ public:
         if (steamPathFound)
             InitVariables();
 
+        discordIcon = new Walnut::Image("Resource Images/Discord.png");
+
         // Init function list
         {
             funcList.push_back(std::function<void()>(GobblegumLoadoutPtr));
@@ -324,7 +329,8 @@ public:
                 if (!steamPathFound || !procFound)
                     ImGui::EndDisabled();
                 ImGui::PushFont(sidebarFont);
-                ImGui::Text("Frontend"); ImGui::Separator(3.5f);
+                ImGui::Text("Frontend");
+                ImGui::Separator(3.5f);
                 ImGui::PopFont();
 
                 const char* sidebarItems[] = { "Gobblegum Loadout", "Autosplits", "Practice Patches", "Settings", "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options",
@@ -341,11 +347,14 @@ public:
                         sidebarCurrentItem = i;
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();
-                } ImGui::Spacing(); ImGui::Separator();
+                }
+                ImGui::Spacing();
+                ImGui::Separator();
                 if (!steamPathFound || !procFound)
                     ImGui::BeginDisabled();
                 ImGui::PushFont(sidebarFont);
-                ImGui::Text("In Game"); ImGui::Separator(3.5f);
+                ImGui::Text("In Game");
+                ImGui::Separator(3.5f);
                 ImGui::PopFont();
                 // In Game
                 if (appStatus != "Status: Active" || currentMap == "core_frontend")
@@ -361,13 +370,16 @@ public:
                         sidebarCurrentItem = i;
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();
-                } ImGui::Spacing(); ImGui::Separator();
+                }
+                ImGui::Spacing();
+                ImGui::Separator();
                 if (appStatus != "Status: Active" || currentMap == "core_frontend")
                     ImGui::EndDisabled();
                 if (!steamPathFound || !procFound)
                     ImGui::EndDisabled();
                 ImGui::PushFont(sidebarFont);
-                ImGui::Text("Resources"); ImGui::Separator(3.5f);
+                ImGui::Text("Resources");
+                ImGui::Separator(3.5f);
                 ImGui::PopFont();
                 // Resources
                 for (int i = inGameItems; i < resourceItems; i++)
@@ -377,7 +389,14 @@ public:
                         sidebarCurrentItem = i;
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();
-                } ImGui::Spacing(); ImGui::Separator();
+                }
+                ImGui::Spacing();
+                ImGui::Separator();
+
+                ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
+                if (ImGui::ImageButton(discordIcon->GetDescriptorSet(), ImVec2(225.0f, 70.0f)))
+                    discordPopup = true;
+                ImGui::PopStyleColor();
             }
         }
         ImGui::End();
@@ -456,6 +475,34 @@ public:
                 if (ImGui::Button("Exit", ImVec2(125, 0)))
                 {
                     injectResponseWait = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+        }
+        if (discordPopup)
+        {
+            ImGui::OpenPopup("Join Discord");
+            discordPopup = false;
+            showDiscordModal = true;
+        }
+        if (showDiscordModal)
+        {
+            ImVec2 windowPos = ImGui::GetWindowPos();
+            ImVec2 windowSize = ImGui::GetWindowSize();
+            ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
+            if (ImGui::BeginPopupModal("Join Discord", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::TextWrapped("Need help or looking for Practice Tool news? Join the Discord and head to #help or #bo3-practice-tool to stay up to date.");
+                if (ImGui::Button("Join", ImVec2(140, 0)))
+                {
+                    ShellExecuteA(NULL, "open", "https://discord.gg/SnaSjkPEmV", NULL, NULL, SW_SHOWNORMAL);
+                    discordPopup = false;
+                    ImGui::CloseCurrentPopup();
+                } SAMELINE;
+                if (ImGui::Button("Close", ImVec2(140, 0)))
+                {
+                    discordPopup = false;
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndPopup();
@@ -2254,7 +2301,7 @@ void RoundOptionsPtr()
     if (CreateButton("Restart Round", ImVec2(120.0f, 25.0f)))
         NotifyGame({ 2, 1 });
     ImGui::SetNextItemWidth(125.0f);
-    if (ImGui::InputInt("Set Round", &roundInput, 1, 10, ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputInt("Set Round", &roundInput, 1, 10))
     {
         if (roundInput < 1)
             roundInput = 1;
@@ -2727,7 +2774,7 @@ void ZombieCalculatorPtr()
                 ImGui::Text("Number Of Players");
                 ImGui::SetNextItemWidth(170.0f);
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 + 10);
-                if (ImGui::InputInt("##Number Of Players", &playerCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Number Of Players", &playerCount, 1, NULL))
                 {
                     if (playerCount < 1)
                         playerCount = 1;
@@ -2746,7 +2793,7 @@ void ZombieCalculatorPtr()
                 ImGui::Text("Current Round");
                 ImGui::SetNextItemWidth(170.0f);
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 + 10);
-                if (ImGui::InputInt("##Current Round", &roundNumber, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Current Round", &roundNumber, 1, NULL))
                 {
                     if (roundNumber < 1)
                         roundNumber = 1;
@@ -2769,18 +2816,16 @@ void ZombieCalculatorPtr()
                 SAMELINE;
                 ImGui::BeginChild("Calc Data 1", ImVec2(300.0f, 130.0f), true);
                 std::string numZombiesText("Zombies On Round " + std::to_string(roundNumber) + ":");
-                std::string numZombiesNum(std::to_string(zombiesForRound));
+                std::string numZombiesNum(CommifyNumString(zombiesForRound));
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(numZombiesText.c_str()).x) / 2 + 10);
                 ImGui::Text(numZombiesText.c_str());
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(numZombiesNum.c_str()).x) / 2 + 10);
                 ImGui::Text(numZombiesNum.c_str());
-                std::string numHordesText("Hordes On Round " + std::to_string(roundNumber) + ":");
+                std::string numHordesText("Hordes On Round " + CommifyNumString(roundNumber) + ":");
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(numHordesText.c_str()).x) / 2 + 10);
                 ImGui::Text(numHordesText.c_str());
-                char roundedHordes[16];
-                snprintf(roundedHordes, sizeof(roundedHordes), "%.3f", hordesForRound);
-                ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(roundedHordes).x) / 2 + 10);
-                ImGui::Text(roundedHordes);
+                ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(CommifyNumString(hordesForRound).c_str()).x) / 2 + 10);
+                ImGui::Text(CommifyNumString(hordesForRound).c_str());
                 ImGui::EndChild();
             }
 
@@ -2789,13 +2834,13 @@ void ZombieCalculatorPtr()
                 SAMELINE;
                 ImGui::BeginChild("Calc Data 2", ImVec2(300.0f, 130.0f), true);
                 std::string numZombiesUpToText("Zombies Up To Round " + std::to_string(roundNumber) + ":");
-                std::string numZombiesUpToNum(std::to_string(zombiesUpToRound));
+                std::string numZombiesUpToNum(CommifyNumString(zombiesUpToRound));
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(numZombiesUpToText.c_str()).x) / 2 + 10);
                 ImGui::Text(numZombiesUpToText.c_str());
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(numZombiesUpToNum.c_str()).x) / 2 + 10);
                 ImGui::Text(numZombiesUpToNum.c_str());
-                std::string numZombieHealthText("Zombie Health On Round " + std::to_string(roundNumber) + ":");
-                std::string numZombieHealthNum(std::to_string(zombieHealthForRound));
+                std::string numZombieHealthText("Zombie Health On Round " + CommifyNumString(roundNumber) + ":");
+                std::string numZombieHealthNum(CommifyNumString(zombieHealthForRound));
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(numZombieHealthText.c_str()).x) / 2 + 10);
                 ImGui::Text(numZombieHealthText.c_str());
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(numZombieHealthNum.c_str()).x) / 2 + 10);
@@ -2826,7 +2871,7 @@ void ZombieCalculatorPtr()
                 SAMELINE;
                 ImGui::BeginChild("Calc Data 4", ImVec2(300.0f, 130.0f), true);
                 std::string corpseDelayText("Corpse Delay On Round " + std::to_string(roundNumber) + ":");
-                std::string corpseDelayNum(std::to_string(corpseDelay[playerCount - 1][roundNumber - 1]));
+                std::string corpseDelayNum(CommifyNumString(corpseDelay[playerCount - 1][roundNumber - 1]));
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(corpseDelayText.c_str()).x) / 2 + 10);
                 ImGui::Text(corpseDelayText.c_str());
                 HelpMarker("Expected corpse delay killing every zombie exactly 2.25 seconds after it spawns. Actual value may vary in game.");
@@ -2852,7 +2897,7 @@ void ZombieCalculatorPtr()
                 DummySpace(7.5f, 0.0f);
                 SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Number Of Players - Special Enemies", &specialEnemyPlayerCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Number Of Players - Special Enemies", &specialEnemyPlayerCount, 1, NULL))
                 {
                     if (specialEnemyPlayerCount < 1)
                         specialEnemyPlayerCount = 1;
@@ -2909,7 +2954,7 @@ void ZombieCalculatorPtr()
                     specialEnemiesRoundTime = CalcRoundTime(specialEnemyRound, specialEnemyPlayerCount, corpseDelay[specialEnemyPlayerCount - 1][specialEnemyRound - 1], true);
                 } SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Current Round - Special Enemies", &specialEnemyRound, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Current Round - Special Enemies", &specialEnemyRound, 1, NULL))
                 {
                     if (specialEnemyRound < 1)
                         specialEnemyRound = 1;
@@ -3021,7 +3066,7 @@ void ZombieCalculatorPtr()
                     HelpMarker("Bugs add no spawn delay, and are thus not included.");
                     SAMELINE;
                     ImGui::SetNextItemWidth(130.0f);
-                    if (ImGui::InputInt("# of Meatballs", &meatballCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputInt("# of Meatballs", &meatballCount, 1, NULL))
                     {
                         if (meatballCount < 0)
                             meatballCount = 0;
@@ -3038,7 +3083,7 @@ void ZombieCalculatorPtr()
                     ImGui::Text(dogDelay.c_str());
                     ImGui::SetNextItemWidth(130.0f);
                     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 - ImGui::CalcTextSize("# of Dogs").x / 2 + 10);
-                    if (ImGui::InputInt("# of Dogs", &dogCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputInt("# of Dogs", &dogCount, 1, NULL))
                     {
                         if (dogCount < 0)
                             dogCount = 0;
@@ -3075,7 +3120,7 @@ void ZombieCalculatorPtr()
                     ImGui::Text(spiderDelay.c_str());
                     ImGui::SetNextItemWidth(130.0f);
                     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 - ImGui::CalcTextSize("# of Spiders").x / 2 + 10);
-                    if (ImGui::InputInt("# of Spiders", &islandSpidersCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputInt("# of Spiders", &islandSpidersCount, 1, NULL))
                     {
                         if (islandSpidersCount < 0)
                             islandSpidersCount = 0;
@@ -3092,7 +3137,7 @@ void ZombieCalculatorPtr()
                     ImGui::Text(manglerDelay.c_str());
                     ImGui::SetNextItemWidth(130.0f);
                     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 - ImGui::CalcTextSize("# of Manglers").x / 2 + 10);
-                    if (ImGui::InputInt("# of Manglers", &manglersCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputInt("# of Manglers", &manglersCount, 1, NULL))
                     {
                         if (manglersCount < 0)
                             manglersCount = 0;
@@ -3107,7 +3152,7 @@ void ZombieCalculatorPtr()
                     ImGui::Text(valkDelay.c_str());
                     ImGui::SetNextItemWidth(130.0f);
                     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 - ImGui::CalcTextSize("# of Valks").x / 2 + 10);
-                    if (ImGui::InputInt("# of Valks", &valksCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputInt("# of Valks", &valksCount, 1, NULL))
                     {
                         if (valksCount < 0)
                             valksCount = 0;
@@ -3124,7 +3169,7 @@ void ZombieCalculatorPtr()
                     ImGui::Text(spiderDelay.c_str());
                     ImGui::SetNextItemWidth(130.0f);
                     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 - ImGui::CalcTextSize("# of Spiders").x / 2 + 10);
-                    if (ImGui::InputInt("# of Spiders", &genesisSpidersCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputInt("# of Spiders", &genesisSpidersCount, 1, NULL))
                     {
                         if (genesisSpidersCount < 0)
                             genesisSpidersCount = 0;
@@ -3139,7 +3184,7 @@ void ZombieCalculatorPtr()
                     ImGui::Text(furyDelay.c_str());
                     ImGui::SetNextItemWidth(130.0f);
                     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 - ImGui::CalcTextSize("# of Furys").x / 2 + 10);
-                    if (ImGui::InputInt("# of Furys", &furysCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputInt("# of Furys", &furysCount, 1, NULL))
                     {
                         if (furysCount < 0)
                             furysCount = 0;
@@ -3154,7 +3199,7 @@ void ZombieCalculatorPtr()
                     ImGui::Text(keeperDelay.c_str());
                     ImGui::SetNextItemWidth(130.0f);
                     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 - ImGui::CalcTextSize("# of Keepers").x / 2 + 10);
-                    if (ImGui::InputInt("# of Keepers", &keepersCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputInt("# of Keepers", &keepersCount, 1, NULL))
                     {
                         if (keepersCount < 0)
                             keepersCount = 0;
@@ -3185,7 +3230,7 @@ void ZombieCalculatorPtr()
                 HelpMarker("Moon doesn't increase spawn rate with player count. On top of that, spawn rate increases 1 round every time you travel to the Earth/Moon.");
                 SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Number Of Players - Moon", &moonPlayerCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Number Of Players - Moon", &moonPlayerCount, 1, NULL))
                 {
                     if (moonPlayerCount < 1)
                         moonPlayerCount = 1;
@@ -3197,7 +3242,7 @@ void ZombieCalculatorPtr()
                         moonExpectedRoundTime = SpecialRoundTime(moonRound, moonPlayerCount, corpseDelay[moonPlayerCount - 1][moonRound - 1], false);
                 } SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Current Round - Moon", &moonRound, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Current Round - Moon", &moonRound, 1, NULL))
                 {
                     if (moonRound < 1)
                         moonRound = 1;
@@ -3212,7 +3257,7 @@ void ZombieCalculatorPtr()
                 ImGui::Text("Number Of Earth Travels");
                 ImGui::SetNextItemWidth(120.0f);
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth()) / 2 + 10);
-                if (ImGui::InputInt("##Number of Earth travels", &moonEarthTravels, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Number of Earth travels", &moonEarthTravels, 1, NULL))
                 {
                     if (moonEarthTravels < 0)
                         moonEarthTravels = 0;
@@ -3228,7 +3273,7 @@ void ZombieCalculatorPtr()
                 DummySpace(7.5f, 0.0f);
                 SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Number of Round Skips", &moonRoundSkips, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Number of Round Skips", &moonRoundSkips, 1, NULL))
                 {
                     if (moonRoundSkips < 0)
                         moonRoundSkips = 0;
@@ -3263,7 +3308,7 @@ void ZombieCalculatorPtr()
                 HelpMarker("The GK Lockdown scales to the current round and player count, as well as increasing spawn rate each wave if not already maxed. The time presented will be when to nuke as long as you stay under 22 zombies at once. A new wave starts when the windows close.");
                 SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Number Of Players - GK Lockdown", &gkLockdownPlayerCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Number Of Players - GK Lockdown", &gkLockdownPlayerCount, 1, NULL))
                 {
                     if (gkLockdownPlayerCount < 1)
                         gkLockdownPlayerCount = 1;
@@ -3272,7 +3317,7 @@ void ZombieCalculatorPtr()
                     CalcLockdownTime(gkLockdownRound, gkLockdownPlayerCount);
                 } SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Current Round - GK Lockdown", &gkLockdownRound, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Current Round - GK Lockdown", &gkLockdownRound, 1, NULL))
                 {
                     if (gkLockdownRound < 1)
                         gkLockdownRound = 1;
@@ -3308,7 +3353,7 @@ void ZombieCalculatorPtr()
                 HelpMarker("SOE has a constant spawn rate for rounds 1-4 regardless of player count.");
                 SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Number Of Players - SOE", &soePlayerCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Number Of Players - SOE", &soePlayerCount, 1, NULL))
                 {
                     if (soePlayerCount < 1)
                         soePlayerCount = 1;
@@ -3317,7 +3362,7 @@ void ZombieCalculatorPtr()
                     soeExpectedRoundTime = SpecialRoundTime(soeRound, soePlayerCount, corpseDelay[soePlayerCount - 1][soeRound - 1], true);
                 } SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Current Round - SOE", &soeRound, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Current Round - SOE", &soeRound, 1, NULL))
                 {
                     if (soeRound < 1)
                         soeRound = 1;
@@ -3342,16 +3387,16 @@ void ZombieCalculatorPtr()
                 HelpMarker("If you know the amount of zombies left on a round, and you want to figure out how much longer the round is, you can input the data here to get that time. The main use is finding how long to wait after 1st flag on SOE before nuking. Does not account for corpse delay.");
                 SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Number Of Zombies - Player Calc", &customZombiesLeft, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Number Of Zombies - Player Calc", &customZombiesLeft, 1, NULL))
                 {
-                    if (customZombiesLeft < 0)
-                        customZombiesLeft = 0;
+                    if (customZombiesLeft < 1)
+                        customZombiesLeft = 1;
                     else if (customZombiesLeft > GetZombieCountForRound(customZombiesLeftRound, customZombiesLeftPlayerCount))
                         customZombiesLeft = GetZombieCountForRound(customZombiesLeftRound, customZombiesLeftPlayerCount);
                     customCalcExpectedRoundTime = CustomRoundTime(customZombiesLeftRound, customZombiesLeftPlayerCount, customZombiesLeft);
                 } SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Current Round - Player Calc", &customZombiesLeftRound, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Current Round - Player Calc", &customZombiesLeftRound, 1, NULL))
                 {
                     if (customZombiesLeftRound < 1)
                         customZombiesLeftRound = 1;
@@ -3365,7 +3410,7 @@ void ZombieCalculatorPtr()
                 DummySpace(15.0f, 0.0f);
                 SAMELINE;
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::InputInt("##Number Of Players - Player Calc", &customZombiesLeftPlayerCount, 1, NULL, ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputInt("##Number Of Players - Player Calc", &customZombiesLeftPlayerCount, 1, NULL))
                 {
                     if (customZombiesLeftPlayerCount < 0)
                         customZombiesLeftPlayerCount = 0;
@@ -3679,10 +3724,7 @@ void CodeGuidesPtr()
 
                 // Timer operations
                 if (gameStarted)
-                {
-                    std::time_t finalTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
-                    gameTime = "Time: " + ParseTimeFromMilli((int)finalTime);
-                }
+                    gameTime = "Time: " + ParseTimeFromMilli(gameTimer.Elapsed());
             }
             ImGui::EndTabItem();
         }
