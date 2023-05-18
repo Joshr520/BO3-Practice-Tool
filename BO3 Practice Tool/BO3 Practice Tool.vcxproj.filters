@@ -120,6 +120,9 @@
     <ClInclude Include="Fonts\Icons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Walnut\xml.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BO3 Practice Tool.cpp">
@@ -183,6 +186,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="imgui\imgui_impl_vulkan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Walnut\xml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

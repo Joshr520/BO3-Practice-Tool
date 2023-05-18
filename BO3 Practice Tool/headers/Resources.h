@@ -224,15 +224,18 @@ namespace Autosplits
 	void WriteAutosplitPreset(const SplitPreset& preset);
 	void CreateNewAutosplitPreset(const std::string& presetName);
 	void DeleteAutosplitPreset(const std::string& preset);
+	void WriteSplitXML(const std::string& preset, const std::vector<std::pair<std::string, int>>& splits);
+	void WriteLayoutXML(const std::string& preset, int numSplits);
 	SplitPreset ParseSplitJson(const std::string& filePath);
 
 	inline std::vector<std::string> generalSplitData = { "Egg Autosplit", "Split on every X round ends", "Song Autosplit", "PAP Autosplit" };
 
-	inline int soeSplits[4] = { 0 };
+	inline int soeSplits[5] = { 0 };
 	inline std::vector<std::string> soeRitualSplits = { "Magician Ritual", "Femme Ritual", "Detective Ritual", "Boxer Ritual", "PAP Ritual" };
 	inline std::vector<std::string> soeEggSplits = { "Canals Egg", "Footlight Egg", "Waterfront Egg", "Rift Egg", "Pickup Sword" };
 	inline std::vector<std::string> soeOvumSplits = { "Junction Ovum", "Canals Ovum", "Footlight Ovum", "Waterfront Ovum" };
 	inline std::vector<std::string> soeFlagSplits = { "Pickup Upgraded Sword", "Activate Book", "Flag 1", "Flag 2", "Flag 3", "Flag 4" };
+	inline std::vector<std::string> soeRiftSplits = { "Canals - Rift", "Footlight - Rift", "Waterfront - Rift", "Rift - Canals", "Rift - Footlight", "Rift - Waterfront" };
 
 	inline int deSplits[9] = { 0 };
 	inline std::vector<std::string> deDragonSplits = { "Dragon 1", "Dragon 2", "Dragon 3", "Pickup Bow" };

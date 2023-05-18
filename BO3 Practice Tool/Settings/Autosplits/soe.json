@@ -1,0 +1,11 @@
+{
+    "Settings": {
+        "In Game Timer": false,
+        "In Game Round Timer": true,
+        "Amount of Splits": 0,
+        "Map Index": 0,
+        "Split Type": 0,
+        "Round Interval": 1
+    },
+    "Split Data": {}
+}

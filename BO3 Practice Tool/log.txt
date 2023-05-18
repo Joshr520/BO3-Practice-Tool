@@ -1,6 +1,6 @@
 -------------Practice Tool Startup-------------
 Searching for BO3 directory
-BO3 directory not saved - prompting user for input
+BO3 directory found
 Starting Enumeration
 BlackOps3.exe Not Found
 Writing presets

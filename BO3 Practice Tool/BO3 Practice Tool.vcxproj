@@ -186,6 +186,7 @@ COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y</Command>
     <ClInclude Include="Walnut\Layer.h" />
     <ClInclude Include="Walnut\Random.h" />
     <ClInclude Include="Walnut\Timer.h" />
+    <ClInclude Include="Walnut\xml.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BO3 Practice Tool.cpp" />
@@ -209,6 +210,7 @@ COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y</Command>
     <ClCompile Include="Walnut\Image.cpp" />
     <ClCompile Include="Walnut\Input\Input.cpp" />
     <ClCompile Include="Walnut\Random.cpp" />
+    <ClCompile Include="Walnut\xml.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BO3 Practice Tool.rc" />

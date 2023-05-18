@@ -966,10 +966,7 @@ void AutosplitsPtr()
                         addSplitView = false;
                     }
                 }
-            }
-            DummySpace(0.0f, 25.0f);
-            // row 2
-            {
+                SAMELINE;
                 if (CreateListBox("##Ovum Splits", soeOvumSplits, soeSplits[2], ImVec2(150.0f, 101.0f)))
                 {
 
@@ -988,7 +985,11 @@ void AutosplitsPtr()
                         addSplitView = false;
                     }
                 }
-                SAMELINE;
+            }
+            DummySpace(0.0f, 25.0f);
+            // row 2
+            {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 75);
                 if (CreateListBox("##Flag Splits", soeFlagSplits, soeSplits[3], ImVec2(200.0f, 151.0f)))
                 {
 
@@ -1002,6 +1003,25 @@ void AutosplitsPtr()
                         }) == splitPresets[currentSplitPreset].splits.end())
                     {
                         splitPresets[currentSplitPreset].splits.push_back({ soeFlagSplits[soeSplits[3]], addSplitRound });
+                        splitPresets[currentSplitPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Rift Splits", soeRiftSplits, soeSplits[4], ImVec2(200.0f, 151.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Rift", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == soeRiftSplits[soeSplits[4]];
+                        }) == splitPresets[currentSplitPreset].splits.end())
+                    {
+                        splitPresets[currentSplitPreset].splits.push_back({ soeRiftSplits[soeSplits[4]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
                         addSplitView = false;
@@ -1625,6 +1645,16 @@ void AutosplitsPtr()
             {
                 WriteAutosplitPreset(splitPresets[currentSplitPreset]);
             }
+            SAMELINE;
+            if (!splitPresets[currentSplitPreset].splits.size())
+                ImGui::BeginDisabled();
+            if (CreateButton("Create Livesplit Files", ImVec2(175.0f, 25.0f)))
+            {
+                WriteSplitXML(splitPresets[currentSplitPreset].presetName, splitPresets[currentSplitPreset].splits);
+                WriteLayoutXML(splitPresets[currentSplitPreset].presetName, splitPresets[currentSplitPreset].splits.size());
+            }
+            if (!splitPresets[currentSplitPreset].splits.size())
+                ImGui::EndDisabled();
             ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 160.0f, ImGui::GetCursorPosY() - 30.0f));
             ImGui::BeginGroup();
             if (ImGui::Checkbox("In Game Round Timer", &splitPresets[currentSplitPreset].igrt))

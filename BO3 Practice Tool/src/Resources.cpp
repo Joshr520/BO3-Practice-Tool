@@ -1,5 +1,3 @@
-#pragma warning( disable : 4244 ) 
-
 #include "Resources.h"
 #include "GUIFunctions.h"
 #include <limits.h>
@@ -10,6 +8,7 @@
 #include "json.h"
 
 #include "Walnut/Random.h"
+#include "Walnut/xml.h"
 
 namespace ZombieCalc
 {
@@ -699,6 +698,281 @@ namespace Autosplits
             std::filesystem::remove(selfDirectory + file);
         if (currentSplitPreset > 0) currentSplitPreset--;
         LoadSplitPresets();
+    }
+
+    void WriteSplitXML(const std::string& preset, const std::vector<std::pair<std::string, int>>& splits)
+    {
+        XML::XMLBuilder builder("1.0", "Run");
+
+        rapidxml::xml_node<>* runNode = builder.GetRootNode();
+        builder.AddAttribute(runNode, "version", "1.7.0");
+
+        rapidxml::xml_node<>* gameIconNode = builder.AddNode(builder.GetRootNode(), "GameIcon");
+
+        builder.AddNode(builder.GetRootNode(), "GameName", "Black Ops 3");
+        builder.AddNode(builder.GetRootNode(), "CategoryName", preset);
+        builder.AddNode(builder.GetRootNode(), "LayoutPath");
+
+        rapidxml::xml_node<>* metadataNode = builder.AddNode(builder.GetRootNode(), "Metadata");
+        rapidxml::xml_node<>* metadataRunNode = builder.AddNode(metadataNode, "Run");
+        builder.AddAttribute(metadataRunNode, "id", "");
+
+        rapidxml::xml_node<>* platformNode = builder.AddNode(metadataNode, "Platform");
+        builder.AddAttribute(platformNode, "usesEmulator", "False");
+        builder.AddNode(metadataNode, "Region");
+        builder.AddNode(metadataNode, "Variables");
+        builder.AddNode(builder.GetRootNode(), "Offset", "00:00:00");
+        builder.AddNode(builder.GetRootNode(), "AttemptCount", "0");
+        builder.AddNode(builder.GetRootNode(), "AttemptHistory");
+
+        rapidxml::xml_node<>* segmentsNode = builder.AddNode(builder.GetRootNode(), "Segments");
+
+        for (auto split : splits)
+        {
+            rapidxml::xml_node<>* segmentNode = builder.AddNode(segmentsNode, "Segment");
+
+            builder.AddNode(segmentNode, "Name", split.first.c_str());
+            builder.AddNode(segmentNode, "Icon");
+
+            rapidxml::xml_node<>* splitTimesNode = builder.AddNode(segmentNode, "SplitTimes");
+            rapidxml::xml_node<>* splitTimeNode = builder.AddNode(splitTimesNode, "SplitTime");
+            builder.AddAttribute(splitTimeNode, "name", "Personal Best");
+            builder.AddNode(segmentNode, "BestSegmentTime");
+            builder.AddNode(segmentNode, "SegmentHistory");
+        }
+
+        builder.AddNode(builder.GetRootNode(), "AutoSplitterSettings");
+
+        builder.SaveToFile(selfDirectory + PRESET_DIRECTORY + "/" + preset + ".lss");
+    }
+
+    void WriteLayoutXML(const std::string& preset, int numSplits)
+    {
+        XML::XMLBuilder builder("1.0", "Layout");
+
+        rapidxml::xml_node<>* root = builder.GetRootNode();
+        builder.AddAttribute(root, "version", "1.6.1");
+
+        builder.AddNode(root, "Mode", "Vertical");
+        builder.AddNode(root, "X", "0");
+        builder.AddNode(root, "Y", "0");
+        builder.AddNode(root, "VerticalWidth", "300");
+        builder.AddNode(root, "VerticalHeight", "400");
+        builder.AddNode(root, "HorizontalWidth", "-1");
+        builder.AddNode(root, "HorizontalHeight", "-1");
+
+        rapidxml::xml_node<>* settingsNode = builder.AddNode(root, "Settings");
+        builder.AddNode(settingsNode, "TextColor", "FFFFFFFF");
+        builder.AddNode(settingsNode, "BackgroundColor", "FF0F0F0F");
+        builder.AddNode(settingsNode, "BackgroundColor2", "00000000");
+        builder.AddNode(settingsNode, "ThinSeparatorsColor", "03FFFFFF");
+        builder.AddNode(settingsNode, "SeparatorsColor", "24FFFFFF");
+        builder.AddNode(settingsNode, "PersonalBestColor", "FF16A6FF");
+        builder.AddNode(settingsNode, "AheadGainingTimeColor", "FF00CC36");
+        builder.AddNode(settingsNode, "AheadLosingTimeColor", "FF52CC73");
+        builder.AddNode(settingsNode, "BehindGainingTimeColor", "FFCC5C52");
+        builder.AddNode(settingsNode, "BehindLosingTimeColor", "FFCC1200");
+        builder.AddNode(settingsNode, "BestSegmentColor", "FFD8AF1F");
+        builder.AddNode(settingsNode, "UseRainbowColor", "False");
+        builder.AddNode(settingsNode, "NotRunningColor", "FFACACAC");
+        builder.AddNode(settingsNode, "PausedColor", "FF7A7A7A");
+        builder.AddNode(settingsNode, "TextOutlineColor", "00000000");
+        builder.AddNode(settingsNode, "ShadowsColor", "00000000");
+        rapidxml::xml_node<>* timesFontNode = builder.AddNode(settingsNode, "TimesFont");
+        rapidxml::xml_node<>* timesCDATA = builder.GetDocument()->allocate_node(rapidxml::node_cdata);
+        timesCDATA->value(builder.GetDocument()->allocate_string("AAEAAAD/////AQAAAAAAAAAMAgAAAFFTeXN0ZW0uRHJhd2luZywgVmVyc2lvbj00LjAuMC4wLCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWIwM2Y1ZjdmMTFkNTBhM2EFAQAAABNTeXN0ZW0uRHJhd2luZy5Gb250BAAAAAROYW1lBFNpemUFU3R5bGUEVW5pdAEABAQLGFN5c3RlbS5EcmF3aW5nLkZvbnRTdHlsZQIAAAAbU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AgAAAAIAAAAGAwAAAAhTZWdvZSBVSQAAQEEF/P///xhTeXN0ZW0uRHJhd2luZy5Gb250U3R5bGUBAAAAB3ZhbHVlX18ACAIAAAABAAAABfv///8bU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AQAAAAd2YWx1ZV9fAAgCAAAAAwAAAAs="));
+        timesFontNode->append_node(timesCDATA);
+        rapidxml::xml_node<>* timerFontNode = builder.AddNode(settingsNode, "TimerFont");
+        rapidxml::xml_node<>* timerCDATA = builder.GetDocument()->allocate_node(rapidxml::node_cdata);
+        timerCDATA->value(builder.GetDocument()->allocate_string("AAEAAAD/////AQAAAAAAAAAMAgAAAFFTeXN0ZW0uRHJhd2luZywgVmVyc2lvbj00LjAuMC4wLCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWIwM2Y1ZjdmMTFkNTBhM2EFAQAAABNTeXN0ZW0uRHJhd2luZy5Gb250BAAAAAROYW1lBFNpemUFU3R5bGUEVW5pdAEABAQLGFN5c3RlbS5EcmF3aW5nLkZvbnRTdHlsZQIAAAAbU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AgAAAAIAAAAGAwAAAA5DZW50dXJ5IEdvdGhpYwAAL0IF/P///xhTeXN0ZW0uRHJhd2luZy5Gb250U3R5bGUBAAAAB3ZhbHVlX18ACAIAAAABAAAABfv///8bU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AQAAAAd2YWx1ZV9fAAgCAAAAAgAAAAs="));
+        timerFontNode->append_node(timerCDATA);
+        rapidxml::xml_node<>* textFontNode = builder.AddNode(settingsNode, "TextFont");
+        rapidxml::xml_node<>* textCDATA = builder.GetDocument()->allocate_node(rapidxml::node_cdata);
+        textCDATA->value(builder.GetDocument()->allocate_string("AAEAAAD/////AQAAAAAAAAAMAgAAAFFTeXN0ZW0uRHJhd2luZywgVmVyc2lvbj00LjAuMC4wLCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWIwM2Y1ZjdmMTFkNTBhM2EFAQAAABNTeXN0ZW0uRHJhd2luZy5Gb250BAAAAAROYW1lBFNpemUFU3R5bGUEVW5pdAEABAQLGFN5c3RlbS5EcmF3aW5nLkZvbnRTdHlsZQIAAAAbU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AgAAAAIAAAAGAwAAAAhTZWdvZSBVSQAAQEEF/P///xhTeXN0ZW0uRHJhd2luZy5Gb250U3R5bGUBAAAAB3ZhbHVlX18ACAIAAAAAAAAABfv///8bU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AQAAAAd2YWx1ZV9fAAgCAAAAAwAAAAs="));
+        textFontNode->append_node(textCDATA);
+        builder.AddNode(settingsNode, "AlwaysOnTop", "True");
+        builder.AddNode(settingsNode, "ShowBestSegments", "True");
+        builder.AddNode(settingsNode, "AntiAliasing", "True");
+        builder.AddNode(settingsNode, "DropShadows", "True");
+        builder.AddNode(settingsNode, "BackgroundType", "SolidColor");
+        builder.AddNode(settingsNode, "BackgroundImage");
+        builder.AddNode(settingsNode, "ImageOpacity", "1");
+        builder.AddNode(settingsNode, "ImageBlur", "0");
+        builder.AddNode(settingsNode, "Opacity", "1");
+        builder.AddNode(settingsNode, "MousePassThroughWhileRunning", "False");
+
+        rapidxml::xml_node<>* componentsNode = builder.AddNode(root, "Components");
+
+        rapidxml::xml_node<>* titleComponent = builder.AddNode(componentsNode, "Component");
+        builder.AddNode(titleComponent, "Path", "LiveSplit.Title.dll");
+        rapidxml::xml_node<>* titleSettings = builder.AddNode(titleComponent, "Settings");
+        builder.AddNode(titleSettings, "Version", "1.7.3");
+        builder.AddNode(titleSettings, "ShowGameName", "True");
+        builder.AddNode(titleSettings, "ShowCategoryName", "True");
+        builder.AddNode(titleSettings, "ShowAttemptCount", "True");
+        builder.AddNode(titleSettings, "ShowFinishedRunsCount", "False");
+        builder.AddNode(titleSettings, "OverrideTitleFont", "False");
+        builder.AddNode(titleSettings, "OverrideTitleColor", "False");
+        rapidxml::xml_node<>* titleFontNode = builder.AddNode(titleSettings, "TitleFont");
+        rapidxml::xml_node<>* titleCDATA = builder.GetDocument()->allocate_node(rapidxml::node_cdata);
+        titleCDATA->value(builder.GetDocument()->allocate_string("AAEAAAD/////AQAAAAAAAAAMAgAAAFFTeXN0ZW0uRHJhd2luZywgVmVyc2lvbj00LjAuMC4wLCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWIwM2Y1ZjdmMTFkNTBhM2EFAQAAABNTeXN0ZW0uRHJhd2luZy5Gb250BAAAAAROYW1lBFNpemUFU3R5bGUEVW5pdAEABAQLGFN5c3RlbS5EcmF3aW5nLkZvbnRTdHlsZQIAAAAbU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AgAAAAIAAAAGAwAAAAhTZWdvZSBVSQAAUEEF/P///xhTeXN0ZW0uRHJhd2luZy5Gb250U3R5bGUBAAAAB3ZhbHVlX18ACAIAAAAAAAAABfv///8bU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AQAAAAd2YWx1ZV9fAAgCAAAAAgAAAAs="));
+        titleFontNode->append_node(titleCDATA);
+        builder.AddNode(titleSettings, "SingleLine", "False");
+        builder.AddNode(titleSettings, "TitleColor", "FFFFFFFF");
+        builder.AddNode(titleSettings, "BackgroundColor", "FF2A2A2A");
+        builder.AddNode(titleSettings, "BackgroundColor2", "FF131313");
+        builder.AddNode(titleSettings, "BackgroundGradient", "Vertical");
+        builder.AddNode(titleSettings, "DisplayGameIcon", "True");
+        builder.AddNode(titleSettings, "ShowRegion", "False");
+        builder.AddNode(titleSettings, "ShowPlatform", "False");
+        builder.AddNode(titleSettings, "ShowVariables", "True");
+        builder.AddNode(titleSettings, "TextAlignment", "0");
+
+        rapidxml::xml_node<>* splitsComponent = builder.AddNode(componentsNode, "Component");
+        builder.AddNode(splitsComponent, "Path", "LiveSplit.Splits.dll");
+        rapidxml::xml_node<>* splitsSettings = builder.AddNode(splitsComponent, "Settings");
+        builder.AddNode(splitsSettings, "Version", "1.6");
+        builder.AddNode(splitsSettings, "CurrentSplitTopColor", "FF3373F4");
+        builder.AddNode(splitsSettings, "CurrentSplitBottomColor", "FF153574");
+        builder.AddNode(splitsSettings, "VisualSplitCount", std::to_string(std::min(numSplits, 6)));
+        builder.AddNode(splitsSettings, "SplitPreviewCount", "1");
+        builder.AddNode(splitsSettings, "DisplayIcons", "True");
+        builder.AddNode(splitsSettings, "ShowThinSeparators", "True");
+        builder.AddNode(splitsSettings, "AlwaysShowLastSplit", "True");
+        builder.AddNode(splitsSettings, "SplitWidth", "20");
+        builder.AddNode(splitsSettings, "SplitTimesAccuracy", "Hundredths");
+        builder.AddNode(splitsSettings, "AutomaticAbbreviations", "False");
+        builder.AddNode(splitsSettings, "BeforeNamesColor", "FFFFFFFF");
+        builder.AddNode(splitsSettings, "CurrentNamesColor", "FFFFFFFF");
+        builder.AddNode(splitsSettings, "AfterNamesColor", "FFFFFFFF");
+        builder.AddNode(splitsSettings, "OverrideTextColor", "False");
+        builder.AddNode(splitsSettings, "BeforeTimesColor", "FFFFFFFF");
+        builder.AddNode(splitsSettings, "CurrentTimesColor", "FFFFFFFF");
+        builder.AddNode(splitsSettings, "AfterTimesColor", "FFFFFFFF");
+        builder.AddNode(splitsSettings, "OverrideTimesColor", "False");
+        builder.AddNode(splitsSettings, "ShowBlankSplits", "True");
+        builder.AddNode(splitsSettings, "LockLastSplit", "True");
+        builder.AddNode(splitsSettings, "IconSize", "24");
+        builder.AddNode(splitsSettings, "IconShadows", "True");
+        builder.AddNode(splitsSettings, "SplitHeight", "3.6");
+        builder.AddNode(splitsSettings, "CurrentSplitGradient", "Vertical");
+        builder.AddNode(splitsSettings, "BackgroundColor", "00FFFFFF");
+        builder.AddNode(splitsSettings, "BackgroundColor2", "01FFFFFF");
+        builder.AddNode(splitsSettings, "BackgroundGradient", "Alternating");
+        builder.AddNode(splitsSettings, "SeparatorLastSplit", "True");
+        builder.AddNode(splitsSettings, "DeltasAccuracy", "Tenths");
+        builder.AddNode(splitsSettings, "DropDecimals", "True");
+        builder.AddNode(splitsSettings, "OverrideDeltasColor", "False");
+        builder.AddNode(splitsSettings, "DeltasColor", "FFFFFFFF");
+        builder.AddNode(splitsSettings, "Display2Rows", "False");
+        builder.AddNode(splitsSettings, "ShowColumnLabels", "False");
+        builder.AddNode(splitsSettings, "LabelsColor", "FFFFFFFF");
+
+        rapidxml::xml_node<>* splitsColumnsNode = builder.AddNode(splitsSettings, "Columns");
+
+        rapidxml::xml_node<>* splitsColumnsSettingsDeltaNode = builder.AddNode(splitsColumnsNode, "Settings");
+        builder.AddNode(splitsColumnsSettingsDeltaNode, "Version", "1.5");
+        builder.AddNode(splitsColumnsSettingsDeltaNode, "Name", "+/-");
+        builder.AddNode(splitsColumnsSettingsDeltaNode, "Type", "Delta");
+        builder.AddNode(splitsColumnsSettingsDeltaNode, "Comparison", "Current Comparison");
+        builder.AddNode(splitsColumnsSettingsDeltaNode, "TimingMethod", "Current Timing Method");
+
+        rapidxml::xml_node<>* splitsColumnsSettingsTimeNode = builder.AddNode(splitsColumnsNode, "Settings");
+        builder.AddNode(splitsColumnsSettingsTimeNode, "Version", "1.5");
+        builder.AddNode(splitsColumnsSettingsTimeNode, "Name", "Time");
+        builder.AddNode(splitsColumnsSettingsTimeNode, "Type", "SplitTime");
+        builder.AddNode(splitsColumnsSettingsTimeNode, "Comparison", "Current Comparison");
+        builder.AddNode(splitsColumnsSettingsTimeNode, "TimingMethod", "Current Timing Method");
+
+        rapidxml::xml_node<>* prevSegComponent = builder.AddNode(componentsNode, "Component");
+        builder.AddNode(prevSegComponent, "Path", "LiveSplit.PreviousSegment.dll");
+        rapidxml::xml_node<>* prevSegSettings = builder.AddNode(prevSegComponent, "Settings");
+        builder.AddNode(prevSegSettings, "Version", "1.6");
+        builder.AddNode(prevSegSettings, "TextColor", "FFFFFFFF");
+        builder.AddNode(prevSegSettings, "OverrideTextColor", "False");
+        builder.AddNode(prevSegSettings, "BackgroundColor", "00FFFFFF");
+        builder.AddNode(prevSegSettings, "BackgroundColor2", "00FFFFFF");
+        builder.AddNode(prevSegSettings, "BackgroundGradient", "Plain");
+        builder.AddNode(prevSegSettings, "DeltaAccuracy", "Tenths");
+        builder.AddNode(prevSegSettings, "DropDecimals", "True");
+        builder.AddNode(prevSegSettings, "Comparison", "Personal Best");
+        builder.AddNode(prevSegSettings, "Display2Rows", "False");
+        builder.AddNode(prevSegSettings, "ShowPossibleTimeSave", "False");
+        builder.AddNode(prevSegSettings, "TimeSaveAccuracy", "Tenths");
+
+        rapidxml::xml_node<>* runPredComponent = builder.AddNode(componentsNode, "Component");
+        builder.AddNode(runPredComponent, "Path", "LiveSplit.RunPrediction.dll");
+        rapidxml::xml_node<>* runPredSettings = builder.AddNode(runPredComponent, "Settings");
+        builder.AddNode(runPredSettings, "Version", "1.4");
+        builder.AddNode(runPredSettings, "TextColor", "FFFFFFFF");
+        builder.AddNode(runPredSettings, "OverrideTextColor", "False");
+        builder.AddNode(runPredSettings, "TimeColor", "FFFFFFFF");
+        builder.AddNode(runPredSettings, "OverrideTimeColor", "False");
+        builder.AddNode(runPredSettings, "Accuracy", "Seconds");
+        builder.AddNode(runPredSettings, "BackgroundColor", "00FFFFFF");
+        builder.AddNode(runPredSettings, "BackgroundColor2", "00FFFFFF");
+        builder.AddNode(runPredSettings, "BackgroundGradient", "Plain");
+        builder.AddNode(runPredSettings, "Comparison", "Best Segments");
+        builder.AddNode(runPredSettings, "Display2Rows", "False");
+
+        rapidxml::xml_node<>* sobComponent = builder.AddNode(componentsNode, "Component");
+        builder.AddNode(sobComponent, "Path", "LiveSplit.SumOfBest.dll");
+        rapidxml::xml_node<>* sobSettings = builder.AddNode(sobComponent, "Settings");
+        builder.AddNode(sobSettings, "Version", "1.4");
+        builder.AddNode(sobSettings, "TextColor", "FFFFFFFF");
+        builder.AddNode(sobSettings, "OverrideTextColor", "False");
+        builder.AddNode(sobSettings, "TimeColor", "FFFFFFFF");
+        builder.AddNode(sobSettings, "OverrideTimeColor", "False");
+        builder.AddNode(sobSettings, "Accuracy", "Seconds");
+        builder.AddNode(sobSettings, "BackgroundColor", "00FFFFFF");
+        builder.AddNode(sobSettings, "BackgroundColor2", "00FFFFFF");
+        builder.AddNode(sobSettings, "BackgroundGradient", "Plain");
+        builder.AddNode(sobSettings, "Display2Rows", "False");
+
+        rapidxml::xml_node<>* detailedTimerComponent = builder.AddNode(componentsNode, "Component");
+        builder.AddNode(detailedTimerComponent, "Path", "LiveSplit.DetailedTimer.dll");
+        rapidxml::xml_node<>* detailedTimerSettings = builder.AddNode(detailedTimerComponent, "Settings");
+        builder.AddNode(detailedTimerSettings, "Version", "1.5");
+        builder.AddNode(detailedTimerSettings, "Height", "75");
+        builder.AddNode(detailedTimerSettings, "Width", "200");
+        builder.AddNode(detailedTimerSettings, "SegmentTimerSizeRatio", "40");
+        builder.AddNode(detailedTimerSettings, "TimerShowGradient", "True");
+        builder.AddNode(detailedTimerSettings, "OverrideTimerColors", "False");
+        builder.AddNode(detailedTimerSettings, "SegmentTimerShowGradient", "True");
+        builder.AddNode(detailedTimerSettings, "TimerFormat", "1.23");
+        builder.AddNode(detailedTimerSettings, "SegmentTimerFormat", "1.23");
+        builder.AddNode(detailedTimerSettings, "SegmentTimesAccuracy", "Hundredths");
+        builder.AddNode(detailedTimerSettings, "TimerColor", "FFAAAAAA");
+        builder.AddNode(detailedTimerSettings, "SegmentTimerColor", "FFAAAAAA");
+        builder.AddNode(detailedTimerSettings, "SegmentLabelsColor", "FFFFFFFF");
+        builder.AddNode(detailedTimerSettings, "SegmentTimesColor", "FFFFFFFF");
+        rapidxml::xml_node<>* segmentLabelsNode = builder.AddNode(detailedTimerSettings, "SegmentLabelsFont");
+        rapidxml::xml_node<>* segmentLabelsCDATA = builder.GetDocument()->allocate_node(rapidxml::node_cdata);
+        segmentLabelsCDATA->value(builder.GetDocument()->allocate_string("AAEAAAD/////AQAAAAAAAAAMAgAAAFFTeXN0ZW0uRHJhd2luZywgVmVyc2lvbj00LjAuMC4wLCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWIwM2Y1ZjdmMTFkNTBhM2EFAQAAABNTeXN0ZW0uRHJhd2luZy5Gb250BAAAAAROYW1lBFNpemUFU3R5bGUEVW5pdAEABAQLGFN5c3RlbS5EcmF3aW5nLkZvbnRTdHlsZQIAAAAbU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AgAAAAIAAAAGAwAAAAhTZWdvZSBVSQAAIEEF/P///xhTeXN0ZW0uRHJhd2luZy5Gb250U3R5bGUBAAAAB3ZhbHVlX18ACAIAAAAAAAAABfv///8bU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AQAAAAd2YWx1ZV9fAAgCAAAAAwAAAAs="));
+        segmentLabelsNode->append_node(segmentLabelsCDATA);
+        rapidxml::xml_node<>* segmentTimesNode = builder.AddNode(detailedTimerSettings, "SegmentTimesFont");
+        rapidxml::xml_node<>* segmentTimesCDATA = builder.GetDocument()->allocate_node(rapidxml::node_cdata);
+        segmentTimesCDATA->value(builder.GetDocument()->allocate_string("AAEAAAD/////AQAAAAAAAAAMAgAAAFFTeXN0ZW0uRHJhd2luZywgVmVyc2lvbj00LjAuMC4wLCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWIwM2Y1ZjdmMTFkNTBhM2EFAQAAABNTeXN0ZW0uRHJhd2luZy5Gb250BAAAAAROYW1lBFNpemUFU3R5bGUEVW5pdAEABAQLGFN5c3RlbS5EcmF3aW5nLkZvbnRTdHlsZQIAAAAbU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AgAAAAIAAAAGAwAAAAhTZWdvZSBVSQAAIEEF/P///xhTeXN0ZW0uRHJhd2luZy5Gb250U3R5bGUBAAAAB3ZhbHVlX18ACAIAAAABAAAABfv///8bU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AQAAAAd2YWx1ZV9fAAgCAAAAAwAAAAs="));
+        segmentTimesNode->append_node(segmentTimesCDATA);
+        rapidxml::xml_node<>* splitNameNode = builder.AddNode(detailedTimerSettings, "SplitNameFont");
+        rapidxml::xml_node<>* splitNameCDATA = builder.GetDocument()->allocate_node(rapidxml::node_cdata);
+        splitNameCDATA->value(builder.GetDocument()->allocate_string("AAEAAAD/////AQAAAAAAAAAMAgAAAFFTeXN0ZW0uRHJhd2luZywgVmVyc2lvbj00LjAuMC4wLCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWIwM2Y1ZjdmMTFkNTBhM2EFAQAAABNTeXN0ZW0uRHJhd2luZy5Gb250BAAAAAROYW1lBFNpemUFU3R5bGUEVW5pdAEABAQLGFN5c3RlbS5EcmF3aW5nLkZvbnRTdHlsZQIAAAAbU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AgAAAAIAAAAGAwAAAAhTZWdvZSBVSQAAMEEF/P///xhTeXN0ZW0uRHJhd2luZy5Gb250U3R5bGUBAAAAB3ZhbHVlX18ACAIAAAAAAAAABfv///8bU3lzdGVtLkRyYXdpbmcuR3JhcGhpY3NVbml0AQAAAAd2YWx1ZV9fAAgCAAAAAwAAAAs="));
+        splitNameNode->append_node(splitNameCDATA);
+        builder.AddNode(detailedTimerSettings, "DisplayIcon", "False");
+        builder.AddNode(detailedTimerSettings, "IconSize", "40");
+        builder.AddNode(detailedTimerSettings, "ShowSplitName", "False");
+        builder.AddNode(detailedTimerSettings, "SplitNameColor", "FFFFFFFF");
+        builder.AddNode(detailedTimerSettings, "BackgroundColor", "00FFFFFF");
+        builder.AddNode(detailedTimerSettings, "BackgroundColor2", "00FFFFFF");
+        builder.AddNode(detailedTimerSettings, "BackgroundGradient", "Plain");
+        builder.AddNode(detailedTimerSettings, "Comparison", "Current Comparison");
+        builder.AddNode(detailedTimerSettings, "Comparison2", "Best Segments");
+        builder.AddNode(detailedTimerSettings, "HideComparison", "False");
+        builder.AddNode(detailedTimerSettings, "TimingMethod", "Current Timing Method");
+        builder.AddNode(detailedTimerSettings, "DecimalsSize", "35");
+        builder.AddNode(detailedTimerSettings, "SegmentTimerDecimalsSize", "35");
+
+        builder.SaveToFile(selfDirectory + PRESET_DIRECTORY + "/" + preset + ".lsl");
     }
 
     SplitPreset ParseSplitJson(const std::string& filePath)
