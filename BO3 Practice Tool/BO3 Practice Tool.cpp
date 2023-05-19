@@ -1,50 +1,32 @@
 #include <Windows.h>
 #include <Psapi.h>
 #include <Shobjidl.h>
+#include <filesystem>
+
 
 #include "Walnut/Application.h"
 #include "Walnut/Image.h"
 
-#include "GUIFunctions.h"
-#include "PlayerOptions.h"
-#include "ZombieOptions.h"
-#include "PowerupOptions.h"
-#include "EggStepOptions.h"
-#include "Craftables.h"
-#include "Blockers.h"
-#include "MapOptions.h"
-#include "Resources.h"
+#include "ToolData.h"
+#include "GlobalData.h"
 #include "Memhelp.h"
 #include "json.h"
-#include "Resource.h"
+#include "Keybinds.h"
 
 #define CURL_STATICLIB
 #include <curl/curl.h>
 #include <miniz/miniz.h>
 
-using namespace GUIFunctions;
-using namespace ZombieCalc;
-using namespace SOECodeGuide;
-using namespace GKValveSolver;
-using namespace IceCodePractice;
+using namespace BO3PT;
 using namespace JSON;
-using namespace BGB;
-using namespace Weapons;
-using namespace Perks;
-using namespace ZombieOptions;
-using namespace PowerupOptions;
-using namespace EggStepOptions;
-using namespace Craftables;
-using namespace Blockers;
-using namespace MapOptions;
-using namespace Autosplits;
 
 #define SAMELINE ImGui::SameLine()
 
-std::string SelectFolder();
+void SetupData();
 void SearchForGame();
 bool UpdateAvailable();
 bool PerformUpdate();
+std::string SelectFolder();
 
 void GobblegumLoadoutPtr();
 void AutosplitsPtr();
@@ -84,6 +66,7 @@ ImGuiWindowFlags dockFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCo
 ImGuiViewport* viewport;
 
 // Main data
+static bool setupDone = false;
 static bool mainDocked = false;
 static bool subDocked = false;
 static bool updateAvailable = false;
@@ -127,7 +110,6 @@ static std::string weaponSelectName = "none";
 static int perkSelectIndex = 0;
 static int gobblegumClassicSelectIndex = 0;
 static int gobblegumMegaSelectIndex = 0;
-static int pointInput = 0;
 
 // Round options data
 static int roundInput = 1;
@@ -187,73 +169,10 @@ public:
         style.WindowBorderSize = 0.0f;
         style.Colors[2].w = 0.6f;
 
-        if (!DoesPathExist(selfDirectory + "\\settings.json"))
-            WriteEmptyJson(selfDirectory + "\\settings.json");
-        Document doc = ReadJsonFromFile(selfDirectory + "\\settings.json");
-
-        LogFile("Searching for BO3 directory");
-        if (doc.HasMember("Steam Path") && doc["Steam Path"].IsString())
-        {
-            bo3Directory = doc["Steam Path"].GetString();
-            LogFile("BO3 directory found");
-        }
-        else
-            LogFile("BO3 directory not saved - prompting user for input");
-        if (DoesPathExist(bo3Directory))
-        {
-            steamPathFound = true;
-            VerifyFileStructure();
-        }
-        pID = MemHelp::GetProcessIdByName(L"BlackOps3.exe");
-        if (pID != 0)
-        {
-            baseAddr = MemHelp::GetModuleBaseAddress(pID, L"BlackOps3.exe");
-            mapNameAddr = baseAddr + 0x179DF840 / 8;
-            roundAddr = baseAddr + 0x1140DC30 / 8;
-            std::stringstream log;
-            log << "Base Address: " << baseAddr << "\n";
-            log << "Map Address: " << mapNameAddr << "\n";
-            log << "Round Address: " << roundAddr << "\n";
-            LogFile(log.str());
-            pHandle = OpenProcess(PROCESS_ALL_ACCESS, false, pID);
-            if (pHandle != INVALID_HANDLE_VALUE)
-                procFound = true;
-        }
-        else
-        {
-            auto thread = std::thread(SearchForGame);
-            thread.detach();
-        }
-        LogFile("Writing presets");
-        WritePresetToGame(inactiveGumPreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
-        WritePracticePatches(inactivePracticePatchIndexes);
-        updateAvailable = UpdateAvailable();
-
-        if (steamPathFound)
-            InitVariables();
+        auto thread = std::thread(SetupData);
+        thread.detach();
 
         discordIcon = new Walnut::Image("Resource Images/Discord.png");
-
-        // Init function list
-        {
-            funcList.push_back(std::function<void()>(GobblegumLoadoutPtr));
-            funcList.push_back(std::function<void()>(AutosplitsPtr));
-            funcList.push_back(std::function<void()>(PracticePatchesPtr));
-            funcList.push_back(std::function<void()>(SettingsPtr));
-            funcList.push_back(std::function<void()>(PlayerOptionsPtr));
-            funcList.push_back(std::function<void()>(ZombieOptionsPtr));
-            funcList.push_back(std::function<void()>(RoundOptionsPtr));
-            funcList.push_back(std::function<void()>(PowerupOptionsPtr));
-            funcList.push_back(std::function<void()>(EggStepOptionsPtr));
-            funcList.push_back(std::function<void()>(CraftableOptionsPtr));
-            funcList.push_back(std::function<void()>(BlockerOptionsPtr));
-            funcList.push_back(std::function<void()>(MapOptionsPtr));
-            funcList.push_back(std::function<void()>(ZombieCalculatorPtr));
-            funcList.push_back(std::function<void()>(CodeGuidesPtr));
-            funcList.push_back(std::function<void()>(GKValveSolverPtr));
-        }
-
-        LogFile("Setup Finished");
 	}
 
     virtual void OnUIRender() override
@@ -283,7 +202,7 @@ public:
             ImGuiID dock_main_id = dockID;
             ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
             ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.2f, nullptr, &dock_main_id);
-            ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.625f, nullptr, &dock_right_id);
+            ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.35f, nullptr, &dock_right_id);
 
             ImGui::DockBuilderDockWindow("##Sidebar", dock_left_id);
             ImGui::DockBuilderDockWindow("##Body", dock_right_id);
@@ -330,7 +249,7 @@ public:
                     ImGui::EndDisabled();
                 ImGui::PushFont(sidebarFont);
                 ImGui::Text("Frontend");
-                ImGui::Separator(3.5f);
+                ImGui::Separator(2.5f);
                 ImGui::PopFont();
 
                 const char* sidebarItems[] = { "Gobblegum Loadout", "Autosplits", "Practice Patches", "Settings", "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options",
@@ -354,7 +273,7 @@ public:
                     ImGui::BeginDisabled();
                 ImGui::PushFont(sidebarFont);
                 ImGui::Text("In Game");
-                ImGui::Separator(3.5f);
+                ImGui::Separator(2.5f);
                 ImGui::PopFont();
                 // In Game
                 if (appStatus != "Status: Active" || currentMap == "core_frontend")
@@ -379,7 +298,7 @@ public:
                     ImGui::EndDisabled();
                 ImGui::PushFont(sidebarFont);
                 ImGui::Text("Resources");
-                ImGui::Separator(3.5f);
+                ImGui::Separator(2.5f);
                 ImGui::PopFont();
                 // Resources
                 for (int i = inGameItems; i < resourceItems; i++)
@@ -510,10 +429,10 @@ public:
         }
         if (!steamPathFound)
         {
-            ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Select BO3 EXE").x / 2, ImGui::GetContentRegionAvail().y / 2 - ImGui::CalcTextSize("Select BO3 EXE").y / 2 - 50.0f));
+            ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Select BO3 Folder").x / 2, ImGui::GetContentRegionAvail().y / 2 - ImGui::CalcTextSize("Select BO3 EXE").y / 2 - 50.0f));
             ImGui::Text("Select BO3 EXE");
             ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Select BO3 EXE").x / 2);
-            if (CreateButton("Browse", ImVec2(ImGui::CalcTextSize("Select BO3 EXE").x, 50.0f)))
+            if (CreateButton("Browse", ImVec2(ImGui::CalcTextSize("Select BO3 Folder").x, 50.0f)))
             {
                 bo3Directory = SelectFolder();
                 std::string exe = bo3Directory + std::string("\\BlackOps3.exe");
@@ -538,15 +457,15 @@ public:
                 ImGui::SetNextWindowPos(ImVec2(windowPos.x + windowSize.x / 2 - ImGui::CalcItemWidth() / 3, windowPos.y + 120), ImGuiCond_Always);
                 if (ImGui::BeginPopupModal("Directory Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
                 {
-                    ImGui::TextWrapped("Incorrect File Chosen");
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::CalcTextSize("Incorrect File Chosen").x / 2 - 60);
+                    ImGui::TextWrapped("Incorrect Folder Chosen");
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::CalcTextSize("Incorrect Folder Chosen").x / 2 - 60);
                     if (ImGui::Button("OK", ImVec2(120, 0)))
                         ImGui::CloseCurrentPopup();
                     ImGui::EndPopup();
                 }
             }
         }
-        else
+        else if (setupDone)
             funcList[sidebarCurrentItem]();
 
         ImGui::End();
@@ -598,58 +517,74 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	return app;
 }
 
-std::string SelectFolder()
+void SetupData()
 {
-    std::string returnFolder = "";
+    if (!DoesPathExist(selfDirectory + "\\settings.json"))
+        WriteEmptyJson(selfDirectory + "\\settings.json");
+    Document doc = ReadJsonFromFile(selfDirectory + "\\settings.json");
 
-    HRESULT CoInitializeEx(LPVOID pvReserved, DWORD dwCoInit);
-
-    CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-
-    IFileDialog* pFileDialog;
-    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileDialog));
-    if (SUCCEEDED(hr))
+    LogFile("Searching for BO3 directory");
+    if (doc.HasMember("Steam Path") && doc["Steam Path"].IsString())
     {
-        FILEOPENDIALOGOPTIONS options;
-        hr = pFileDialog->GetOptions(&options);
-        if (SUCCEEDED(hr))
-        {
-            options |= FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST;
-            hr = pFileDialog->SetOptions(options);
-        }
+        bo3Directory = doc["Steam Path"].GetString();
+        LogFile("BO3 directory found");
+    }
+    else
+        LogFile("BO3 directory not saved - prompting user for input");
+    if (DoesPathExist(bo3Directory))
+    {
+        steamPathFound = true;
+        VerifyFileStructure();
+    }
+    pID = MemHelp::GetProcessIdByName(L"BlackOps3.exe");
+    if (pID != 0)
+    {
+        baseAddr = MemHelp::GetModuleBaseAddress(pID, L"BlackOps3.exe");
+        mapNameAddr = baseAddr + 0x179DF840 / 8;
+        roundAddr = baseAddr + 0x1140DC30 / 8;
+        std::stringstream log;
+        log << "Base Address: " << baseAddr << "\n";
+        log << "Map Address: " << mapNameAddr << "\n";
+        log << "Round Address: " << roundAddr << "\n";
+        LogFile(log.str());
+        pHandle = OpenProcess(PROCESS_ALL_ACCESS, false, pID);
+        if (pHandle != INVALID_HANDLE_VALUE)
+            procFound = true;
+    }
+    else
+    {
+        auto thread = std::thread(SearchForGame);
+        thread.detach();
+    }
+    LogFile("Writing presets");
+    WritePresetToGame(inactiveGumPreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
+    WritePracticePatches(inactivePracticePatchIndexes);
+    updateAvailable = UpdateAvailable();
 
-        if (SUCCEEDED(hr))
-        {
-            hr = pFileDialog->Show(nullptr);
-            if (SUCCEEDED(hr))
-            {
-                IShellItem* pItem;
-                hr = pFileDialog->GetResult(&pItem);
-                if (SUCCEEDED(hr))
-                {
-                    PWSTR folderPath;
-                    hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &folderPath);
-                    if (SUCCEEDED(hr))
-                    {
-                        int bufferSize = WideCharToMultiByte(CP_UTF8, 0, folderPath, -1, nullptr, 0, nullptr, nullptr);
+    if (steamPathFound)
+        InitVariables();
 
-                        returnFolder.resize(bufferSize);
-                        WideCharToMultiByte(CP_UTF8, 0, folderPath, -1, &returnFolder[0], bufferSize, nullptr, nullptr);
-                        returnFolder.resize(returnFolder.length() - 1);
-
-                        CoTaskMemFree(folderPath);
-                    }
-                    pItem->Release();
-                }
-            }
-        }
-
-        pFileDialog->Release();
+    // Init function list
+    {
+        funcList.emplace_back(std::function<void()>(GobblegumLoadoutPtr));
+        funcList.emplace_back(std::function<void()>(AutosplitsPtr));
+        funcList.emplace_back(std::function<void()>(PracticePatchesPtr));
+        funcList.emplace_back(std::function<void()>(SettingsPtr));
+        funcList.emplace_back(std::function<void()>(PlayerOptionsPtr));
+        funcList.emplace_back(std::function<void()>(ZombieOptionsPtr));
+        funcList.emplace_back(std::function<void()>(RoundOptionsPtr));
+        funcList.emplace_back(std::function<void()>(PowerupOptionsPtr));
+        funcList.emplace_back(std::function<void()>(EggStepOptionsPtr));
+        funcList.emplace_back(std::function<void()>(CraftableOptionsPtr));
+        funcList.emplace_back(std::function<void()>(BlockerOptionsPtr));
+        funcList.emplace_back(std::function<void()>(MapOptionsPtr));
+        funcList.emplace_back(std::function<void()>(ZombieCalculatorPtr));
+        funcList.emplace_back(std::function<void()>(CodeGuidesPtr));
+        funcList.emplace_back(std::function<void()>(GKValveSolverPtr));
     }
 
-    CoUninitialize();
-
-    return returnFolder;
+    LogFile("Setup Finished");
+    setupDone = true;
 }
 
 void SearchForGame()
@@ -747,6 +682,60 @@ bool PerformUpdate()
     if (DownloadAndExtractZip({ "BO3 Practice Tool", "GSC", "Resource Images" }))
         return 0;
     return 1;
+}
+
+std::string SelectFolder()
+{
+    std::string returnFolder = "";
+
+    HRESULT CoInitializeEx(LPVOID pvReserved, DWORD dwCoInit);
+
+    CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+    IFileDialog* pFileDialog;
+    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileDialog));
+    if (SUCCEEDED(hr))
+    {
+        FILEOPENDIALOGOPTIONS options;
+        hr = pFileDialog->GetOptions(&options);
+        if (SUCCEEDED(hr))
+        {
+            options |= FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST;
+            hr = pFileDialog->SetOptions(options);
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            hr = pFileDialog->Show(nullptr);
+            if (SUCCEEDED(hr))
+            {
+                IShellItem* pItem;
+                hr = pFileDialog->GetResult(&pItem);
+                if (SUCCEEDED(hr))
+                {
+                    PWSTR folderPath;
+                    hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &folderPath);
+                    if (SUCCEEDED(hr))
+                    {
+                        int bufferSize = WideCharToMultiByte(CP_UTF8, 0, folderPath, -1, nullptr, 0, nullptr, nullptr);
+
+                        returnFolder.resize(bufferSize);
+                        WideCharToMultiByte(CP_UTF8, 0, folderPath, -1, &returnFolder[0], bufferSize, nullptr, nullptr);
+                        returnFolder.resize(returnFolder.length() - 1);
+
+                        CoTaskMemFree(folderPath);
+                    }
+                    pItem->Release();
+                }
+            }
+        }
+
+        pFileDialog->Release();
+    }
+
+    CoUninitialize();
+
+    return returnFolder;
 }
 
 void GobblegumLoadoutPtr()
@@ -1980,15 +1969,15 @@ void PlayerOptionsPtr()
     {
         if (ImGui::BeginTabItem(ICON_FA_GEAR " General Options"))
         {
-            if (CreateButton("Godmode", ImVec2(100.0f, 25.0f), &PlayerOptions::godActive, true, fakeColor, true))
-                NotifyGame({ 0, 11, PlayerOptions::godActive });
+            if (CreateButton("Godmode", ImVec2(100.0f, 25.0f), &godActive, true, fakeColor, true))
+                NotifyGame({ 0, 11, godActive });
             SAMELINE;
-            if (CreateButton("Infinite Ammo", ImVec2(150.0f, 25.0f), &PlayerOptions::infAmmoActive, true, fakeColor, true))
-                NotifyGame({ 0, 12, PlayerOptions::infAmmoActive });
+            if (CreateButton("Infinite Ammo", ImVec2(150.0f, 25.0f), &infAmmoActive, true, fakeColor, true))
+                NotifyGame({ 0, 12, infAmmoActive });
             SAMELINE;
             ImGui::SetNextItemWidth(175.0f);
-            if (ImGui::SliderInt("Timescale", &PlayerOptions::timescaleInt, 1, 10))
-                NotifyGame({ 0, 13, PlayerOptions::timescaleInt });
+            if (ImGui::SliderInt("Timescale", &timescaleInt, 1, 10))
+                NotifyGame({ 0, 13, timescaleInt });
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem(ICON_FA_GEAR " Weapon Options"))
@@ -1998,7 +1987,7 @@ void PlayerOptionsPtr()
                 std::vector<int> notify = { 0, 1 };
                 std::vector weaponNums = GetWeaponIndex(currentMap, weaponSelectName);
                 notify.insert(notify.end(), weaponNums.begin(), weaponNums.end());
-                notify.push_back(upgradedWeapon);
+                notify.emplace_back(upgradedWeapon);
                 NotifyGame(notify);
             }
             SAMELINE;

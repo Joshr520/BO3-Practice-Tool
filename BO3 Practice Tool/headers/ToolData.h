@@ -1,22 +1,183 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <unordered_map>
-#include <tuple>
-#include <chrono>
-#include <set>
-#include <fstream>
+#include <unordered_set>
+#include <functional>
 
 #include "Walnut/Image.h"
 #include "Walnut/Timer.h"
+#include "imgui.h"
 
-constexpr unsigned long hashstr(const char* str, int h = 0)
+namespace BO3PT
 {
-	return !str[h] ? 55 : (hashstr(str, h + 1) * 33) + (unsigned char)(str[h]);
-}
+#pragma region Blockers
+	inline int zodDoorIndex = 0;
+	inline int zodPowerIndex = 0;
+	inline int zodSmashablesIndex = 0;
+	inline int factoryDoorIndex = 0;
+	inline int castleDoorIndex = 0;
+	inline int castleLanderIndex = 0;
+	inline int islandDoorIndex = 0;
+	inline int stalingradDoorIndex = 0;
+	inline int genesisDoorIndex = 0;
+	inline int genesisGenIndex = 0;
+	inline int prototypeDoorIndex = 0;
+	inline int asylumDoorIndex = 0;
+	inline int sumpfDoorIndex = 0;
+	inline int theaterDoorIndex = 0;
+	inline int cosmodromeDoorIndex = 0;
+	inline int templeDoorIndex = 0;
+	inline int moonDoorIndex = 0;
+	inline int tombDoorIndex = 0;
+	inline int tombGenIndex = 0;
+	inline std::vector<std::string> zodDoorItems = { "Start-Junction", "Canals-Junction", "Canals-Tram", "Canals High-Tram", "Theater-Junction", "Theater Alley-Square", "Theater High-Square",
+		"Slums-Junction", "Slums Waterfront-Alley", "Slums High-Train", "Canals Dropdown", "Footlight Dropdown", "Slums Alley Dropdown", "Slums Waterfront Dropdown" };
+	inline std::vector<std::string> zodPowerItems = { "Quick Revive", "Canals Perk", "Footlight Perk", "Waterfront Perk", "Stamin Up", "Mule Kick", "Widows Wine",
+		"Start Stairs", "Canals Stairs", "Ruby Rabbit Stairs", "Theater Stairs", "Burlesque Door", "Slums Stairs", "Rift Door", "Junction Crane", "Canals Grate" };
+	inline std::vector<std::string> zodSmashablesItems = { "Canals Statue", "Theater Statue", "Slums Statue", "Rift Statue", "Summoning Key", "Detective Badge", "Femme Hairpiece",
+		"Boxer Belt", "Boxing Ring", "Start Powerup Door", "Canals Portal", "Theater Portal", "Slums Portal" };
+	inline std::vector<std::string> factoryDoorItems = { "Outside West", "Warehouse Building", "Warehouse Second Floor", "West TP", "Outside East", "East Building", "East Loading Dock", "East TP", "South TP" };
+	inline std::vector<std::string> castleDoorItems = { "Start-Sub Clocktower", "Sub Clocktower-Courtyard", "Courtyard-Great Hall Upper", "Great Hall-Armory", "Start-Gatehouse",
+		"Gatehouse-Lower Courtyard", "Lower Courtyard-Livingquarters", "Livingquarters-Armory", "Undercroft-Undercroft Lab", "Gatehouse Dropdown", "Great Hall Dropdown M8", "Great Hall Dropdown Speed Cola",
+		"Lower Courtyard Dropdown Dragon", "Lower Courtyard Dropdown Landing Pad" };
+	inline std::vector<std::string> castleLanderItems = { "Landing Pad Clocktower", "Landing Pad Rocket", "Landing Pad Gatehouse", "Landing Pad Start" };
+	inline std::vector<std::string> islandDoorItems = { "Start-Jungle", "Jungle-Crash Site", "Jungle-Jungle Lab", "Jungle Lab-Jungle Lab Upper", "Jungle Lab-Bunker Exterior", "Start-Swamp", "Swamp-Ruins", "Swamp-Swamp Lab",
+		"Swamp Lab-Swamp Lab Upper", "Swamp Lab-Meteor Site", "Swamp Lab-Bunker Exterior", "Bunker Exterior-Bunker Interior", "Bunker Interior-Bunker Upper", "Bunker Interior-Bunker Left", "Bunker Left-Cliffside",
+		"Bunker Interior-Bunker Right", "Bunker Interior-Operating Rooms", "Operating Rooms-Flooded Bunker", "Bunker Exterior Dropdown" };
+	inline std::vector<std::string> stalingradDoorItems = { "Start-Department", "Department-Alley", "Department-Department Upper", "Bunker-Armory", "Bunker-Infirmary", "Department-Armory", "Department-Infirmary", "Dragon Command",
+		"Supply", "Tank", "Supply Tram Dropdown", "Tank Bridge Dropdown" };
+	inline std::vector<std::string> genesisDoorItems = { "Start-Left", "Start-Right", "Temple-Temple Stairs", "Temple-Undercroft", "Temple-Theater", "Undercroft-Theater", "Asylum Downstairs-Upstairs", "Asylum Upstairs-Kitchen",
+		"Cellblock-Messhall", "Ruins-Mound", "Generator-Trenches", "Prototype Start-Upstairs", "Prison Dropdown Generator", "Prison Dropdown Poster" };
+	inline std::vector<std::string> genesisGenItems = { "Mob", "Spawn", "DE", "Verruckt" };
+	inline std::vector<std::string> prototypeDoorItems = { "Start-Box", "Start-Upstairs", "Box-Upstairs" };
+	inline std::vector<std::string> asylumDoorItems = { "Start Right Door", "Start Left Door", "Right Upstairs Blocker", "Right Upstairs Door", "Right Upstairs Door 2", "Box Right Door", "Left Upstairs Door", "Box Left Door" };
+	inline std::vector<std::string> sumpfDoorItems = { "Start-Downstairs", "Start-Upstairs", "Comm Room Area", "Comm Room Hut", "Storage Area", "Storage Hut", "Doc Quarters Area", "Doc Quarters Hut", "Fishing Hut Area", "Fishing Hut" };
+	inline std::vector<std::string> theaterDoorItems = { "Start-Crematorium", "Crematorium-Alleyway", "Alleyway-Trap Room", "Trap Room-Stairwell", "Start-Foyer", "Foyer-Dining", "Dining-Dressing", "Dressing-Stage" };
+	inline std::vector<std::string> cosmodromeDoorItems = { "Centrifuge-Power", "Power-Centrifuge", "Centrifuge-Alley", "Base Entry-Power", "Power-Roof", "Roof-Catwalk", "Base Entry-North Path", "Catwalk-Lander", "Base Entry-Storage", "Storage-Lander" };
+	inline std::vector<std::string> templeDoorItems = { "Start-Waterfall Upper", "Waterfall-Tunnel", "Waterfall-Cave Water", "Cave Water-Power", "Start-Pressure", "Pressure-Cave 1", "Cave 1-Cave 2", "Cave 3-Power" };
+	inline std::vector<std::string> moonDoorItems = { "Start Exit", "Catacombs West", "Tunnel 6 Enter", "Tunnel 6 Exit", "Catacombs East", "Tunnel 11 Enter 1", "Tunnel 11 Enter 2", "Tunnel 11 Exit", "Power Exit",
+		"Dig Enter East", "Biodome Enter East", "Dig Exit East", "Biodome Enter West" };
+	inline std::vector<std::string> tombDoorItems = { "Start-Gen 3 Trench", "Gen 3 Trench-Gen 3", "Gen 3-Workshop", "Start-Gen 2 Trench", "Gen 2 Trench-Gen 2", "Gen 2-Workshop", "Workshop-NML", "NML-Mound", "NML-Gen 5", "NML-Tank Station", "Tank Station-Church" };
+	inline std::vector<std::string> tombGenItems = { "Gen 1", "Gen 2", "Gen 3", "Gen 4", "Gen 5", "Gen 6" };
+#pragma endregion
 
-namespace ZombieCalc
-{
+#pragma region Craftables
+	inline int craftListIndex = 0;
+	inline int craftStaff = 0;
+	inline std::unordered_map<std::string, std::unordered_map<int, std::vector<std::string>>> craftList;
+	inline std::unordered_map<std::string, std::unordered_map<int, std::string>> craftNames;
+	inline std::unordered_map<std::string, std::unordered_map<int, int>> craftComboIndexes;
+
+	void InitCraftablesList();
+#pragma endregion
+
+#pragma region EggStepOptions
+	inline std::vector<std::string> zodRitualSteps = { "Magician Ritual", "Femme Ritual", "Detective Ritual", "Boxer Ritual", "PAP Ritual" };
+	inline std::vector<std::string> zodEggSteps = { "Canals Egg", "Footlight Egg", "Waterfront Egg", "Rift Egg" };
+	inline std::vector<std::string> zodOvumSteps = { "Magician Ovum", "Femme Ovum", "Detective Ovum", "Boxer Ovum" };
+	inline std::vector<std::string> zodFlagSteps = { "Flag 1", "Flag 2", "Flag 3", "Flag 4" };
+	inline int zodRitualIndex = 0;
+	inline int zodEggIndex = 0;
+	inline int zodOvumIndex = 0;
+	inline int zodFlagIndex = 0;
+#pragma endregion
+
+#pragma region GUIFunctions
+	void InitVariables();
+	void InitImages();
+	void HelpMarker(const std::string& text);
+	void DummySpace(float x, float y);
+	void SetToggleButtonColor(bool active);
+	void FakeButton(const std::string& name, const ImVec2& size, const ImVec4& color);
+	void SwapGumSelection(int newGum, int gumSlot);
+	void VerifyFileStructure();
+	void WritePracticePatches(const int patch[8]);
+	void NotifyGame(const std::vector<int>& passList);
+	void InjectTool(bool enable, bool& injectResponse);
+	void ResetToggles();
+
+	bool CreateButton(const std::string& name, const ImVec2& size, bool* value = NULL, bool toggle = false, const ImVec4& color = { 25, 100, 128, 255 }, bool inGame = false);
+	bool CreateListBox(const std::string& name, const std::vector<std::string>& items, int& currentItem, const ImVec2& boxSize);
+	bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress);
+	bool DoesPathExist(const std::string_view& s);
+	bool CheckVersions(const std::string& newVersion, const std::string& oldVersion);
+	bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles);
+
+	std::vector<int> GumSearch(const std::vector<int>& inGumArr, const std::string& searchText);
+	std::vector<int> GetWeaponIndex(const std::string& currentMap, const std::string& weaponSelectName);
+#pragma endregion
+
+#pragma region MapOptions
+	inline int mapListIndex = 0;
+	inline std::vector<std::string> mapList = { "Shadows of Evil", "The Giant", "Der Eisendrache", "Zetsubou No Shima", "Gorod Krovi", "Revelations", "Nacht Der Untoten", "Verruckt", "Shi No Numa", "Kino Der Toten", "Ascension", "Shangri-La", "Moon", "Origins" };
+#pragma endregion
+
+#pragma region Points
+	inline int pointInput = 0;
+#pragma endregion
+
+#pragma region Weapons
+	inline bool upgradedWeapon = false;
+	inline std::unordered_map<std::string, std::vector<std::string>> weaponList;
+
+	void InitWeaponsList();
+#pragma endregion
+
+#pragma region BGB
+	struct BGBPreset
+	{
+		std::string presetName;
+		std::vector<int> presetGums{ 0, 0, 0, 0, 0 };
+	};
+
+	inline int currentGumPreset = 0;
+	inline int gumSelectIndex = 0;
+	inline int gumContextIndex = 0;
+	inline bool showGumSelection = false;
+	inline bool writeGums = false;
+	inline std::vector<std::string> classicList;
+	inline std::vector<std::string> megaList;
+	inline std::vector<std::string> gumDescriptions;
+	inline std::vector<BGBPreset> gumPresets;
+	inline BGBPreset inactiveGumPreset = { "No Presets Available", { -1, -1, -1, -1, -1 } };
+
+	void InitBGBDescriptions();
+	void InitClassicGumsList();
+	void InitMegaGumsList();
+	void LoadGumProfiles();
+	void DeleteGumPreset(const std::string& preset);
+	void CreateNewGumPreset(const std::string& presetName);
+	void WriteGumPreset(const std::vector<int>& gumPreset);
+	void WritePresetToGame(BGBPreset& gumPreset, const std::string& file);
+	bool CheckPresetExists(const std::string& inPreset);
+	std::string GetCurrentPresetName();
+#pragma endregion
+
+#pragma region Perks
+	inline std::unordered_map<std::string, std::vector<std::string>> perksList;
+
+	void InitPerksList();
+#pragma endregion
+
+#pragma region PlayerOptions
+	inline int timescaleInt = 1;
+	inline bool godActive = false;
+	inline bool infAmmoActive = false;
+#pragma endregion
+
+#pragma region PowerupOptions
+	inline int powerupListIndex = 0;
+	inline bool instaGrab = false;
+	inline std::unordered_map<std::string, std::vector<std::string>> powerupList = { };
+
+	void InitPowerupList();
+
+
+#pragma endregion
+
+#pragma region ZombieCalc
 	inline int roundNumber = 1;
 	inline int zombiesForRound = 0;
 	inline int specialZombiesForRound = 0;
@@ -75,9 +236,8 @@ namespace ZombieCalc
 	inline std::string valkDelay = "";
 	inline std::string furyDelay = "";
 	inline std::string keeperDelay = "";
-	inline std::vector<std::string> specialEnemiesMapCombo = { "SOE", "Giant + DE", "ZNS", "GK", "Rev"};
+	inline std::vector<std::string> specialEnemiesMapCombo = { "SOE", "Giant + DE", "ZNS", "GK", "Rev" };
 	inline std::vector<std::string> dogRoundCountCombo = { "1", "2", "3", "4+" };
-
 	inline int corpseDelay[4][255] = { {0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 3, 3, 2, 3, 3, 4, 3, 4, 4, 4, 5, 5,
 		5, 5, 5, 6, 6, 7, 7, 7, 7, 8, 8, 9, 9, 9, 10, 11, 11, 12, 12, 13, 13, 14, 15, 16, 16, 17, 17, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23,
 		24, 24, 25, 26, 26, 27, 28, 28, 29, 30, 30, 31, 32, 33, 33, 34, 35, 36, 37, 37, 39, 39, 40, 41, 42, 43, 44, 44, 45, 46, 47, 48, 49, 49,
@@ -115,29 +275,28 @@ namespace ZombieCalc
 		1164, 1175, 1185, 1196, 1207, 1219, 1230, 1244, 1255, 1265, 1277, 1290, 1301, 1313, 1324, 1337, 1350, 1361, 1374, 1385, 1397, 1409, 1420,1433,
 		1446, 1458, 1469, 1484, 1496, 1509, 1520, 1533, 1547, 1559, 1572, 1587, 1598, 1613, 1624, 1640, 1651, 1664, 1677, 1691, 1705, 1718, 1732} };
 
+	void CalcLockdownTime(int round, int playerCount);
 	int GetZombieCountForRound(int round, int playerCount);
 	int MaxZombieFunc(int maxZombies, int round);
 	int GetZombiesUpToRound(int round, int playerCount);
 	int GetZombieHealthForRound(int round);
 	int GetZombieSpawnRateForRound(int round, int playerCount);
-	float RawSpawnRateForRound(int round, int playerCount);
 	int GetSpecialEnemySpawnRate(int playerCount, const std::string& specialEnemy);
-	std::string CalcRoundTime(int round, int playerCount, int corpseDelay = 0, bool specialEnemies = false);
 	int RoundTimeNearest50(int time);
+	float RawSpawnRateForRound(int round, int playerCount);
+	std::string CalcRoundTime(int round, int playerCount, int corpseDelay = 0, bool specialEnemies = false);
 	std::string SpecialRoundTime(int round, int playerCount, int corpseDelay, bool soe);
 	std::string CustomRoundTime(int round, int playerCount, int zombieCount);
-	void CalcLockdownTime(int round, int playerCount);
-}
+	
+#pragma endregion
 
-namespace SOECodeGuide
-{
+#pragma region SOECodeGuide
 	inline int codeIndex_1 = 0;
 	inline int codeIndex_2 = 1;
 	inline std::vector<std::string> soeCodeCombo;
-}
+#pragma endregion
 
-namespace GKValveSolver
-{
+#pragma region GKValveSolver
 	inline bool greenChosen = false;
 	inline bool passwordChosen = false;
 	inline bool noGreenChoice = false;
@@ -151,12 +310,12 @@ namespace GKValveSolver
 	inline std::vector<std::string> valveSolutionsText_1 = { "?", "?", "?", "?", "?", "?" };
 	inline std::vector<std::string> valveSolutionsText_2 = { "?", "?", "?", "?", "?", "?" };
 	inline std::vector<std::string> valveLocations = { "Department", "Dragon Command", "Armory", "Supply", "Infirmary", "Tank" };
-	inline std::vector<std::vector<std::string>> valveDirectionOdds_1 = { { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" } };
-	inline std::vector<std::vector<std::string>> valveDirectionOdds_2 = { { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" } };
-	inline std::vector<std::vector<std::string>> excludedValves = { };
 	inline std::vector<bool> valveGreen = { false, false, false, false, false, false };
 	inline std::vector<bool> valvePassword = { false, false, false, false, false, false };
 	inline std::vector<std::vector<bool>> valveDirections = { { false, false, false }, { false, false, false }, { false, false, false }, { false, false, false }, { false, false, false }, { false, false, false } };
+	inline std::vector<std::vector<std::string>> valveDirectionOdds_1 = { { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" } };
+	inline std::vector<std::vector<std::string>> valveDirectionOdds_2 = { { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" } };
+	inline std::vector<std::vector<std::string>> excludedValves = { };
 	inline std::unordered_map<std::string, int> locationToInt = { { "Department", 0 }, { "Dragon Command", 1 }, { "Armory", 2 }, { "Supply", 3}, {"Infirmary", 4}, { "Tank", 5 } };
 	inline std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> valveSolutions_1 = { };
 	inline std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> valveSolutions_2 = { };
@@ -168,41 +327,34 @@ namespace GKValveSolver
 	void CalcValveProbabilities();
 	void CalcRemainingGreen();
 	void CalcExcludedValves();
-}
+#pragma endregion
 
-namespace IceCodePractice
-{
+#pragma region IceCodeGuide
 	struct IceCodePair
 	{
 		Walnut::Image* digitImage;
 		Walnut::Image* symbolImage;
 	};
 
-	inline bool showSolution = false;
-	inline bool gameStarted = false;
-	inline bool gameChecked[12] = { false };
 	inline int gameProgress = 0;
 	inline int timesMissed = 0;
 	inline int timesGuessed = 0;
+	inline bool showSolution = false;
+	inline bool gameStarted = false;
+	inline bool gameChecked[12] = { false };
 	inline int randomList[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+	inline std::string gameTime = "Time: ";
+	inline std::string accuracy = "Accuracy: ";
 	inline std::vector<IceCodePair> iceCodePairs;
 	inline std::vector<IceCodePair> randomIceCodePairs;
 	inline Walnut::Timer gameTimer;
-	inline std::string gameTime = "Time: ";
-	inline std::string accuracy = "Accuracy: ";
 
 	void InitIceCodePairs();
 	void RandomizeCodes();
 	void ProgressGame(bool success, int numCode);
-}
+#pragma endregion
 
-namespace Autosplits
-{
-	// A SplitPreset will contain the name of the preset and a vector of pairs containing a string and int
-	// The string represents the name of the split, which is also used to create the split logic, while the int determines if the split is tied to a specific round
-	// Examples: { "Rift: Waterfront", 3 } will activate once you enter the waterfront rift, and it waits for the current round to be >= 3
-	// { "Crackle", 0 } 0 is used to represent the current round, so once you finish crackle, the game will split when the current round ends
-	// { "Skull Pickup", -1 } -1 is used to represent no round attachment, so the split will activate immediately when picking up the skullmnnnn
+#pragma region Autosplits
 	struct SplitPreset
 	{
 		std::string presetName;
@@ -215,8 +367,8 @@ namespace Autosplits
 		int roundInterval = 1;
 	};
 
-	inline bool writeSplits = false;
 	inline int currentSplitPreset = 0;
+	inline bool writeSplits = false;
 	inline std::vector<SplitPreset> splitPresets;
 	inline SplitPreset inactiveSplitPreset = { "No Presets Available", { { "", 0} } };
 
@@ -240,11 +392,11 @@ namespace Autosplits
 	inline int deSplits[9] = { 0 };
 	inline std::vector<std::string> deDragonSplits = { "Dragon 1", "Dragon 2", "Dragon 3", "Pickup Bow" };
 	inline std::vector<std::string> deLightningBowSplits = { "Pickup Arrow", "Bonfires Shot", "Wall Ride", "Crackle", "Upgrade Lightning" };
-	inline std::vector<std::string> deFireBowSplits = { "Pickup Arrow", "Obelisk Shot", "Circles Filled", "Golf", "Upgrade Fire "};
+	inline std::vector<std::string> deFireBowSplits = { "Pickup Arrow", "Obelisk Shot", "Circles Filled", "Golf", "Upgrade Fire " };
 	inline std::vector<std::string> deVoidBowSplits = { "Pickup Arrow", "Activate Urn", "Pickup Skulls", "Crawler Kills", "Runes", "Upgrade Void" };
 	inline std::vector<std::string> deWolfBowSplits = { "Pickup Arrow", "Shrine Shot", "Wolf Souls Filled", "Arrow Forged", "Upgrade Wolf" };
 	inline std::vector<std::string> deWispSplits = { "Time Travel 1", "Time Travel 2" };
-	inline std::vector<std::string> deSimonSplits = { "Safe Code Entered", "Simon 1", "Simon 2"};
+	inline std::vector<std::string> deSimonSplits = { "Safe Code Entered", "Simon 1", "Simon 2" };
 	inline std::vector<std::string> deKeeperSplits = { "Keeper Spawned", "Keeper 1", "Keeper 2", "Keeper 3", "Keeper 4", "Keeper Trapped" };
 	inline std::vector<std::string> deBossSplits = { "Boss Enter", "Boss Exit" };
 
@@ -256,7 +408,7 @@ namespace Autosplits
 
 	inline int gkSplits[5] = { 0 };
 	inline std::vector<std::string> gkPAPSplits = { "Groph 1", "Groph 2", "Groph 3" };
-	inline std::vector<std::string> gkGauntletSplits = { "Pickup Egg", "Egg On Fire", "Incubation Start", "Pickup Gauntlet"};
+	inline std::vector<std::string> gkGauntletSplits = { "Pickup Egg", "Egg On Fire", "Incubation Start", "Pickup Gauntlet" };
 	inline std::vector<std::string> gkDragonSplits = { "Fly 1", "Fly 2", "Fly 3" };
 	inline std::vector<std::string> gkLockdownSplits = { "Lockdown Start", "Lockdown End" };
 	inline std::vector<std::string> gkChallengeSplits = { "Start Challenges", "Start Download", "Boss Enter" };
@@ -271,38 +423,14 @@ namespace Autosplits
 	inline int tombSplits[2] = { 0 };
 	inline std::vector<std::string> tombStaffSplits = { "Ice Craft", "Wind Craft", "Fire Craft", "Lightning Craft" };
 	inline std::vector<std::string> tombEndSplits = { "Upgrade Leave", "4 Boxes Done", "Fists Done" };
-}
+#pragma endregion
 
-std::string ParseTimeFromMilli(int milliseconds);
-
-template <typename T>
-std::string CommifyNumString(T value)
-{
-	std::stringstream ss;
-	ss << std::fixed << std::setprecision(3) << value;
-
-	std::string str = ss.str();
-	std::locale locale;
-	std::stringstream result;
-
-	bool isNegative = false;
-	if (str[0] == '-')
-	{
-		isNegative = true;
-		result << '-';
-		str.erase(0, 1);
-	}
-
-	size_t decimalPos = str.find('.');
-	if (decimalPos == std::string::npos)
-		decimalPos = str.length();
-
-	for (size_t i = 0; i < str.length(); ++i)
-	{
-		if (i > 0 && i < decimalPos && (decimalPos - i) % 3 == 0)
-			result << std::use_facet<std::numpunct<char>>(locale).thousands_sep();
-		result << str[i];
-	}
-
-	return result.str();
+#pragma region ZombieOptions
+	inline bool zombiesIgnore = false;
+	inline bool zombiesFreeze = false;
+	inline bool zombiesSpawn = false;
+	inline bool zombieSpeedWalk = false;
+	inline bool zombieSpeedRun = false;
+	inline bool zombieSpeedSprint = false;
+#pragma endregion
 }

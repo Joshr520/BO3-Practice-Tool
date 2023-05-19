@@ -1,7 +1,7 @@
 #include "memHelp.h"
-#include "GUIFunctions.h"
+#include "GlobalData.h"
 
-using namespace std;
+using namespace BO3PT;
 
 namespace MemHelp
 {

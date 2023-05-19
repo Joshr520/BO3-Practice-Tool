@@ -3,7 +3,7 @@
 #include <rapidxml/rapidxml.hpp>
 #include <string>
 
-namespace XML
+namespace Walnut
 {
     class XMLBuilder
     {

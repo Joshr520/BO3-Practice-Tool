@@ -2,15 +2,13 @@
 
 #include "Walnut/Application.h"
 
-#include <GLFW/glfw3.h>
-
 namespace Walnut {
 
 	bool Input::IsKeyDown(KeyCode keycode)
 	{
 		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
 		int state = glfwGetKey(windowHandle, (int)keycode);
-		return state == GLFW_PRESS || state == GLFW_REPEAT;
+		return state == GLFW_PRESS && state != GLFW_REPEAT;
 	}
 
 	bool Input::IsMouseButtonDown(MouseButton button)

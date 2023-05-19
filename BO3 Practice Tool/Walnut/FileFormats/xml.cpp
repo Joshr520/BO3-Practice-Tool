@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-namespace XML
+namespace Walnut
 {
     XMLBuilder::XMLBuilder(std::string_view version, std::string_view type)
         : m_Doc(new rapidxml::xml_document<>()), m_Root(nullptr)

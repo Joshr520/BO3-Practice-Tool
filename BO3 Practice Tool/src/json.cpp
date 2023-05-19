@@ -1,5 +1,7 @@
 #include "json.h"
-#include "GUIFunctions.h"
+#include "GlobalData.h"
+
+using namespace BO3PT;
 
 namespace JSON
 {

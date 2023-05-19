@@ -155,18 +155,12 @@ COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y</Command>
     <ClInclude Include="framework.h" />
     <ClInclude Include="glfw\include\GLFW\glfw3.h" />
     <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
-    <ClInclude Include="headers\Blockers.h" />
-    <ClInclude Include="headers\Craftables.h" />
-    <ClInclude Include="headers\EggStepOptions.h" />
-    <ClInclude Include="headers\GUIFunctions.h" />
+    <ClInclude Include="headers\GlobalData.h" />
     <ClInclude Include="headers\json.h" />
-    <ClInclude Include="headers\MapOptions.h" />
+    <ClInclude Include="headers\Keybinds.h" />
     <ClInclude Include="headers\Memhelp.h" />
-    <ClInclude Include="headers\PlayerOptions.h" />
-    <ClInclude Include="headers\PowerupOptions.h" />
-    <ClInclude Include="headers\Resources.h" />
     <ClInclude Include="headers\stb_image.h" />
-    <ClInclude Include="headers\ZombieOptions.h" />
+    <ClInclude Include="headers\ToolData.h" />
     <ClInclude Include="imgui\fonts\Icons.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
@@ -186,7 +180,7 @@ COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y</Command>
     <ClInclude Include="Walnut\Layer.h" />
     <ClInclude Include="Walnut\Random.h" />
     <ClInclude Include="Walnut\Timer.h" />
-    <ClInclude Include="Walnut\xml.h" />
+    <ClInclude Include="Walnut\FileFormats\xml.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BO3 Practice Tool.cpp" />
@@ -199,18 +193,16 @@ COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y</Command>
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
-    <ClCompile Include="src\Craftables.cpp" />
-    <ClCompile Include="src\GUIFunctions.cpp" />
+    <ClCompile Include="src\GlobalData.cpp" />
     <ClCompile Include="src\json.cpp" />
+    <ClCompile Include="src\Keybinds.cpp" />
     <ClCompile Include="src\Memhelp.cpp" />
-    <ClCompile Include="src\PlayerOptions.cpp" />
-    <ClCompile Include="src\PowerupOptions.cpp" />
-    <ClCompile Include="src\Resources.cpp" />
+    <ClCompile Include="src\ToolData.cpp" />
     <ClCompile Include="Walnut\Application.cpp" />
     <ClCompile Include="Walnut\Image.cpp" />
     <ClCompile Include="Walnut\Input\Input.cpp" />
     <ClCompile Include="Walnut\Random.cpp" />
-    <ClCompile Include="Walnut\xml.cpp" />
+    <ClCompile Include="Walnut\FileFormats\xml.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BO3 Practice Tool.rc" />
