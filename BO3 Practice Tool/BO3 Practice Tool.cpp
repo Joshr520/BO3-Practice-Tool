@@ -6,11 +6,11 @@
 
 #include "Walnut/Application.h"
 #include "Walnut/Image.h"
+#include "Walnut/FileFormats/json.h"
 
 #include "ToolData.h"
 #include "GlobalData.h"
 #include "Memhelp.h"
-#include "json.h"
 #include "Keybinds.h"
 
 #define CURL_STATICLIB
@@ -18,7 +18,6 @@
 #include <miniz/miniz.h>
 
 using namespace BO3PT;
-using namespace JSON;
 
 #define SAMELINE ImGui::SameLine()
 
@@ -169,8 +168,7 @@ public:
         style.WindowBorderSize = 0.0f;
         style.Colors[2].w = 0.6f;
 
-        auto thread = std::thread(SetupData);
-        thread.detach();
+        SetupData();
 
         discordIcon = new Walnut::Image("Resource Images/Discord.png");
 	}
@@ -429,9 +427,9 @@ public:
         }
         if (!steamPathFound)
         {
-            ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Select BO3 Folder").x / 2, ImGui::GetContentRegionAvail().y / 2 - ImGui::CalcTextSize("Select BO3 EXE").y / 2 - 50.0f));
-            ImGui::Text("Select BO3 EXE");
-            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Select BO3 EXE").x / 2);
+            ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Select BO3 Folder").x / 2, ImGui::GetContentRegionAvail().y / 2 - ImGui::CalcTextSize("Select BO3 Folder").y / 2 - 50.0f));
+            ImGui::Text("Select BO3 Folder");
+            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Select BO3 Folder").x / 2);
             if (CreateButton("Browse", ImVec2(ImGui::CalcTextSize("Select BO3 Folder").x, 50.0f)))
             {
                 bo3Directory = SelectFolder();
@@ -442,9 +440,9 @@ public:
                 else
                 {
                     steamPathFound = true;
-                    Document data = ReadJsonFromFile(selfDirectory + "\\settings.json");
-                    ModifyJsonString(data, "Steam Path", bo3Directory);
-                    WriteJson(data, selfDirectory + "\\settings.json");
+                    Walnut::JSONBuilder builder(selfDirectory + "\\settings.json");
+                    builder.ModifyString(builder.GetDocument(), "Steam Path", bo3Directory);
+                    builder.SaveToFile(selfDirectory + "\\settings.json");
                     VerifyFileStructure();
                     InitVariables();
                 }
@@ -520,13 +518,13 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 void SetupData()
 {
     if (!DoesPathExist(selfDirectory + "\\settings.json"))
-        WriteEmptyJson(selfDirectory + "\\settings.json");
-    Document doc = ReadJsonFromFile(selfDirectory + "\\settings.json");
+        Walnut::JSONBuilder::WriteEmpty(selfDirectory + "\\settings.json");
+    Walnut::JSONBuilder builder(std::string_view(selfDirectory + "\\settings.json"));
 
     LogFile("Searching for BO3 directory");
-    if (doc.HasMember("Steam Path") && doc["Steam Path"].IsString())
+    if (builder.GetDocument().HasMember("Steam Path") && builder.GetDocument()["Steam Path"].IsString())
     {
-        bo3Directory = doc["Steam Path"].GetString();
+        bo3Directory = builder.GetDocument()["Steam Path"].GetString();
         LogFile("BO3 directory found");
     }
     else
@@ -653,16 +651,21 @@ bool UpdateAvailable()
             LogFile("curl GET failed with error code: " + std::to_string(res));
             return 0;
         }
-        Document get = ReadJsonFromString(buffer);
-        if (get.HasParseError())
+        Walnut::JSONBuilder builder(buffer);
+        if (builder.GetDocument().HasParseError())
         {
             LogFile("JSON returned from get invalid");
             return 0;
         }
-        if (!GetStringFromJsonArray("assets", "browser_download_url", get, downloadURL))
+        const char* downloadGet = "";
+        const char* tagGet = "";
+        if (!builder.RetrieveValueFromKey("browser_download_url", downloadGet))
             return 0;
-        if (!GetStringFromJson("tag_name", get, tagName))
+        if (!builder.RetrieveValueFromKey("tag_name", tagGet))
             return 0;
+
+        downloadURL = downloadGet;
+        tagName = tagGet;
 
         if (!CheckVersions(tagName, internalVersion))
         {
@@ -1961,6 +1964,37 @@ void SettingsPtr()
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Keybinds").x / 2);
     ImGui::Text("Keybinds");
     ImGui::PopFont();
+    ImGui::BeginGroup();
+    int count = 0;
+    float cursorPosY = ImGui::GetCursorPosY();
+    for (std::pair<const std::string, HotKeyBind>& hotkey : hotkeyDefs)
+    {
+        ImVec2 size = { max(150.0f, ImGui::CalcTextSize(hotkey.second.keyNames.c_str()).x), 25.0f };
+        if (count > 12)
+        {
+            ImGui::SetCursorPosX(375.0f);
+            ImGui::Text(hotkey.first.c_str());
+            SAMELINE;
+            ImGui::SetCursorPosX(575.0f);
+            if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size) && !registerHotKey)
+                AssignHotKey(hotkey.first, hotkey);
+            count++;
+            continue;
+        }
+        ImGui::Text(hotkey.first.c_str());
+        SAMELINE;
+        ImGui::SetCursorPosX(200.0f);
+        if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size) && !registerHotKey)
+            AssignHotKey(hotkey.first, hotkey);
+        count++;
+        if (count > 12)
+        {
+            ImGui::EndGroup();
+            ImGui::SetCursorPosY(cursorPosY);
+            ImGui::BeginGroup();
+        }
+    }
+    ImGui::EndGroup();
 }
 
 void PlayerOptionsPtr()

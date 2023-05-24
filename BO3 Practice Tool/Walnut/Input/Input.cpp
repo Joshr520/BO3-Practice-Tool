@@ -1,36 +1,32 @@
 #include "Input.h"
 
 #include "Walnut/Application.h"
+#include "SDL.h"
 
 namespace Walnut {
 
 	bool Input::IsKeyDown(KeyCode keycode)
 	{
-		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
-		int state = glfwGetKey(windowHandle, (int)keycode);
-		return state == GLFW_PRESS && state != GLFW_REPEAT;
+		const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
+		return keyboardState[SDL_GetScancodeFromKey((SDL_Keycode)keycode)] == 1;
 	}
 
 	bool Input::IsMouseButtonDown(MouseButton button)
 	{
-		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
-		int state = glfwGetMouseButton(windowHandle, (int)button);
-		return state == GLFW_PRESS;
+		int state = SDL_GetMouseState(NULL, NULL);
+		return (state & SDL_BUTTON((int)button)) != 0;
 	}
 
 	glm::vec2 Input::GetMousePosition()
 	{
-		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
-
-		double x, y;
-		glfwGetCursorPos(windowHandle, &x, &y);
-		return { (float)x, (float)y };
+		int x, y;
+		SDL_GetMouseState(&x, &y);
+		return glm::vec2(x, y);
 	}
 
 	void Input::SetCursorMode(CursorMode mode)
 	{
-		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
-		glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL + (int)mode);
+		SDL_SetRelativeMouseMode(static_cast<SDL_bool>(mode));
 	}
 
 }

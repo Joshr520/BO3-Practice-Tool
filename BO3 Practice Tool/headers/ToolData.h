@@ -378,7 +378,7 @@ namespace BO3PT
 	void DeleteAutosplitPreset(const std::string& preset);
 	void WriteSplitXML(const std::string& preset, const std::vector<std::pair<std::string, int>>& splits);
 	void WriteLayoutXML(const std::string& preset, int numSplits);
-	SplitPreset ParseSplitJson(const std::string& filePath);
+	SplitPreset ParseSplitJson(std::string_view filename);
 
 	inline std::vector<std::string> generalSplitData = { "Egg Autosplit", "Split on every X round ends", "Song Autosplit", "PAP Autosplit" };
 

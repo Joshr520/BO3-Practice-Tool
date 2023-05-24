@@ -33,8 +33,8 @@ namespace BO3PT
             notepad = FindWindowA(NULL, "*Untitled - Notepad");
         }
         edit = FindWindowExA(notepad, NULL, "EDIT", NULL);
-        SendMessage(edit, EM_REPLACESEL, TRUE, (LPARAM)text.c_str());
-        SendMessage(edit, EM_REPLACESEL, TRUE, (LPARAM)"\n");
+        SendMessageA(edit, EM_REPLACESEL, TRUE, (LPARAM)text.c_str());
+        SendMessageA(edit, EM_REPLACESEL, TRUE, (LPARAM)"\n");
     }
 
     std::string ParseTimeFromMilli(int milliseconds)

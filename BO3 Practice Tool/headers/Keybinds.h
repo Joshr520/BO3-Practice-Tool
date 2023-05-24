@@ -1,29 +1,61 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
 #include <vector>
 #include <string>
 #include <map>
-#include <set>
+#include <unordered_map>
 #include <functional>
+#include "SDL.h"
+
+#include <Windows.h>
+
+struct hashPair {
+	template <class T1, class T2>
+	size_t operator()(const std::pair<T1, T2>& p) const
+	{
+		auto hash1 = std::hash<T1>{}(p.first);
+		auto hash2 = std::hash<T2>{}(p.second);
+
+		if (hash1 != hash2) {
+			return hash1 ^ hash2;
+		}
+
+		return hash1;
+	}
+};
 
 namespace BO3PT
 {
 	struct HotKeyBind
 	{
-		int type = 0; // 0 = keyboard, 1 = mouse
-		std::vector<int> keys = { };
-		std::string keyNames = "";
+		// splitGroup = how to categorize the keybinds in the json
+		std::string splitGroup;
 		std::function<void()> activatedFunc;
+		std::string keyNames = "";
+		// 0 = keyboard, 1 = mouse
+		int type = 0;
+		int index = 0;
 	};
+
+	// HOTKEY PIPELINE
+	// Call InitHotKeyBinds() to initialize at startup
+	// When changing a hotkey, modify the keybindBuilder json object with the updated keybind, then call RemoveDuplicates() which will update the json data and keybind call data
 
 	inline bool globalHotKeys = false;
 	inline bool registerHotKey = false;
-	inline std::set<int> modsToAssign;
-	inline std::pair<const std::string, HotKeyBind>* hotkeyToAssign;
-	inline std::map<std::string, HotKeyBind> inGameHotkeyDefs;
+	inline std::string jsonKeyToAssign;
+	inline std::pair<const std::string, HotKeyBind>* hotkeyToAssign = nullptr;
+	inline std::map<std::string, HotKeyBind> hotkeyDefs;
+	inline std::unordered_map<std::pair<int, int>, std::function<void()>, hashPair> hotkeyCalls;
 
-	void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+	void SDLKeyCallback(SDL_Event event);
+	void RawKeyboardCallback(RAWINPUT* raw);
+	void SDLMouseCallback(SDL_Event event);
+	void CheckAndRunMouseBinds(USHORT flags, USHORT data);
+	void InitHotKeyBinds();
+	void LoadKeybinds();
+	void RemoveDuplicates();
+	void AssignHotKey(const std::string& jsonKey, std::pair<const std::string, HotKeyBind>& hotkey);
 
 	// HotKey Functions - valid function to be called on a hotkey press
 	void GodmodeOn();

@@ -3,7 +3,8 @@
 #include "Fonts/Icons.h"
 #include "Walnut/Random.h"
 #include "Walnut/FileFormats/xml.h"
-#include "json.h"
+#include "Walnut/FileFormats/json.h"
+#include "Keybinds.h"
 
 #define CURL_STATICLIB
 #include <curl/curl.h>
@@ -170,6 +171,7 @@ namespace BO3PT
     void InitVariables()
     {
         InitImages();
+        InitHotKeyBinds();
         InitBGBDescriptions();
         InitClassicGumsList();
         InitMegaGumsList();
@@ -327,7 +329,7 @@ namespace BO3PT
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt"))
             std::ofstream(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
         if (!DoesPathExist(selfDirectory + "\\bindings.json"))
-            JSON::WriteEmptyJson(selfDirectory + "\\bindings.json");
+            Walnut::JSONBuilder::WriteEmpty(selfDirectory + "\\bindings.json");
         if (!DoesPathExist(selfDirectory + "\\Settings"))
             std::filesystem::create_directory(selfDirectory + "\\Settings");
         if (!DoesPathExist(selfDirectory + "\\Settings\\Autosplits"))
@@ -1245,7 +1247,7 @@ namespace BO3PT
         if (multiplier < 1)
             multiplier = 1;
         if (round >= 10)
-            multiplier *= (round * 0.15);
+            multiplier *= (round * 0.15f);
         if (playerCount == 1)
             maxZombies += 3 * multiplier;
         else
@@ -1861,55 +1863,49 @@ namespace BO3PT
     void WriteAutosplitPreset(const SplitPreset& preset)
     {
         std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + preset.presetName + ".json";
-        Document doc;
-        doc.SetObject();
 
-        Value settings(kObjectType);
-        settings.AddMember("In Game Timer", preset.igt, doc.GetAllocator());
-        settings.AddMember("In Game Round Timer", preset.igrt, doc.GetAllocator());
-        settings.AddMember("Amount of Splits", preset.numSplits, doc.GetAllocator());
-        settings.AddMember("Map Index", preset.map, doc.GetAllocator());
-        settings.AddMember("Split Type", preset.splitType, doc.GetAllocator());
-        settings.AddMember("Round Interval", preset.roundInterval, doc.GetAllocator());
+        Walnut::JSONBuilder builder;
 
-        Value splitData(kObjectType);
+        rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
+        settings.AddMember("In Game Timer", preset.igt, builder.GetAllocator());
+        settings.AddMember("In Game Round Timer", preset.igrt, builder.GetAllocator());
+        settings.AddMember("Amount of Splits", preset.numSplits, builder.GetAllocator());
+        settings.AddMember("Map Index", preset.map, builder.GetAllocator());
+        settings.AddMember("Split Type", preset.splitType, builder.GetAllocator());
+        settings.AddMember("Round Interval", preset.roundInterval, builder.GetAllocator());
+
+        rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
         for (std::pair<std::string, int> pair : preset.splits)
         {
-            Value key(StringRef(pair.first.c_str()), doc.GetAllocator());
-            Value value(pair.second);
-            splitData.AddMember(key, value, doc.GetAllocator());
+            rapidjson::Value key(rapidjson::StringRef(pair.first.c_str()), builder.GetAllocator());
+            rapidjson::Value value(pair.second);
+            splitData.AddMember(key, value, builder.GetAllocator());
         }
 
-        doc.AddMember("Settings", settings, doc.GetAllocator());
-        doc.AddMember("Split Data", splitData, doc.GetAllocator());
-
-        JSON::WriteJson(doc, filename);
+        builder.SaveToFile(filename);
         if (writeSplits && appStatus == "Status: Active")
-            JSON::WriteJson(doc, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
         else
-            JSON::WriteJson({ }, bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            builder.WriteEmpty(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
     }
 
     void CreateNewAutosplitPreset(const std::string& presetName)
     {
         std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + presetName + ".json";
-        Document doc;
-        doc.SetObject();
+       
+        Walnut::JSONBuilder builder;
 
-        Value settings(kObjectType);
-        settings.AddMember("In Game Timer", false, doc.GetAllocator());
-        settings.AddMember("In Game Round Timer", true, doc.GetAllocator());
-        settings.AddMember("Amount of Splits", 0, doc.GetAllocator());
-        settings.AddMember("Map Index", 0, doc.GetAllocator());
-        settings.AddMember("Split Type", 0, doc.GetAllocator());
-        settings.AddMember("Round Interval", 1, doc.GetAllocator());
+        rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
+        settings.AddMember("In Game Timer", false, builder.GetAllocator());
+        settings.AddMember("In Game Round Timer", true, builder.GetAllocator());
+        settings.AddMember("Amount of Splits", 0, builder.GetAllocator());
+        settings.AddMember("Map Index", 0, builder.GetAllocator());
+        settings.AddMember("Split Type", 0, builder.GetAllocator());
+        settings.AddMember("Round Interval", 1, builder.GetAllocator());
 
-        Value splitData(kObjectType);
+        rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
 
-        doc.AddMember("Settings", settings, doc.GetAllocator());
-        doc.AddMember("Split Data", splitData, doc.GetAllocator());
-
-        JSON::WriteJson(doc, filename);
+        builder.SaveToFile(filename);
         LoadSplitPresets();
     }
 
@@ -2198,19 +2194,19 @@ namespace BO3PT
         builder.SaveToFile(selfDirectory + PRESET_DIRECTORY + "/" + preset + ".lsl");
     }
 
-    SplitPreset ParseSplitJson(const std::string& filePath)
+    SplitPreset ParseSplitJson(std::string_view filename)
     {
         SplitPreset returnPreset;
-        Document doc = JSON::ReadJsonFromFile(filePath);
+        Walnut::JSONBuilder builder(filename);
 
-        if (doc.HasMember("Settings") && doc["Settings"].IsObject())
+        if (builder.GetDocument().HasMember("Settings") && builder.GetDocument()["Settings"].IsObject())
         {
-            const Value& settings = doc["Settings"];
+            const rapidjson::Value& settings = builder.GetDocument()["Settings"];
 
-            for (Value::ConstMemberIterator it = settings.MemberBegin(); it != settings.MemberEnd(); it++)
+            for (rapidjson::Value::ConstMemberIterator it = settings.MemberBegin(); it != settings.MemberEnd(); it++)
             {
                 const std::string& key = it->name.GetString();
-                const Value& value = it->value;
+                const rapidjson::Value& value = it->value;
 
                 switch (hashstr(key.c_str()))
                 {
@@ -2241,16 +2237,14 @@ namespace BO3PT
                 }
             }
         }
-        if (doc.HasMember("Split Data") && doc["Split Data"].IsObject())
+        if (builder.GetDocument().HasMember("Split Data") && builder.GetDocument()["Split Data"].IsObject())
         {
-            const Value& splitData = doc["Split Data"];
+            const rapidjson::Value& splitData = builder.GetDocument()["Split Data"];
 
-            for (Value::ConstMemberIterator it = splitData.MemberBegin(); it != splitData.MemberEnd(); it++)
+            for (rapidjson::Value::ConstMemberIterator it = splitData.MemberBegin(); it != splitData.MemberEnd(); it++)
             {
                 if (it->name.IsString() && it->value.IsInt())
-                {
                     returnPreset.splits.push_back({ it->name.GetString(), it->value.GetInt() });
-                }
                 else
                     LogFile("Autosplits json error: Incorrect typings found at key " + std::string(it->name.GetString()));
             }

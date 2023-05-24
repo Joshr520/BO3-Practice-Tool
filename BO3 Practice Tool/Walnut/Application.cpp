@@ -6,27 +6,24 @@
 
 #include "stb_image.h"
 
-#include "imgui_impl_glfw.h"
+#include "imgui_impl_sdl2.h"
 #include "imgui_impl_vulkan.h"
 #include <stdio.h>          // printf, fprintf
 #include <stdlib.h>         // abort
-#define GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <SDL.h>
+#include <SDL_vulkan.h>
 #include <vulkan/vulkan.h>
-#include <glm/glm.hpp>
 
 #include <filesystem>
 #include <iostream>
+#include <glm/glm.hpp>
+#include <hidusage.h>
+
+#include "Keybinds.h"
+#include "GlobalData.h"
+#include "SDL_syswm.h"
 
 extern bool g_ApplicationRunning;
-
-// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
-// To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
-// Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
-#if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-#pragma comment(lib, "legacy_stdio_definitions")
-#endif
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #ifdef _DEBUG
@@ -56,6 +53,8 @@ static std::vector<std::vector<std::function<void()>>> s_ResourceFreeQueue;
 static uint32_t s_CurrentFrameIndex = 0;
 
 static Walnut::Application* s_Instance = nullptr;
+static HWND s_HWND = NULL;
+WNDPROC g_OriginalWndProc;
 
 void check_vk_result(VkResult err)
 {
@@ -294,7 +293,7 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 		err = vkResetFences(g_Device, 1, &fd->Fence);
 		check_vk_result(err);
 	}
-	
+
 	{
 		// Free resources in queue
 		for (auto& func : s_ResourceFreeQueue[s_CurrentFrameIndex])
@@ -377,9 +376,28 @@ static void FramePresent(ImGui_ImplVulkanH_Window* wd)
 	wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount; // Now we can use the next set of semaphores
 }
 
-static void glfw_error_callback(int error, const char* description)
+LRESULT CALLBACK RawInputWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+	if (msg == WM_INPUT)
+	{
+		UINT dwSize = 0;
+		GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+		std::vector<BYTE> lpb(dwSize);
+		if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, lpb.data(), &dwSize, sizeof(RAWINPUTHEADER)) == dwSize)
+		{
+			RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb.data());
+			if (raw->header.dwType == RIM_TYPEMOUSE && raw->data.mouse.usButtonFlags)
+				BO3PT::CheckAndRunMouseBinds(raw->data.mouse.usButtonFlags, raw->data.mouse.usButtonData);
+			else if (BO3PT::registerHotKey && raw->header.dwType == RIM_TYPEKEYBOARD && raw->data.keyboard.Message == WM_KEYDOWN || raw->data.keyboard.Message == WM_SYSKEYDOWN)
+				BO3PT::RawKeyboardCallback(raw);
+		}
+	}
+	else if (msg == WM_HOTKEY)
+	{
+		BO3PT::NLog("Hotkey Pressed");
+	}
+
+	return CallWindowProc(g_OriginalWndProc, hwnd, msg, wParam, lParam);
 }
 
 namespace Walnut {
@@ -404,41 +422,66 @@ namespace Walnut {
 		return *s_Instance;
 	}
 
+	HWND Application::GetHWND()
+	{
+		return s_HWND;
+	}
+
 	void Application::Init()
 	{
-		// Setup GLFW window
-		glfwSetErrorCallback(glfw_error_callback);
-		if (!glfwInit())
+		// Setup SDL
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
 		{
-			std::cerr << "Could not initalize GLFW!\n";
+			printf("Error: %s\n", SDL_GetError());
 			return;
 		}
 
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		m_WindowHandle = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Name.c_str(), NULL, NULL);
+		// From 2.0.18: Enable native IME.
+#ifdef SDL_HINT_IME_SHOW_UI
+		SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
+#endif
 
-		GLFWimage images[1];
-		images[0].pixels = stbi_load("Icon.png", &images[0].width, &images[0].height, 0, 4);
-		glfwSetWindowIcon(m_WindowHandle, 1, images);
+		// Create window with Vulkan graphics context
+		SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+		m_WindowHandle = SDL_CreateWindow(m_Specification.Name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_Specification.Width, m_Specification.Height, window_flags);
+
+		SDL_SysWMinfo wmInfo;
+		SDL_VERSION(&wmInfo.version);
+		SDL_GetWindowWMInfo(m_WindowHandle, &wmInfo);
+		s_HWND = wmInfo.info.win.window;
+
+		RAWINPUTDEVICE rid;
+		rid.usUsagePage = HID_USAGE_PAGE_GENERIC;
+		rid.usUsage = HID_USAGE_GENERIC_MOUSE;
+		rid.dwFlags = RIDEV_INPUTSINK;
+		rid.hwndTarget = s_HWND;
+		RegisterRawInputDevices(&rid, 1, sizeof(rid));
+		rid.usUsage = HID_USAGE_GENERIC_KEYBOARD;
+		RegisterRawInputDevices(&rid, 1, sizeof(rid));
+
+		g_OriginalWndProc = (WNDPROC)GetWindowLongPtr(s_HWND, GWLP_WNDPROC);
+		SetWindowLongPtr(s_HWND, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RawInputWndProc));
 
 		// Setup Vulkan
-		if (!glfwVulkanSupported())
-		{
-			std::cerr << "GLFW: Vulkan not supported!\n";
-			return;
-		}
+		ImVector<const char*> extensions;
 		uint32_t extensions_count = 0;
-		const char** extensions = glfwGetRequiredInstanceExtensions(&extensions_count);
-		SetupVulkan(extensions, extensions_count);
+		SDL_Vulkan_GetInstanceExtensions(m_WindowHandle, &extensions_count, nullptr);
+		extensions.resize(extensions_count);
+		SDL_Vulkan_GetInstanceExtensions(m_WindowHandle, &extensions_count, extensions.Data);
+		SetupVulkan(extensions.Data, extensions_count);
 
 		// Create Window Surface
 		VkSurfaceKHR surface;
-		VkResult err = glfwCreateWindowSurface(g_Instance, m_WindowHandle, g_Allocator, &surface);
-		check_vk_result(err);
+		VkResult err;
+		if (SDL_Vulkan_CreateSurface(m_WindowHandle, g_Instance, &surface) == 0)
+		{
+			printf("Failed to create Vulkan surface.\n");
+			return;
+		}
 
 		// Create Framebuffers
 		int w, h;
-		glfwGetFramebufferSize(m_WindowHandle, &w, &h);
+		SDL_GetWindowSize(m_WindowHandle, &w, &h);
 		ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
 		SetupVulkanWindow(wd, surface, w, h);
 
@@ -469,7 +512,7 @@ namespace Walnut {
 		}
 
 		// Setup Platform/Renderer backends
-		ImGui_ImplGlfw_InitForVulkan(m_WindowHandle, true);
+		ImGui_ImplSDL2_InitForVulkan(m_WindowHandle);
 		ImGui_ImplVulkan_InitInfo init_info = {};
 		init_info.Instance = g_Instance;
 		init_info.PhysicalDevice = g_PhysicalDevice;
@@ -550,14 +593,14 @@ namespace Walnut {
 		s_ResourceFreeQueue.clear();
 
 		ImGui_ImplVulkan_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
 		ImGui::DestroyContext();
 
 		CleanupVulkanWindow();
 		CleanupVulkan();
 
-		glfwDestroyWindow(m_WindowHandle);
-		glfwTerminate();
+		SDL_DestroyWindow(m_WindowHandle);
+		SDL_Quit();
 
 		g_ApplicationRunning = false;
 	}
@@ -571,14 +614,32 @@ namespace Walnut {
 		ImGuiIO& io = ImGui::GetIO();
 
 		// Main loop
-		while (!glfwWindowShouldClose(m_WindowHandle) && m_Running)
+		while (m_Running)
 		{
 			// Poll and handle events (inputs, window resize, etc.)
 			// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
 			// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
 			// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
 			// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-			glfwPollEvents();
+			SDL_Event event;
+			while (SDL_PollEvent(&event))
+			{
+				if (!BO3PT::registerHotKey)
+					ImGui_ImplSDL2_ProcessEvent(&event);
+				if (event.type == SDL_QUIT)
+					m_Running = false;
+				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(m_WindowHandle))
+					m_Running = false;
+				if (BO3PT::registerHotKey)
+				{
+					if (event.type == SDL_KEYDOWN && event.key.state == SDL_PRESSED)
+						BO3PT::SDLKeyCallback(event);
+					else if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEWHEEL)
+						BO3PT::SDLMouseCallback(event);
+				}
+				//if (event.type == SDL_MOUSEBUTTONDOWN)
+					//BO3PT::MouseCallback(event);
+			}
 
 			for (auto& layer : m_LayerStack)
 				layer->OnUpdate(m_TimeStep);
@@ -587,7 +648,7 @@ namespace Walnut {
 			if (g_SwapChainRebuild)
 			{
 				int width, height;
-				glfwGetFramebufferSize(m_WindowHandle, &width, &height);
+				SDL_GetWindowSize(m_WindowHandle, &width, &height);
 				if (width > 0 && height > 0)
 				{
 					ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
@@ -604,7 +665,7 @@ namespace Walnut {
 
 			// Start the Dear ImGui frame
 			ImGui_ImplVulkan_NewFrame();
-			ImGui_ImplGlfw_NewFrame();
+			ImGui_ImplSDL2_NewFrame();
 			ImGui::NewFrame();
 
 			{
@@ -701,7 +762,7 @@ namespace Walnut {
 
 	float Application::GetTime()
 	{
-		return (float)glfwGetTime();
+		return (float)SDL_GetTicks();
 	}
 
 	VkInstance Application::GetInstance()
@@ -771,7 +832,6 @@ namespace Walnut {
 
 		vkDestroyFence(g_Device, fence, nullptr);
 	}
-
 
 	void Application::SubmitResourceFree(std::function<void()>&& func)
 	{

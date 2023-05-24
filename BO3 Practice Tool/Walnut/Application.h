@@ -9,16 +9,17 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "imgui_impl_sdl2.h"
 #include "vulkan/vulkan.h"
 #include "Fonts/Icons.h"
+
+#include <Windows.h>
 
 inline ImFont* mainFont;
 inline ImFont* sidebarFont;
 inline ImFont* titleFont;
 
 void check_vk_result(VkResult err);
-
-struct GLFWwindow;
 
 namespace Walnut {
 
@@ -36,6 +37,7 @@ namespace Walnut {
 		~Application();
 
 		static Application& Get();
+		static HWND GetHWND();
 
 		void Run();
 		void SetMenubarCallback(const std::function<void()>& menubarCallback) { m_MenubarCallback = menubarCallback; }
@@ -52,7 +54,7 @@ namespace Walnut {
 		void Close();
 
 		float GetTime();
-		GLFWwindow* GetWindowHandle() const { return m_WindowHandle; }
+		SDL_Window* GetWindowHandle() const { return m_WindowHandle; }
 
 		static VkInstance GetInstance();
 		static VkPhysicalDevice GetPhysicalDevice();
@@ -67,7 +69,7 @@ namespace Walnut {
 		void Shutdown();
 	private:
 		ApplicationSpecification m_Specification;
-		GLFWwindow* m_WindowHandle = nullptr;
+		SDL_Window* m_WindowHandle = nullptr;
 		bool m_Running = false;
 
 		float m_TimeStep = 0.0f;

@@ -5,9 +5,9 @@
 
 namespace Walnut {
 
-	typedef enum class KeyCode : uint16_t
+	typedef enum class KeyCode : int16_t
 	{
-		// From glfw3.h
+		Unknown = -1,
 		Space = 32,
 		Apostrophe = 39, /* ' */
 		Comma = 44, /* , */
@@ -180,5 +180,6 @@ namespace Walnut {
 		os << static_cast<int32_t>(button);
 		return os;
 	}
+
 }
 
