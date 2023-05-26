@@ -388,13 +388,12 @@ LRESULT CALLBACK RawInputWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb.data());
 			if (raw->header.dwType == RIM_TYPEMOUSE && raw->data.mouse.usButtonFlags)
 				BO3PT::CheckAndRunMouseBinds(raw->data.mouse.usButtonFlags, raw->data.mouse.usButtonData);
-			else if (BO3PT::registerHotKey && raw->header.dwType == RIM_TYPEKEYBOARD && raw->data.keyboard.Message == WM_KEYDOWN || raw->data.keyboard.Message == WM_SYSKEYDOWN)
-				BO3PT::RawKeyboardCallback(raw);
+			else if (raw->header.dwType == RIM_TYPEKEYBOARD && raw->data.keyboard.Message == WM_KEYDOWN || raw->data.keyboard.Message == WM_SYSKEYDOWN)
+			{
+				if (BO3PT::registerHotKey)
+					BO3PT::RawKeyboardCallback(raw);
+			}
 		}
-	}
-	else if (msg == WM_HOTKEY)
-	{
-		BO3PT::NLog("Hotkey Pressed");
 	}
 
 	return CallWindowProc(g_OriginalWndProc, hwnd, msg, wParam, lParam);

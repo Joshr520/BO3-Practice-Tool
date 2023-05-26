@@ -39,12 +39,14 @@ void EggStepOptionsPtr();
 void CraftableOptionsPtr();
 void BlockerOptionsPtr();
 void MapOptionsPtr();
+void GumTrackerPtr();
 void ZombieCalculatorPtr();
 void CodeGuidesPtr();
 void GKValveSolverPtr();
 
-void PresetSelectionFunc(int input);
-void SwapSelectionFunc(int input);
+void GumPresetSelectionFunc(int input);
+void GumSwapSelectionFunc(int input);
+void GumTrackerSelectionFunc(int input);
 
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
 {
@@ -53,14 +55,14 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* use
 }
 
 // JSON Settings
-bool steamPathFound = false;
+static bool steamPathFound = false;
 
 // Function pointer list for main UI content
-std::vector<std::function<void()>> funcList;
+static std::vector<std::function<void()>> funcList;
 
 // ImGUI data
 ImVec4 clear_color = ImVec4(0.1f, 0.1f, 0.1f, 1.00f);
-ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoDocking;
+ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoDocking;
 ImGuiWindowFlags dockFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoScrollbar;
 ImGuiViewport* viewport;
 
@@ -76,7 +78,15 @@ static bool injectResponse = false;
 static bool injectResponseWait = false;
 static bool discordPopup = false;
 static bool showDiscordModal = false;
+
 static int sidebarCurrentItem = 0;
+static int frontendItems = 4;
+static int inGameItems = frontendItems + 8;
+static int resourceItems = inGameItems + 4;
+
+const char* sidebarItems[] = { "Gobblegum Loadout", "Autosplits", "Practice Patches", "Settings", "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options",
+                    "Craftable Options", "Blocker Options", "Map Options", "Gum Tracker", "Zombie Calculator", "Code Guides", "GK Valve Solver" };
+
 static ImVec4 fakeColor = { 0, 0, 0, 0 };
 static std::string internalVersion = "Beta-v0.2.0";
 static Walnut::Image* discordIcon;
@@ -124,11 +134,11 @@ static int addSplitRound = -1;
 static int mapError = 0;
 
 // Memory reading data
-DWORD pID;
-uintptr_t* baseAddr;
-uintptr_t* mapNameAddr;
-uintptr_t* roundAddr;
-HANDLE pHandle;
+static DWORD pID;
+static uintptr_t* baseAddr;
+static uintptr_t* mapNameAddr;
+static uintptr_t* roundAddr;
+static HANDLE pHandle;
 static bool procFound = false;
 static int currentRound = 0;
 static char readMap[13];
@@ -208,17 +218,24 @@ public:
 
             ImGui::DockBuilderFinish(dock_main_id);
         }
-        ImGui::DockSpace(dockID, ImVec2(viewport->Size.x, viewport->Size.y), ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_PassthruCentralNode);
+        ImGui::DockSpace(dockID, { NULL, NULL }, ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_PassthruCentralNode);
 
         ImGui::PopFont();
         ImGui::Begin("##Sidebar", 0, dockFlags);
         {
-            if (!steamPathFound || !procFound)
-                ImGui::BeginDisabled();
             // Create sidebar options
             {
                 ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(appStatus.c_str()).x) / 2 + 10);
                 ImGui::Text(appStatus.c_str());
+
+                ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
+                if (ImGui::ImageButton(discordIcon->GetDescriptorSet(), ImVec2(45.0f, 45.0f)))
+                    discordPopup = true;
+                ImGui::PopStyleColor();
+                SAMELINE;
+
+                if (!steamPathFound || !procFound)
+                    ImGui::BeginDisabled();
                 if (CreateButton("Toggle Status", ImVec2(ImGui::GetContentRegionAvail().x, 50.0f), &enabled, true))
                 {
                     if (currentMap == ".")
@@ -245,17 +262,11 @@ public:
                 ImGui::Separator();
                 if (!steamPathFound || !procFound)
                     ImGui::EndDisabled();
+
                 ImGui::PushFont(sidebarFont);
                 ImGui::Text("Frontend");
                 ImGui::Separator(2.5f);
                 ImGui::PopFont();
-
-                const char* sidebarItems[] = { "Gobblegum Loadout", "Autosplits", "Practice Patches", "Settings", "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options",
-                    "Craftable Options", "Blocker Options", "Map Options", "Zombie Calculator", "Code Guides", "GK Valve Solver" };
-                const char* sidebarPreview = sidebarItems[sidebarCurrentItem];
-                static int frontendItems = 4;
-                static int inGameItems = frontendItems + 8;
-                static int resourceItems = inGameItems + 3;
                 // Frontend
                 for (int i = 0; i < frontendItems; i++)
                 {
@@ -301,6 +312,9 @@ public:
                 // Resources
                 for (int i = inGameItems; i < resourceItems; i++)
                 {
+                    float y = ImGui::GetCursorPosY();
+                    if (viewport->Size.y - 25.0f <= 0)
+                        break;
                     const bool is_selected = sidebarCurrentItem == i;
                     if (ImGui::Selectable(sidebarItems[i], is_selected))
                         sidebarCurrentItem = i;
@@ -309,11 +323,6 @@ public:
                 }
                 ImGui::Spacing();
                 ImGui::Separator();
-
-                ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
-                if (ImGui::ImageButton(discordIcon->GetDescriptorSet(), ImVec2(225.0f, 70.0f)))
-                    discordPopup = true;
-                ImGui::PopStyleColor();
             }
         }
         ImGui::End();
@@ -576,6 +585,7 @@ void SetupData()
         funcList.emplace_back(std::function<void()>(CraftableOptionsPtr));
         funcList.emplace_back(std::function<void()>(BlockerOptionsPtr));
         funcList.emplace_back(std::function<void()>(MapOptionsPtr));
+        funcList.emplace_back(std::function<void()>(GumTrackerPtr));
         funcList.emplace_back(std::function<void()>(ZombieCalculatorPtr));
         funcList.emplace_back(std::function<void()>(CodeGuidesPtr));
         funcList.emplace_back(std::function<void()>(GKValveSolverPtr));
@@ -831,7 +841,7 @@ void GobblegumLoadoutPtr()
         if (appStatus != "Status: Active")
             ImGui::EndDisabled();
         // preset gum image buttons
-        CreateGumImages(gumPresets[currentGumPreset].presetGums, ImVec2(128.0f, 128.0f), 5, "Selection", PresetSelectionFunc);
+        CreateGumImages(gumPresets[currentGumPreset].presetGums, ImVec2(128.0f, 128.0f), 5, "Selection", GumPresetSelectionFunc, gumContextIndex);
         ImGui::EndGroup();
     }
     else
@@ -855,7 +865,7 @@ void GobblegumLoadoutPtr()
                 {
                     gumSearchList = GumSearch(classicGumList, searchText);
                 }
-                if (CreateGumImages(gumSearchList, ImVec2(145.0f, 145.0f), 6, "Swap", SwapSelectionFunc))
+                if (CreateGumImages(gumSearchList, ImVec2(145.0f, 145.0f), 6, "Swap", GumSwapSelectionFunc, gumContextIndex))
                     strcpy_s(searchText, "");
                 ImGui::EndTabItem();
             }
@@ -871,7 +881,7 @@ void GobblegumLoadoutPtr()
                 {
                     gumSearchList = GumSearch(megaGumList, searchText);
                 }
-                if (CreateGumImages(gumSearchList, ImVec2(145.0f, 145.0f), 6, "Swap", SwapSelectionFunc))
+                if (CreateGumImages(gumSearchList, ImVec2(145.0f, 145.0f), 6, "Swap", GumSwapSelectionFunc, gumContextIndex))
                     strcpy_s(searchText, "");
                 ImGui::EndTabItem();
             }
@@ -1643,7 +1653,7 @@ void AutosplitsPtr()
             if (CreateButton("Create Livesplit Files", ImVec2(175.0f, 25.0f)))
             {
                 WriteSplitXML(splitPresets[currentSplitPreset].presetName, splitPresets[currentSplitPreset].splits);
-                WriteLayoutXML(splitPresets[currentSplitPreset].presetName, splitPresets[currentSplitPreset].splits.size());
+                WriteLayoutXML(splitPresets[currentSplitPreset].presetName, static_cast<int>(splitPresets[currentSplitPreset].splits.size()));
             }
             if (!splitPresets[currentSplitPreset].splits.size())
                 ImGui::EndDisabled();
@@ -1961,38 +1971,77 @@ void PracticePatchesPtr()
 void SettingsPtr()
 {
     ImGui::PushFont(titleFont);
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Keybinds").x / 2);
-    ImGui::Text("Keybinds");
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 25.0f);
+    ImGui::Text("In Game Keybinds");
     ImGui::PopFont();
+    SAMELINE;
+    ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - 135.0f);
+    if (CreateButton("Reset Keybinds##In Game", ImVec2(125.0f, 25.0f)))
+    {
+        for (std::pair<const std::string, HotKeyBind>& hotkey : hotkeyDefs)
+        {
+            if (hotkey.second.splitGroup != "In Game")
+                continue;
+            hotkey.second.keyNames = "";
+        }
+        RemoveDuplicates();
+    }
+    ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 25.0f, ImGui::GetCursorPosY() + 25.0f));
     ImGui::BeginGroup();
     int count = 0;
-    float cursorPosY = ImGui::GetCursorPosY();
+    float cursorPosX = ImGui::GetCursorPosX();
     for (std::pair<const std::string, HotKeyBind>& hotkey : hotkeyDefs)
     {
-        ImVec2 size = { max(150.0f, ImGui::CalcTextSize(hotkey.second.keyNames.c_str()).x), 25.0f };
-        if (count > 12)
-        {
-            ImGui::SetCursorPosX(375.0f);
-            ImGui::Text(hotkey.first.c_str());
-            SAMELINE;
-            ImGui::SetCursorPosX(575.0f);
-            if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size) && !registerHotKey)
-                AssignHotKey(hotkey.first, hotkey);
-            count++;
+        if (hotkey.second.splitGroup != "In Game")
             continue;
-        }
         ImGui::Text(hotkey.first.c_str());
         SAMELINE;
-        ImGui::SetCursorPosX(200.0f);
-        if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, size) && !registerHotKey)
+        if (count < 13)
+            ImGui::SetCursorPosX(cursorPosX + 170.0f);
+        else
+            ImGui::SetCursorPosX(cursorPosX + 190.0f);
+        if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, ImVec2(225.0f, 25.0f)) && !registerHotKey)
             AssignHotKey(hotkey.first, hotkey);
         count++;
-        if (count > 12)
+        if (count == 13)
         {
             ImGui::EndGroup();
-            ImGui::SetCursorPosY(cursorPosY);
+            SAMELINE;
             ImGui::BeginGroup();
+            cursorPosX = ImGui::GetCursorPosX();
         }
+    }
+    ImGui::EndGroup();
+
+    ImGui::PushFont(titleFont);
+    ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 25.0f, ImGui::GetCursorPosY() + 25.0f));
+    ImGui::Text("Gum Tracker Keybinds");
+    ImGui::PopFont();
+    SAMELINE;
+    ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - 135.0f);
+
+    if (CreateButton("Reset Keybinds##Gum Track", ImVec2(125.0f, 25.0f)))
+    {
+        for (std::pair<const std::string, HotKeyBind>& hotkey : hotkeyDefs)
+        {
+            if (hotkey.second.splitGroup != "Gum Tracker")
+                continue;
+            hotkey.second.keyNames = "";
+        }
+        RemoveDuplicates();
+    }
+    ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 25.0f, ImGui::GetCursorPosY() + 25.0f));
+    ImGui::BeginGroup();
+    cursorPosX = ImGui::GetCursorPosX();
+    for (std::pair<const std::string, HotKeyBind>& hotkey : hotkeyDefs)
+    {
+        if (hotkey.second.splitGroup != "Gum Tracker")
+            continue;
+        ImGui::Text(hotkey.first.c_str());
+        SAMELINE;
+        ImGui::SetCursorPosX(cursorPosX + 200.0f);
+        if (CreateButton(hotkey.second.keyNames + "##" + hotkey.first, ImVec2(225.0f, 25.0f)) && !registerHotKey)
+            AssignHotKey(hotkey.first, hotkey);
     }
     ImGui::EndGroup();
 }
@@ -2812,6 +2861,122 @@ void MapOptionsPtr()
         NotifyGame({ 7, 0, mapListIndex });
     }
     ImGui::EndGroup();
+}
+
+void GumTrackerPtr()
+{
+    if (showGumSelection)
+    {
+        if (CreateButton(ICON_FA_ARROW_LEFT, ImVec2(50.0f, 25.0f)))
+            showGumSelection = false;
+        SAMELINE;
+        if (ImGui::BeginTabBar("Gum Type Choice"))
+        {
+            if (ImGui::BeginTabItem("Classics"))
+            {
+                static char searchText[64] = "";
+                if (!strcmp(gumSelectMenu, "Megas"))
+                    strcpy_s(searchText, "");
+                gumSelectMenu = "Classics";
+                if (!strcmp(searchText, ""))
+                    gumSearchList = classicGumList;
+                if (ImGui::InputText("Gobblegum Search", searchText, IM_ARRAYSIZE(searchText)))
+                {
+                    gumSearchList = GumSearch(classicGumList, searchText);
+                }
+                if (CreateGumImages(gumSearchList, ImVec2(145.0f, 145.0f), 6, "Swap", GumTrackerSelectionFunc, gumTrackContextIndex))
+                    strcpy_s(searchText, "");
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Megas"))
+            {
+                static char searchText[64] = "";
+                if (!strcmp(gumSelectMenu, "Classics"))
+                    strcpy_s(searchText, "");
+                gumSelectMenu = "Megas";
+                if (!strcmp(searchText, ""))
+                    gumSearchList = megaGumList;
+                if (ImGui::InputText("Gobblegum Search", searchText, IM_ARRAYSIZE(searchText)))
+                {
+                    gumSearchList = GumSearch(megaGumList, searchText);
+                }
+                if (CreateGumImages(gumSearchList, ImVec2(145.0f, 145.0f), 6, "Swap", GumTrackerSelectionFunc, gumTrackContextIndex))
+                    strcpy_s(searchText, "");
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
+    }
+    else
+    {
+        ImGui::SetNextItemWidth(250);
+        if (ImGui::BeginCombo("Gum Presets", gumPresets[currentGumPreset].presetName.c_str(), ImGuiComboFlags_HeightRegular))
+        {
+            for (int i = 0; i < gumPresets.size(); i++)
+            {
+                const bool is_selected = currentGumPreset == i;
+                if (ImGui::Selectable(gumPresets[i].presetName.c_str(), is_selected))
+                    currentGumPreset = i;
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+        SAMELINE;
+        if (CreateButton("Load Preset", ImVec2(100.0f, 25.0f)) && gumPresets[currentGumPreset].presetName != "No Presets Available")
+        {
+            for (int i = 0; i < 5; i++)
+                gumTrackIndexes[i] = gumPresets[currentGumPreset].presetGums[i];
+        }
+
+        DummySpace(25.0f, 0.0f);
+        SAMELINE;
+
+        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0)); ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(25, 100, 128, 100));
+        for (int i = 0; i < 5; i++)
+        {
+            ImGui::BeginGroup();
+            if (CreateButton(std::string("Choose Gum##" + std::to_string(i)) + std::to_string(i + 1), ImVec2(155.0f, 25.0f)))
+            {
+                showGumSelection = true;
+                gumTrackCurrentIndex = i;
+            }
+            if (i == gumTrackCurrentIndex)
+                ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(25, 100, 128, 100));
+            if (!gumTrackChosen[i])
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+            if (ImGui::ImageButton(bgbImgList[gumTrackIndexes[i]]->GetDescriptorSet(), ImVec2(145.0f, 145.0f)))
+            {
+                gumTrackChosen[i] = !gumTrackChosen[i];
+                if (std::all_of(std::begin(gumTrackChosen), std::end(gumTrackChosen), [](bool value) { return value; }))
+                    std::fill(std::begin(gumTrackChosen), std::end(gumTrackChosen), false);
+            }
+            ImGui::PopStyleColor(ImGui::GetCurrentContext()->ColorStack.Size - 2);
+            if (ImGui::IsItemHovered())
+            {
+                gumTrackContextIndex = gumTrackIndexes[i];
+                gumTrackCurrentIndex = i;
+                NLog("Hover " + std::to_string(gumTrackCurrentIndex));
+            }
+            ImGui::EndGroup();
+            ImGui::PopStyleVar(ImGui::GetCurrentContext()->StyleVarStack.Size);
+
+            if (i != 4)
+                SAMELINE;
+        }
+        ImGui::PopStyleColor(2);
+    }
+
+    ImGui::Begin("##Gum Context Menu", 0, dockFlags);
+    ImGui::Image(bgbImgList[gumTrackContextIndex]->GetDescriptorSet(), ImVec2(196.0f, 196.0f));
+    SAMELINE;
+    ImVec2 contPos = ImGui::GetCursorPos();
+    ImGui::PushFont(sidebarFont);
+    ImGui::Text(bgbImgList[gumTrackContextIndex]->GetFilename().c_str());
+    ImGui::SetCursorPos(ImVec2(contPos.x, contPos.y + 30.0f));
+    ImGui::TextWrapped(gumDescriptions[gumTrackContextIndex].c_str());
+    ImGui::PopFont();
+    ImGui::End();
 }
 
 void ZombieCalculatorPtr()
@@ -4193,13 +4358,13 @@ void GKValveSolverPtr()
     }
 }
 
-void PresetSelectionFunc(int input)
+void GumPresetSelectionFunc(int input)
 {
     gumSelectIndex = input;
     showGumSelection = true;
 }
 
-void SwapSelectionFunc(int input)
+void GumSwapSelectionFunc(int input)
 {
     SwapGumSelection(input, gumSelectIndex);
     showGumSelection = false;
@@ -4207,4 +4372,18 @@ void SwapSelectionFunc(int input)
         WritePresetToGame(gumPresets[currentGumPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
     else
         WritePresetToGame(inactiveGumPreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
+}
+
+void GumTrackerSelectionFunc(int input)
+{
+    for (int i = 0; i < 5; i++)
+    {
+        if (gumTrackIndexes[i] == input)
+        {
+            gumTrackIndexes[i] = gumTrackIndexes[gumTrackCurrentIndex];
+            break;
+        }
+    }
+    gumTrackIndexes[gumTrackCurrentIndex] = input;
+    showGumSelection = false;
 }

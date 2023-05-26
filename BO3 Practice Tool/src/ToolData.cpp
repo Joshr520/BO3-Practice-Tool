@@ -499,7 +499,7 @@ namespace BO3PT
         return false;
     }
 
-    bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress)
+    bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress, int& outIndex)
     {
         ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0)); ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(25, 100, 128, 100));
         float leftPos = ImGui::GetCursorPosX();
@@ -527,7 +527,7 @@ namespace BO3PT
                 return 1;
             }
             if (ImGui::IsItemHovered())
-                gumContextIndex = index;
+                outIndex = index;
             if ((i + 1) % numOnLine != 0)
                 ImGui::SameLine();
             else
@@ -1249,25 +1249,25 @@ namespace BO3PT
         if (round >= 10)
             multiplier *= (round * 0.15f);
         if (playerCount == 1)
-            maxZombies += 3 * multiplier;
+            maxZombies += static_cast<int>(3 * multiplier);
         else
-            maxZombies += ((playerCount - 1) * 6) * multiplier;
+            maxZombies += static_cast<int>(((playerCount - 1) * 6) * multiplier);
         return MaxZombieFunc(maxZombies, round);
     }
 
     int MaxZombieFunc(int maxZombies, int round)
     {
         if (round < 2)
-            return maxZombies * 0.25;
+            return static_cast<int>(maxZombies * 0.25);
         if (round < 3)
-            return maxZombies * 0.3;
+            return static_cast<int>(maxZombies * 0.3);
         if (round < 4)
-            return maxZombies * 0.5;
+            return static_cast<int>(maxZombies * 0.5);
         if (round < 5)
-            return maxZombies * 0.7;
+            return static_cast<int>(maxZombies * 0.7);
         if (round < 6)
-            return maxZombies * 0.9;
-        return maxZombies;
+            return static_cast<int>(maxZombies * 0.9);
+        return static_cast<int>(maxZombies);
     }
 
     int GetZombiesUpToRound(int round, int playerCount)
@@ -1287,7 +1287,7 @@ namespace BO3PT
             return zombieHealth;
         for (int i = 10; i <= round; i++)
         {
-            zombieHealth += (int)zombieHealth * 0.1;
+            zombieHealth += static_cast<int>(zombieHealth * 0.1);
         }
         return zombieHealth;
     }
@@ -1303,10 +1303,10 @@ namespace BO3PT
             startDelay = 0.89f;
         else if (playerCount == 4)
             startDelay = 0.67f;
-        float calcSpawnRate = startDelay * pow(0.95f, round - 1) + 0.1f;
+        float calcSpawnRate = startDelay * static_cast<float>(pow(0.95f, round - 1)) + 0.1f;
         if (calcSpawnRate < 0.2f)
             calcSpawnRate = 0.2f;
-        int calcRoundedTime = calcSpawnRate * 1000;
+        int calcRoundedTime = static_cast<int>(calcSpawnRate * 1000);
         return RoundTimeNearest50(calcRoundedTime);
     }
 
@@ -1321,7 +1321,7 @@ namespace BO3PT
             startDelay = 0.89f;
         else if (playerCount == 4)
             startDelay = 0.67f;
-        return startDelay * pow(0.95f, round - 1);
+        return startDelay * static_cast<float>(pow(0.95f, round - 1));
     }
 
     int RoundTimeNearest50(int time)
@@ -1440,20 +1440,20 @@ namespace BO3PT
         float rawSpawnRate_1 = RawSpawnRateForRound(round, playerCount);
         if (rawSpawnRate_1 < 0.1f)
             rawSpawnRate_1 = 0.1f;
-        float rawSpawnRate_2 = rawSpawnRate_1 - playerCount * 0.1;
+        float rawSpawnRate_2 = rawSpawnRate_1 - playerCount * 0.1f;
         if (rawSpawnRate_2 < 0.1f)
             rawSpawnRate_2 = 0.1f;
-        float rawSpawnRate_3 = rawSpawnRate_2 - playerCount * 0.1;
+        float rawSpawnRate_3 = rawSpawnRate_2 - playerCount * 0.1f;
         if (rawSpawnRate_3 < 0.1f)
             rawSpawnRate_3 = 0.1f;
-        float rawSpawnRate_4 = rawSpawnRate_3 - playerCount * 0.1;
+        float rawSpawnRate_4 = rawSpawnRate_3 - playerCount * 0.1f;
         if (rawSpawnRate_4 < 0.1f)
             rawSpawnRate_4 = 0.1f;
 
-        int spawnRate_1 = RoundTimeNearest50(rawSpawnRate_1 * 1000) + 50;
-        int spawnRate_2 = RoundTimeNearest50(rawSpawnRate_2 * 1000) + 50;
-        int spawnRate_3 = RoundTimeNearest50(rawSpawnRate_3 * 1000) + 50;
-        int spawnRate_4 = RoundTimeNearest50(rawSpawnRate_4 * 1000) + 50;
+        int spawnRate_1 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_1 * 1000)) + 50;
+        int spawnRate_2 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_2 * 1000)) + 50;
+        int spawnRate_3 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_3 * 1000)) + 50;
+        int spawnRate_4 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_4 * 1000)) + 50;
 
         int waveCount_1 = 14 + (8 * playerCount);
         int waveCount_2 = 16 + (9 * playerCount);

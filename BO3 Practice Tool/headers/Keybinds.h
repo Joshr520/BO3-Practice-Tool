@@ -45,8 +45,9 @@ namespace BO3PT
 	inline bool registerHotKey = false;
 	inline std::string jsonKeyToAssign;
 	inline std::pair<const std::string, HotKeyBind>* hotkeyToAssign = nullptr;
-	inline std::map<std::string, HotKeyBind> hotkeyDefs;
+	inline std::map<const std::string, HotKeyBind> hotkeyDefs;
 	inline std::unordered_map<std::pair<int, int>, std::function<void()>, hashPair> hotkeyCalls;
+	inline std::unordered_map<int, std::function<void()>> mouseCalls;
 
 	void SDLKeyCallback(SDL_Event event);
 	void RawKeyboardCallback(RAWINPUT* raw);
@@ -83,4 +84,8 @@ namespace BO3PT
 	void GlobalPowerOn();
 	void OpenAllBarriers();
 	void CloseAllBarriers();
+
+	void IncrementGumTracker();
+	void DecrementGumTracker();
+	void ToggleGumTracker();
 }

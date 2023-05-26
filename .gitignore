@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/BO3 Practice Tool/Settings/Gum Profiles/GumPresets.csv
+/BO3 Practice Tool/imgui.ini
+/BO3 Practice Tool/bindings.json
+/BO3 Practice Tool/settings.json

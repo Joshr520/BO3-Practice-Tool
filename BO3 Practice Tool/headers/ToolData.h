@@ -100,7 +100,7 @@ namespace BO3PT
 
 	bool CreateButton(const std::string& name, const ImVec2& size, bool* value = NULL, bool toggle = false, const ImVec4& color = { 25, 100, 128, 255 }, bool inGame = false);
 	bool CreateListBox(const std::string& name, const std::vector<std::string>& items, int& currentItem, const ImVec2& boxSize);
-	bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress);
+	bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress, int& outIndex);
 	bool DoesPathExist(const std::string_view& s);
 	bool CheckVersions(const std::string& newVersion, const std::string& oldVersion);
 	bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles);
@@ -173,8 +173,13 @@ namespace BO3PT
 	inline std::unordered_map<std::string, std::vector<std::string>> powerupList = { };
 
 	void InitPowerupList();
+#pragma endregion
 
-
+#pragma region Gum Tracker
+	inline bool gumTrackChosen[5] = { false };
+	inline int gumTrackIndexes[5] = { 0, 1, 2, 3, 4 };
+	inline int gumTrackCurrentIndex = 0;
+	inline int gumTrackContextIndex = 0;
 #pragma endregion
 
 #pragma region ZombieCalc

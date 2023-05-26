@@ -7,18 +7,13 @@
 
 #include <unordered_set>
 
-std::map<Uint8, std::string> mouseButtonNames = {
-	{ SDL_BUTTON_LEFT, "Left Click" },
-	{ SDL_BUTTON_MIDDLE, "Middle Click" },
-	{ SDL_BUTTON_RIGHT, "Right Click" },
-	{ SDL_BUTTON_X1, "Mouse 4" },
-	{ SDL_BUTTON_X2, "Mouse 5" }
-};
+std::unordered_map<Uint8, std::string> sdlMouseButtons = { { SDL_BUTTON_LEFT, "Left Click" }, { SDL_BUTTON_MIDDLE, "Middle Click" }, { SDL_BUTTON_RIGHT, "Right Click" }, { SDL_BUTTON_X1, "Mouse 4" }, { SDL_BUTTON_X2, "Mouse 5" } };
+std::unordered_map<std::string, USHORT> stringToRawMouse = { { "Left Click", 0x01, }, { "Middle Click", 0x10 }, {"Right Click", 0x04 }, { "Mouse 4", 0x40 }, { "Mouse 5", 0x100 }, { "Scroll Up", 0x401 }, { "Scroll Down", 0x3FF } };
+std::unordered_set<std::string> validMouseBinds = { "Left Click", "Middle Click", "Right Click", "Mouse 4", "Mouse 5", "Scroll Up", "Scroll Down" };
+
 
 static bool writeKeys = false;
 static Walnut::JSONBuilder keybindBuilder;
-
-std::unordered_set<std::string> validMouseBinds = { "Left Click", "Middle Click", "Right Click", "Mouse 4", "Mouse 5", "Scroll Up", "Scroll Down" };
 
 namespace BO3PT
 {
@@ -92,9 +87,9 @@ namespace BO3PT
 		std::string mouseBind;
 		if (event.type == SDL_MOUSEBUTTONDOWN)
 		{
-			if (mouseButtonNames.find(event.button.button) == mouseButtonNames.end())
+			if (sdlMouseButtons.find(event.button.button) == sdlMouseButtons.end())
 				return;
-			mouseBind = mouseButtonNames[event.button.button];
+			mouseBind = sdlMouseButtons[event.button.button];
 		}
 		else if (event.type == SDL_MOUSEWHEEL)
 			event.wheel.y > 0 ? mouseBind = "Scroll Up" : mouseBind = "Scroll Down";
@@ -103,7 +98,7 @@ namespace BO3PT
 
 		rapidjson::Value& bind = keybindBuilder.GetDocument()[hotkeyToAssign->second.splitGroup.c_str()][hotkeyToAssign->first.c_str()];
 		keybindBuilder.ModifyString(bind, "KeyNames", hotkeyToAssign->second.keyNames);
-		keybindBuilder.ModifyInt(bind, "Key", 0);
+		keybindBuilder.ModifyInt(bind, "Key", stringToRawMouse[mouseBind]);
 		keybindBuilder.ModifyInt(bind, "Mods", 0);
 		keybindBuilder.SaveToFile(selfDirectory + "\\bindings.json");
 
@@ -114,8 +109,14 @@ namespace BO3PT
 
 	void CheckAndRunMouseBinds(USHORT flags, USHORT data)
 	{
-		//NLog("Flags: " + std::to_string(flags));
-		//NLog("Data: " + std::to_string(data));
+		if (flags > 0x400)
+			return;
+
+		if (flags == 0x400)
+			((short)(unsigned short)data) < 0 ? flags-- : flags++;
+
+		if (mouseCalls.find(flags) != mouseCalls.end())
+			mouseCalls[flags]();
 	}
 
 	void InitHotKeyBinds()
@@ -129,6 +130,9 @@ namespace BO3PT
 		hotkeyDefs.insert({ "End Round", { "In Game", std::function<void()>(EndRound)} }); hotkeyDefs.insert({ "Restart Round", { "In Game", std::function<void()>(RestartRound)} }); hotkeyDefs.insert({ "Pickup Every Part", { "In Game", std::function<void()>(PickupEveryPart)} });
 		hotkeyDefs.insert({ "Open All Doors", { "In Game", std::function<void()>(OpenAllDoors)} }); hotkeyDefs.insert({ "Global Power On", { "In Game", std::function<void()>(GlobalPowerOn)} }); hotkeyDefs.insert({ "Open All Barriers", { "In Game", std::function<void()>(OpenAllBarriers)} });
 		hotkeyDefs.insert({ "Close All Barriers", { "In Game", std::function<void()>(CloseAllBarriers)} });
+
+		hotkeyDefs.insert({ "Increment Gum Tracker", { "Gum Tracker", std::function<void()>(IncrementGumTracker) } }); hotkeyDefs.insert({ "Decrement Gum Tracker", { "Gum Tracker", std::function<void()>(DecrementGumTracker) } });
+		hotkeyDefs.insert({ "Toggle Gum Tracker", { "Gum Tracker", std::function<void()>(ToggleGumTracker) } });
 
 		keybindBuilder = Walnut::JSONBuilder(std::string_view(selfDirectory + "\\bindings.json"));
 
@@ -152,7 +156,6 @@ namespace BO3PT
 				newBind.AddMember("KeyNames", "", keybindBuilder.GetAllocator());
 				newBind.AddMember("Key", 0, keybindBuilder.GetAllocator());
 				newBind.AddMember("Mods", 0, keybindBuilder.GetAllocator());
-				continue;
 			}
 			else if (!bindingData[hotkey.second.splitGroup.c_str()].HasMember(hotkey.first.c_str()))
 			{
@@ -160,7 +163,6 @@ namespace BO3PT
 				newBind.AddMember("KeyNames", "", keybindBuilder.GetAllocator());
 				newBind.AddMember("Key", 0, keybindBuilder.GetAllocator());
 				newBind.AddMember("Mods", 0, keybindBuilder.GetAllocator());
-				continue;
 			}
 			else if (bindingData[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()]["KeyNames"].GetString() != "")
 			{
@@ -169,12 +171,6 @@ namespace BO3PT
 
 				if (validMouseBinds.find(keys) != validMouseBinds.end())
 					hotkey.second.type = 1;
-
-				if (!hotkey.second.type)
-				{
-					UINT fsModifiers = bindingData[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()]["Mods"].GetInt();
-					UINT vk = bindingData[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()]["Key"].GetInt();
-				}
 			}
 		}
 
@@ -185,28 +181,41 @@ namespace BO3PT
 	{
 		std::unordered_set<std::string> usedBinds;
 		hotkeyCalls.clear();
+		mouseCalls.clear();
 		if (hotkeyToAssign)
 		{
 			usedBinds.insert(hotkeyToAssign->second.keyNames);
 			int key = keybindBuilder.GetDocument()[hotkeyToAssign->second.splitGroup.c_str()][hotkeyToAssign->first.c_str()]["Key"].GetInt();
 			int mods = keybindBuilder.GetDocument()[hotkeyToAssign->second.splitGroup.c_str()][hotkeyToAssign->first.c_str()]["Mods"].GetInt();
-			hotkeyCalls.insert({ { key, mods }, hotkeyToAssign->second.activatedFunc });
+			if (!hotkeyToAssign->second.type)
+				hotkeyCalls.insert({ { key, mods }, hotkeyToAssign->second.activatedFunc });
+			else
+				mouseCalls.insert({ key , hotkeyToAssign->second.activatedFunc });
 		}
 
 		for (std::pair<const std::string, HotKeyBind>& hotkey : hotkeyDefs)
 		{
-			if (hotkey.second.keyNames == "" || hotkey.second.type)
+			if (hotkey.second.keyNames == "")
+			{
+				hotkey.second.type = 0;
+				keybindBuilder.ModifyString(keybindBuilder.GetDocument()[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()], "KeyNames", "");
+				keybindBuilder.ModifyInt(keybindBuilder.GetDocument()[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()], "Key", 0);
+				keybindBuilder.ModifyInt(keybindBuilder.GetDocument()[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()], "Mods", 0);
 				continue;
+			}
 			if (hotkeyToAssign && hotkey.second.index == hotkeyToAssign->second.index)
 				continue;
 
 			if (usedBinds.find(hotkey.second.keyNames) == usedBinds.end())
-			{
-				usedBinds.insert(hotkey.second.keyNames);
-				int key = keybindBuilder.GetDocument()[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()]["Key"].GetInt();
-				int mods = keybindBuilder.GetDocument()[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()]["Mods"].GetInt();
-				hotkeyCalls.insert({ { key, mods }, hotkey.second.activatedFunc });
-			}
+				{
+					usedBinds.insert(hotkey.second.keyNames);
+					int key = keybindBuilder.GetDocument()[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()]["Key"].GetInt();
+					int mods = keybindBuilder.GetDocument()[hotkey.second.splitGroup.c_str()][hotkey.first.c_str()]["Mods"].GetInt();
+					if (!hotkey.second.type)
+						hotkeyCalls.insert({ { key, mods }, hotkey.second.activatedFunc });
+					else
+						mouseCalls.insert({ key , hotkey.second.activatedFunc });
+				}
 			else
 			{
 				hotkey.second.keyNames = "";
@@ -229,72 +238,104 @@ namespace BO3PT
 
 	void GodmodeOn()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		godActive = !godActive;
 		NotifyGame({ 0, 11, godActive });
 	}
 	void InfiniteAmmo()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		infAmmoActive = !infAmmoActive;
 		NotifyGame({ 0, 12, infAmmoActive });
 	}
 	void TimescaleIncrease()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		if (timescaleInt < 10)
 			timescaleInt++;
 		NotifyGame({ 0, 13, timescaleInt });
 	}
 	void TimescaleDecrease()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		if (timescaleInt > 1)
 			timescaleInt--;
 		NotifyGame({ 0, 13, timescaleInt });
 	}
 	void MaxPoints()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 0, 0, 4194303 });
 	}
 	void ResetPoints()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 0, 0, 500 });
 	}
 	void GiveAllPerks()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 0, 7 });
 	}
 	void TakeAllPerks()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 0, 8 });
 	}
 	void TakeGum()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 0, 4 });
 	}
 	void TakeGumCharge()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 0, 5 });
 	}
 	void ActivateGum()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 0, 6 });
 	}
 	void ZombiesIgnorePlayer()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 1, 0, zombiesIgnore });
 	}
 	void KillHorde()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 1, 1 });
 	}
 	void FreezeZombies()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 1, 2, zombiesFreeze });
 	}
 	void ToggleSpawning()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 1, 3, zombiesSpawn });
 	}
 	void ZombiesWalk()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		zombieSpeedRun = false;
 		zombieSpeedSprint = false;
 		if (zombieSpeedWalk)
@@ -304,6 +345,8 @@ namespace BO3PT
 	}
 	void ZombiesRun()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		zombieSpeedWalk = false;
 		zombieSpeedSprint = false;
 		if (zombieSpeedRun)
@@ -313,6 +356,8 @@ namespace BO3PT
 	}
 	void ZombiesSprint()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		zombieSpeedWalk = false;
 		zombieSpeedRun = false;
 		if (zombieSpeedSprint)
@@ -322,30 +367,73 @@ namespace BO3PT
 	}
 	void EndRound()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 2, 0 });
 	}
 	void RestartRound()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 2, 1 });
 	}
 	void PickupEveryPart()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 5, 0 });
 	}
 	void OpenAllDoors()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 6, 0 });
 	}
 	void GlobalPowerOn()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 6, 2 });
 	}
 	void OpenAllBarriers()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 6, 5, 0 });
 	}
 	void CloseAllBarriers()
 	{
+		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+			return;
 		NotifyGame({ 6, 5, 1 });
+	}
+
+	void IncrementGumTracker()
+	{
+		if (showGumSelection)
+			return;
+		if (gumTrackCurrentIndex == 4)
+			gumTrackCurrentIndex = 0;
+		else
+			gumTrackCurrentIndex++;
+		gumTrackContextIndex = gumTrackIndexes[gumTrackCurrentIndex];
+	}
+	void DecrementGumTracker()
+	{
+		if (showGumSelection)
+			return;
+		if (gumTrackCurrentIndex == 0)
+			gumTrackCurrentIndex = 4;
+		else
+			gumTrackCurrentIndex--;
+		gumTrackContextIndex = gumTrackIndexes[gumTrackCurrentIndex];
+	}
+	void ToggleGumTracker()
+	{
+		if (showGumSelection)
+			return;
+		gumTrackChosen[gumTrackCurrentIndex] = !gumTrackChosen[gumTrackCurrentIndex];
+		if (std::all_of(std::begin(gumTrackChosen), std::end(gumTrackChosen), [](bool value) { return value; }))
+			std::fill(std::begin(gumTrackChosen), std::end(gumTrackChosen), false);
 	}
 }
