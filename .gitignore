@@ -362,7 +362,10 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /BO3 Practice Tool/Settings
+/BO3 Practice Tool/Settings/Autosplits
+/BO3 Practice Tool/Settings/Gum Profiles
 /BO3 Practice Tool/imgui.ini
 /BO3 Practice Tool/bindings.json
 /BO3 Practice Tool/settings.json
 /BO3 Practice Tool/log.txt
+/BO3 Practice Tool/Settings/Autosplits/soe.json

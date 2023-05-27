@@ -422,7 +422,7 @@ namespace BO3PT
 
         STARTUPINFOA startupInfo = { sizeof(startupInfo) };
         PROCESS_INFORMATION processInfo = { 0 };
-        if (CreateProcessA(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo))
+        if (CreateProcessA(NULL, args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
         {
             DWORD exitCode = WaitToKillCompiler(processInfo);
             if (exitCode != 0)

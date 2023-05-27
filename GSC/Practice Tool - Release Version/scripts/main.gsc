@@ -30,9 +30,11 @@ on_player_spawned()
 {
     if(self IsTestClient()) return;
 
-    self thread TombSoftPatch();
+    //self thread TombSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
+
+    self thread DebugTesting();
 }
 
 DebugTesting()

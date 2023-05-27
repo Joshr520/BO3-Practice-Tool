@@ -2,9 +2,13 @@
 Searching for BO3 directory
 BO3 directory found
 Starting Enumeration
-BlackOps3.exe Not Found
+BlackOps3.exe Found
+Base Address: 00007FF755500000
+Map Address: 00007FF76CEDF840
+Round Address: 00007FF76690DC30
+
 Writing presets
-Started async process - looking for BO3
 Checking for updates
 New version not available
 Setup Finished
+Killing compiler for timeout

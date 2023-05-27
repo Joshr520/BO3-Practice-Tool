@@ -389,18 +389,18 @@ namespace BO3PT
 
 	inline int soeSplits[5] = { 0 };
 	inline std::vector<std::string> soeRitualSplits = { "Magician Ritual", "Femme Ritual", "Detective Ritual", "Boxer Ritual", "PAP Ritual" };
+	inline std::vector<std::string> soeRiftSplits = { "Canals - Rift", "Footlight - Rift", "Waterfront - Rift", "Rift - Canals", "Rift - Footlight", "Rift - Waterfront" };
 	inline std::vector<std::string> soeEggSplits = { "Canals Egg", "Footlight Egg", "Waterfront Egg", "Rift Egg", "Pickup Sword" };
 	inline std::vector<std::string> soeOvumSplits = { "Junction Ovum", "Canals Ovum", "Footlight Ovum", "Waterfront Ovum" };
 	inline std::vector<std::string> soeFlagSplits = { "Pickup Upgraded Sword", "Activate Book", "Flag 1", "Flag 2", "Flag 3", "Flag 4" };
-	inline std::vector<std::string> soeRiftSplits = { "Canals - Rift", "Footlight - Rift", "Waterfront - Rift", "Rift - Canals", "Rift - Footlight", "Rift - Waterfront" };
 
 	inline int deSplits[9] = { 0 };
-	inline std::vector<std::string> deDragonSplits = { "Dragon 1", "Dragon 2", "Dragon 3", "Pickup Bow" };
+	inline std::vector<std::string> deDragonSplits = { "Church Dragon", "Courtyard Dragon", "Undercroft Dragon", "Pickup Bow" };
 	inline std::vector<std::string> deLightningBowSplits = { "Pickup Arrow", "Bonfires Shot", "Wall Ride", "Crackle", "Upgrade Lightning" };
 	inline std::vector<std::string> deFireBowSplits = { "Pickup Arrow", "Obelisk Shot", "Circles Filled", "Golf", "Upgrade Fire " };
 	inline std::vector<std::string> deVoidBowSplits = { "Pickup Arrow", "Activate Urn", "Pickup Skulls", "Crawler Kills", "Runes", "Upgrade Void" };
-	inline std::vector<std::string> deWolfBowSplits = { "Pickup Arrow", "Shrine Shot", "Wolf Souls Filled", "Arrow Forged", "Upgrade Wolf" };
-	inline std::vector<std::string> deWispSplits = { "Time Travel 1", "Time Travel 2" };
+	inline std::vector<std::string> deWolfBowSplits = { "Pickup Arrow", "Shrine Shot", "Activate Wolf", "Wolf Souls Filled", "Arrow Forged", "Upgrade Wolf" };
+	inline std::vector<std::string> deWispSplits = { "Normal TP", "Time Travel 1", "Time Travel 2" };
 	inline std::vector<std::string> deSimonSplits = { "Safe Code Entered", "Simon 1", "Simon 2" };
 	inline std::vector<std::string> deKeeperSplits = { "Keeper Spawned", "Keeper 1", "Keeper 2", "Keeper 3", "Keeper 4", "Keeper Trapped" };
 	inline std::vector<std::string> deBossSplits = { "Boss Enter", "Boss Exit" };
@@ -418,8 +418,9 @@ namespace BO3PT
 	inline std::vector<std::string> gkLockdownSplits = { "Lockdown Start", "Lockdown End" };
 	inline std::vector<std::string> gkChallengeSplits = { "Start Challenges", "Start Download", "Boss Enter" };
 
-	inline int revSplits[5] = { 0 };
+	inline int revSplits[6] = { 0 };
 	inline std::vector<std::string> revStartSplits = { "Gen 1", "Gen 2", "Gen 3", "Gen 4", "Keeper Start" };
+	inline std::vector<std::string> revApothExitSplits = { "Exit Beast Mob", "Exit Beast Verruckt", "Exit Beast DE", "Exit Beast Spawn" };
 	inline std::vector<std::string> revReelSplits = { "Pickup Reel 1", "Place Reel 1", "Pickup Reel 2", "Place Reel 2", "Pickup Reel 3", "Place Reel 3" };
 	inline std::vector<std::string> revEggSplits = { "Sophia TP", "Egg 1 Fill", "Egg 2 Fill", "Egg 3 Fill", "Egg 4 Fill" };
 	inline std::vector<std::string> revRuneSplits = { "Rune 1 Grab", "Rune 2 Grab", "Rune 3 Grab", "Rune 4 Grab", "Boss 1 Enter" };

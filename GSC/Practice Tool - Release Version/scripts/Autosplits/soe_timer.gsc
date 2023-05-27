@@ -1,12 +1,24 @@
 
 
-WaitForRitual(name)
+WaitRitual(name)
 {
     level waittill("ritual_" + name + "_succeed");
 }
 
+WaitRiftTP(str_areaname, str_pos)
+{
+    portal = GetEntArray(str_areaname + "_portal_" + str_pos, "script_noteworthy");
+    portal_trig = GetEntArrayFromArray(portal, "teleport_trigger", "targetname")[0];
+    for(;;)
+    {
+        portal_trig waittill("trigger", portee);
+        if(!level clientfield::get("portal_state_" + str_areaname) || !IsPlayer(portee)) continue;
+        return;
+    }
+}
+
 // // Statue Order - Canals, Footlight, Initial, Waterfront, Rift
-WaitForEgg(num)
+WaitEgg(num)
 {
     for(;;)
     {
@@ -15,7 +27,7 @@ WaitForEgg(num)
     }
 }
 
-WaitForSword(upgraded)
+WaitSword(upgraded)
 {
     self waittill(#"hash_b29853d8");
     if(!upgraded && self.sword_quest.upgrade_stage == 1) return;
@@ -37,16 +49,22 @@ WaitForOvum(num)
     }
 }
 
-WaitForBook()
+WaitBook()
 {
     level flag::wait_till("ee_book");
 }
 
-WaitForFlag(num)
+WaitFlag(num)
 {
     for(;;)
     {
         level waittill("ee_keeper_resurrected");
         if([[ @zm_zod_ee<scripts\zm\zm_zod_ee.gsc>::function_832f1b2a ]]() >= num) return;
     }
+}
+
+WaitZodEnd()
+{
+    if(GetPlayers().size < 4) level flag::wait_till("ee_boss_defeated");
+    else while(!level IsScenePlaying("cin_zod_vign_summoning_key")) wait 0.05;
 }

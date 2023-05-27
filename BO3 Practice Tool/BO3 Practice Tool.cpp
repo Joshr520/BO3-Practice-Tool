@@ -950,7 +950,26 @@ void AutosplitsPtr()
                     }
                 }
                 SAMELINE;
-                if (CreateListBox("##Egg Splits", soeEggSplits, soeSplits[1], ImVec2(150.0f, 126.0f)))
+                if (CreateListBox("##Rift Splits", soeRiftSplits, soeSplits[1], ImVec2(200.0f, 151.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Rift", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == soeRiftSplits[soeSplits[1]];
+                        }) == splitPresets[currentSplitPreset].splits.end())
+                    {
+                        splitPresets[currentSplitPreset].splits.push_back({ soeRiftSplits[soeSplits[1]], addSplitRound });
+                        splitPresets[currentSplitPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Egg Splits", soeEggSplits, soeSplits[2], ImVec2(150.0f, 126.0f)))
                 {
 
                 }
@@ -959,29 +978,10 @@ void AutosplitsPtr()
                 {
                     if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
                         {
-                            return pair.first == soeEggSplits[soeSplits[1]];
+                            return pair.first == soeEggSplits[soeSplits[2]];
                         }) == splitPresets[currentSplitPreset].splits.end())
                     {
-                        splitPresets[currentSplitPreset].splits.push_back({ soeEggSplits[soeSplits[1]], addSplitRound });
-                        splitPresets[currentSplitPreset].numSplits++;
-                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
-                    }
-                }
-                SAMELINE;
-                if (CreateListBox("##Ovum Splits", soeOvumSplits, soeSplits[2], ImVec2(150.0f, 101.0f)))
-                {
-
-                }
-                SAMELINE;
-                if (CreateButton("Add Split##Ovums", ImVec2(100.0f, 25.0f)))
-                {
-                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
-                        {
-                            return pair.first == soeOvumSplits[soeSplits[2]];
-                        }) == splitPresets[currentSplitPreset].splits.end())
-                    {
-                        splitPresets[currentSplitPreset].splits.push_back({ soeOvumSplits[soeSplits[2]], addSplitRound });
+                        splitPresets[currentSplitPreset].splits.push_back({ soeEggSplits[soeSplits[2]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
                         addSplitView = false;
@@ -992,7 +992,25 @@ void AutosplitsPtr()
             // row 2
             {
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 75);
-                if (CreateListBox("##Flag Splits", soeFlagSplits, soeSplits[3], ImVec2(200.0f, 151.0f)))
+                if (CreateListBox("##Ovum Splits", soeOvumSplits, soeSplits[3], ImVec2(150.0f, 101.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Ovums", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == soeOvumSplits[soeSplits[3]];
+                        }) == splitPresets[currentSplitPreset].splits.end())
+                    {
+                        splitPresets[currentSplitPreset].splits.push_back({ soeOvumSplits[soeSplits[3]], addSplitRound });
+                        splitPresets[currentSplitPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
+                        addSplitView = false;
+                    }
+                }
+                if (CreateListBox("##Flag Splits", soeFlagSplits, soeSplits[4], ImVec2(200.0f, 151.0f)))
                 {
 
                 }
@@ -1001,34 +1019,16 @@ void AutosplitsPtr()
                 {
                     if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
                         {
-                            return pair.first == soeFlagSplits[soeSplits[3]];
+                            return pair.first == soeFlagSplits[soeSplits[4]];
                         }) == splitPresets[currentSplitPreset].splits.end())
                     {
-                        splitPresets[currentSplitPreset].splits.push_back({ soeFlagSplits[soeSplits[3]], addSplitRound });
+                        splitPresets[currentSplitPreset].splits.push_back({ soeFlagSplits[soeSplits[4]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
                         addSplitView = false;
                     }
                 }
-                SAMELINE;
-                if (CreateListBox("##Rift Splits", soeRiftSplits, soeSplits[4], ImVec2(200.0f, 151.0f)))
-                {
-
-                }
-                SAMELINE;
-                if (CreateButton("Add Split##Rift", ImVec2(100.0f, 25.0f)))
-                {
-                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
-                        {
-                            return pair.first == soeRiftSplits[soeSplits[4]];
-                        }) == splitPresets[currentSplitPreset].splits.end())
-                    {
-                        splitPresets[currentSplitPreset].splits.push_back({ soeRiftSplits[soeSplits[4]], addSplitRound });
-                        splitPresets[currentSplitPreset].numSplits++;
-                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
-                    }
-                }
+                
             }
             break;
         }
@@ -1036,12 +1036,12 @@ void AutosplitsPtr()
         {
             // row 1
             {
-                if (CreateListBox("##Dragon Splits", deDragonSplits, deSplits[0], ImVec2(150.0f, 101.0f)))
+                if (CreateListBox("##Dragon Splits", deDragonSplits, deSplits[0], ImVec2(155.0f, 101.0f)))
                 {
 
                 }
                 SAMELINE;
-                if (CreateButton("Add Split##Dragon", ImVec2(100.0f, 25.0f)))
+                if (CreateButton("Add Split##Dragon", ImVec2(95.0f, 25.0f)))
                 {
                     if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
                         {
@@ -1115,7 +1115,7 @@ void AutosplitsPtr()
                     }
                 }
                 SAMELINE;
-                if (CreateListBox("##Wolf Bow Splits", deWolfBowSplits, deSplits[4], ImVec2(150.0f, 126.0f)))
+                if (CreateListBox("##Wolf Bow Splits", deWolfBowSplits, deSplits[4], ImVec2(150.0f, 151.0f)))
                 {
 
                 }
@@ -1134,7 +1134,7 @@ void AutosplitsPtr()
                     }
                 }
                 SAMELINE;
-                if (CreateListBox("##Wisp Splits", deWispSplits, deSplits[5], ImVec2(150.0f, 51.0f)))
+                if (CreateListBox("##Wisp Splits", deWispSplits, deSplits[5], ImVec2(150.0f, 76.0f)))
                 {
 
                 }
@@ -1156,7 +1156,7 @@ void AutosplitsPtr()
             DummySpace(0.0f, 25.0f);
             // row 3
             {
-                if (CreateListBox("##Simon Splits", deSimonSplits, deSplits[6], ImVec2(150.0f, 151.0f)))
+                if (CreateListBox("##Simon Splits", deSimonSplits, deSplits[6], ImVec2(150.0f, 76.0f)))
                 {
 
                 }
@@ -1427,7 +1427,26 @@ void AutosplitsPtr()
                     }
                 }
                 SAMELINE;
-                if (CreateListBox("##Reel Splits", revReelSplits, revSplits[1], ImVec2(150.0f, 151.0f)))
+                if (CreateListBox("##Apoth Splits", revApothExitSplits, revSplits[1], ImVec2(150.0f, 101.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Apoth", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == revApothExitSplits[revSplits[1]];
+                        }) == splitPresets[currentSplitPreset].splits.end())
+                    {
+                        splitPresets[currentSplitPreset].splits.push_back({ revApothExitSplits[revSplits[1]], addSplitRound });
+                        splitPresets[currentSplitPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Reel Splits", revReelSplits, revSplits[2], ImVec2(150.0f, 151.0f)))
                 {
 
                 }
@@ -1436,34 +1455,16 @@ void AutosplitsPtr()
                 {
                     if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
                         {
-                            return pair.first == revReelSplits[revSplits[1]];
+                            return pair.first == revReelSplits[revSplits[2]];
                         }) == splitPresets[currentSplitPreset].splits.end())
                     {
-                        splitPresets[currentSplitPreset].splits.push_back({ revReelSplits[revSplits[1]], addSplitRound });
+                        splitPresets[currentSplitPreset].splits.push_back({ revReelSplits[revSplits[2]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
                         addSplitView = false;
                     }
                 }
-                SAMELINE;
-                if (CreateListBox("##Rev Egg Splits", revEggSplits, revSplits[2], ImVec2(150.0f, 126.0f)))
-                {
-
-                }
-                SAMELINE;
-                if (CreateButton("Add Split##Rev Egg", ImVec2(100.0f, 25.0f)))
-                {
-                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
-                        {
-                            return pair.first == revEggSplits[revSplits[2]];
-                        }) == splitPresets[currentSplitPreset].splits.end())
-                    {
-                        splitPresets[currentSplitPreset].splits.push_back({ revEggSplits[revSplits[2]], addSplitRound });
-                        splitPresets[currentSplitPreset].numSplits++;
-                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
-                    }
-                }
+                
             }
             DummySpace(0.0f, 25.0f);
             // row 2
@@ -1500,6 +1501,25 @@ void AutosplitsPtr()
                         }) == splitPresets[currentSplitPreset].splits.end())
                     {
                         splitPresets[currentSplitPreset].splits.push_back({ revEndSplits[revSplits[4]], addSplitRound });
+                        splitPresets[currentSplitPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
+                        addSplitView = false;
+                    }
+                }
+                SAMELINE;
+                if (CreateListBox("##Rev Egg Splits", revEggSplits, revSplits[5], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Rev Egg", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == revEggSplits[revSplits[5]];
+                        }) == splitPresets[currentSplitPreset].splits.end())
+                    {
+                        splitPresets[currentSplitPreset].splits.push_back({ revEggSplits[revSplits[5]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
                         addSplitView = false;
