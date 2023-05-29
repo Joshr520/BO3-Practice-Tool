@@ -414,13 +414,13 @@ namespace BO3PT
 	inline int gkSplits[5] = { 0 };
 	inline std::vector<std::string> gkPAPSplits = { "Groph 1", "Groph 2", "Groph 3" };
 	inline std::vector<std::string> gkGauntletSplits = { "Pickup Egg", "Egg On Fire", "Incubation Start", "Pickup Gauntlet" };
-	inline std::vector<std::string> gkDragonSplits = { "Fly 1", "Fly 2", "Fly 3" };
+	inline std::vector<std::string> gkDragonSplits = { "Fly Supply", "Fly Tank", "Fly DC" };
 	inline std::vector<std::string> gkLockdownSplits = { "Lockdown Start", "Lockdown End" };
 	inline std::vector<std::string> gkChallengeSplits = { "Start Challenges", "Start Download", "Boss Enter" };
 
 	inline int revSplits[6] = { 0 };
-	inline std::vector<std::string> revStartSplits = { "Gen 1", "Gen 2", "Gen 3", "Gen 4", "Keeper Start" };
-	inline std::vector<std::string> revApothExitSplits = { "Exit Beast Mob", "Exit Beast Verruckt", "Exit Beast DE", "Exit Beast Spawn" };
+	inline std::vector<std::string> revStartSplits = { "Spawn Gen", "DE Gen", "Verruckt Gen", "Mob Gen", "Keeper Start" };
+	inline std::vector<std::string> revApothExitSplits = { "Enter Beast", "Exit Beast Mob", "Exit Beast Verruckt", "Exit Beast DE", "Exit Beast Spawn" };
 	inline std::vector<std::string> revReelSplits = { "Pickup Reel 1", "Place Reel 1", "Pickup Reel 2", "Place Reel 2", "Pickup Reel 3", "Place Reel 3" };
 	inline std::vector<std::string> revEggSplits = { "Sophia TP", "Egg 1 Fill", "Egg 2 Fill", "Egg 3 Fill", "Egg 4 Fill" };
 	inline std::vector<std::string> revRuneSplits = { "Rune 1 Grab", "Rune 2 Grab", "Rune 3 Grab", "Rune 4 Grab", "Boss 1 Enter" };

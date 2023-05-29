@@ -13,6 +13,7 @@ TombSoftPatch()
     self.bgb_pack_randomized = array::randomize(self.bgb_pack);
     while(self.bgb_pack_randomized[0] != "zm_bgb_reign_drops" && self.bgb_pack_randomized[0] != "zm_bgb_extra_credit") self.bgb_pack_randomized = array::randomize(self.bgb_pack);
     level.player_out_of_playable_area_monitor = 1;
+    foreach(player in GetPlayers()) self thread zm::player_out_of_playable_area_monitor();
 
     level flag::wait_till("initial_blackscreen_passed");
     thread WriteToScreen("Origins Soft Patch Loaded");

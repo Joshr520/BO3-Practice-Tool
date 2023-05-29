@@ -19,61 +19,89 @@ GKInGameTimer()
     fly_1 = InitHud(0);
     fly_1.label = &"Fly 1: ";
     fly_1 InitSplitHud(fly_1);
-    WaitForFly();
+    WaitFly(2);
     fly_1 SetText("^2" + CalcTime(GetTime() - start_time));
 
     fly_2 = InitHud(0);
     fly_2.label = &"Fly 2: ";
     fly_2 InitSplitHud(fly_2);
     level waittill(#"hash_803aa6bf");
-    WaitForFly();
+    WaitFly(1);
     fly_2 SetText("^2" + CalcTime(GetTime() - start_time));
 
     lockdown = InitHud(0);
     lockdown.label = &"Lockdown: ";
     lockdown InitSplitHud(lockdown);
     thread MonitorLockdownTimer();
-    WaitForLockdown();
+    WaitPAPLockdown();
     lockdown SetText("^2" + CalcTime(GetTime() - start_time));
 
     challenges = InitHud(0);
     challenges.label = &"Challenges: ";
     challenges InitSplitHud(challenges);
-    WaitForChallenges();
+    WaitChallenges();
     challenges SetText("^2" + CalcTime(GetTime() - start_time));
 
     download = InitHud(0);
     download.label = &"Download: ";
     download InitSplitHud(download);
-    WaitForDownload();
+    WaitDownload();
     download SetText("^2" + CalcTime(GetTime() - start_time));
 
     boss = InitHud(0);
     boss.label = &"Boss: ";
     boss InitSplitHud(boss);
-    WaitForGKBoss();
+    WaitStalingradBoss();
     boss SetText("^2" + CalcTime(GetTime() - start_time));
 
     finish = InitHud(0);
     finish.label = &"Finish: ";
     finish InitSplitHud(finish);
-    WaitForGKFinish();
+    WaitStalingradFinish();
     finish SetText("^2" + CalcTime(GetTime() - start_time));
 }
 
-WaitForFly()
+WaitPAPGroph(num)
 {
-    thread WaitForDragonFly("cin_t7_ai_zm_dlc3_dragon_transport_roost2");
-    thread WaitForDragonFly("cin_t7_ai_zm_dlc3_dragon_transport_roost1");
-    thread WaitForDragonFly("cin_t7_ai_zm_dlc3_dragon_transport_roost3");
-    level waittill("dragon_flying");
+    switch(num)
+    {
+        case 0:
+            piecename = "part_transmitter";
+            break;
+        case 1:
+            piecename = "part_codes";
+            break;
+        case 2:
+            piecename = "part_map";
+            break;
+    }
+    level flag::wait_till("dragonride_" + piecename + "_found");
 }
 
-WaitForDragonFly(scene)
+// tank = 1, supply = 2, dc = 3
+WaitFly(num)
 {
-    level endon("dragon_flying");
-    while(!level IsScenePlaying(scene + "_idle_2_pavlovs")) wait 0.05;
-    level notify("dragon_flying");
+    while(!level IsScenePlaying("cin_t7_ai_zm_dlc3_dragon_transport_roost" + num + "_idle_2_pavlovs")) wait 0.05;
+}
+
+WaitPickupEgg()
+{
+    level flag::wait_till("dragon_egg_acquired");
+}
+
+WaitEggBathed()
+{
+    level flag::wait_till("egg_bathed_in_flame");
+}
+
+WaitIncubationStart()
+{
+    level flag::wait_till("egg_placed_incubator");
+}
+
+WaitGauntletPickup()
+{
+    level flag::wait_till("dragon_gauntlet_acquired");
 }
 
 MonitorLockdownTimer()
@@ -102,41 +130,30 @@ MonitorLockdownTimer()
     lockdown_timer Destroy();
 }
 
-KillAll()
-{
-    for(;;)
-    {
-        foreach(zombie in GetAITeamArray(level.zombie_team))
-        {
-            zombie Kill();
-        }
-        wait 0.05;
-    }
-}
-
-WaitForLockdown()
+WaitPAPLockdown(num)
 {
     level flag::wait_till("dragon_strike_unlocked");
     level flag::wait_till("lockdown_active");
+    if(!num) return;
 	level flag::wait_till("lockdown_complete");
 }
 
-WaitForChallenges()
+WaitChallenges()
 {
     level flag::wait_till("scenario_active");
 }
 
-WaitForDownload()
+WaitDownload()
 {
     level waittill(#"hash_8cc49f44");
 }
 
-WaitForGKBoss()
+WaitStalingradBoss()
 {
     GetEnt("ee_sewer_to_arena_trig", "targetname") waittill("trigger", player);
 }
 
-WaitForGKFinish()
+WaitStalingradFinish()
 {
     level waittill(#"hash_9b1cee4c");
 }

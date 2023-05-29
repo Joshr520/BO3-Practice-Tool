@@ -30,11 +30,11 @@ on_player_spawned()
 {
     if(self IsTestClient()) return;
 
-    //self thread TombSoftPatch();
+    self thread TombSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
 
-    self thread DebugTesting();
+    self thread [[ @zm_tomb_vo<scripts\zm\zm_tomb_vo.gsc>::richtofenrespondvoplay ]]("zm_box_final_complete", 1);
 }
 
 DebugTesting()

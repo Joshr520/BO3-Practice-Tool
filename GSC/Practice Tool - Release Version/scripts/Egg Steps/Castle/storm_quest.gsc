@@ -10,24 +10,32 @@ FinishStorm()
 
 ActivateStormQuest()
 {
-    weather_damage = 0;
-    while(!weather_damage)
+    if(CheckQuestProgress("storm") >= 1) return;
+    if(!IsDefined(struct::get("quest_start_elemental_storm").var_67b5dd94))
     {
-        weather_trig = GetEnt("aq_es_weather_vane_trig", "targetname");
-        if(!IsDefined(weather_trig)) continue;
-        weather_damage = 1;
-        weather_trig notify("damage", 1, self, (-0.55191, 0.294189, -13.1041), (-183.448, 1878.71, 1270.1), "MOD_EXPLOSIVE", "", "", "", GetWeapon("elemental_bow"));
-        wait 0.05;
+        weather_damage = 0;
+        while(!weather_damage)
+        {
+            weather_trig = GetEnt("aq_es_weather_vane_trig", "targetname");
+            if(!IsDefined(weather_trig)) continue;
+            weather_damage = 1;
+            weather_trig notify("damage", 1, self, (-0.55191, 0.294189, -13.1041), (-183.448, 1878.71, 1270.1), "MOD_EXPLOSIVE", "", "", "", GetWeapon("elemental_bow"));
+            wait 0.05;
+        }
+
+        level waittill(#"hash_4e123b5d");
+        wait 1;
     }
 
-    level waittill(#"hash_4e123b5d");
-    wait 1;
     arrow = struct::get("quest_start_elemental_storm");
     self BuildAndActivateTrigger(arrow.var_67b5dd94);
 }
 
 StormShootBonfires()
 {
+    if(CheckQuestProgress("storm") >= 2) return;
+    while(CheckQuestProgress("storm") < 1) wait 0.05;
+    
     bonfires = GetEntArray("aq_es_beacon_trig", "script_noteworthy");
     foreach(bonfire in bonfires)
     {
@@ -40,7 +48,6 @@ StormShootBonfires()
         bonfire.b_lit = 1;
     }
 
-    while(level clientfield::get("quest_state_storm") != 1) wait 0.05;
     foreach(bonfire in bonfires)
     {
         bonfire notify("beacon_activated");
@@ -49,7 +56,8 @@ StormShootBonfires()
 
 StormWallrun()
 {
-    while(level clientfield::get("quest_state_storm") != 2) wait 0.05;
+    if(CheckQuestProgress("storm") >= 3) return;
+    while(CheckQuestProgress("storm") < 2) wait 0.05;
     if(level.var_f8d1dc16 != self) level.var_f8d1dc16 = self;
     wallruns = GetEntArray("aq_es_wallrun_trigger", "targetname");
     self.var_a4f04654 = 4;
@@ -62,6 +70,9 @@ StormWallrun()
 
 StormFillUrns()
 {
+    if(CheckQuestProgress("storm") >= 4) return;
+    while(CheckQuestProgress("storm") < 3) wait 0.05;
+
     bonfires = GetEntArray("aq_es_beacon_trig", "script_noteworthy");
     foreach(bonfire in bonfires)
     {
@@ -70,7 +81,6 @@ StormFillUrns()
         bonfire.b_charged = 1;
     }
 
-    while(level clientfield::get("quest_state_storm") != 3) wait 0.05;
     if(level.var_f8d1dc16 != self) level.var_f8d1dc16 = self;
     urn_souls = GetEntArray("aq_es_battery_volume", "script_noteworthy");
     foreach(urn_soul in urn_souls)
@@ -86,7 +96,8 @@ StormFillUrns()
 
 StormTriggerArrow()
 {
-    while(level clientfield::get("quest_state_storm") != 4) wait 0.05;
+    if(CheckQuestProgress("storm") >= 5) return;
+    while(CheckQuestProgress("storm") < 4) wait 0.05;
     if(level.var_f8d1dc16 != self) level.var_f8d1dc16 = self;
     arrow = struct::get("quest_reforge_elemental_storm");
     while(!IsDefined(arrow.var_67b5dd94)) wait 0.05;
@@ -101,6 +112,7 @@ StormTriggerArrow()
 
 StormBuildBow()
 {
+    if(CheckQuestProgress("storm") >= 6) return;
     soulbox = struct::get("upgraded_bow_struct_elemental_storm", "targetname");
     while(!IsDefined(soulbox.var_67b5dd94)) wait 0.05;
     if(level.var_f8d1dc16 != self) level.var_f8d1dc16 = self;

@@ -1,5 +1,3 @@
-
-
 WaitDragonFull(num)
 {
     dragon = level.soul_catchers[num];

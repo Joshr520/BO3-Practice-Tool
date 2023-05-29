@@ -1,5 +1,3 @@
-
-
 WaitRitual(name)
 {
     level waittill("ritual_" + name + "_succeed");

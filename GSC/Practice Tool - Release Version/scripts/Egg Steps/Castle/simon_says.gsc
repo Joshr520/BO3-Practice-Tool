@@ -1,5 +1,6 @@
 SimonSays()
 {
+    if(IsDefined(struct::get("death_ray_button").s_unitrigger)) return;
     level flag::wait_till("ee_golden_key");
     wait 0.5;
     tc = struct::get("tc_launch_platform");
@@ -26,6 +27,4 @@ SimonSays()
     monitor = struct::get("monitor_launch_platform_1");
     monitor.var_73527aa3 = 1;
     monitor notify("trigger_activated");
-    wait 5;
-    level.simon_complete = 1;
 }

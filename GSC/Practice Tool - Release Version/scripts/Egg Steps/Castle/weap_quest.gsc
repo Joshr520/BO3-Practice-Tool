@@ -1,12 +1,17 @@
 // 0 = Lower Courtyard - 1 = Church - 2 = Undercroft
 FillDragon(nums)
 {   
+    if(level.soul_catchers[num].is_charged) return;
     level.var_63e17dd5 = self;
-    foreach(num in nums)
-    {
-        level.soul_catchers[num] notify("first_zombie_killed_in_zone", self);
-        level.soul_catchers[num].var_98730ffa = 8;
-    }
+    level.soul_catchers[num] notify("first_zombie_killed_in_zone", self);
+    level.soul_catchers[num].var_98730ffa = 8;
+}
+
+FillAllDragons()
+{
+    thread FillDragon(0);
+    thread FillDragon(1);
+    thread FillDragon(2);
 }
 
 PickupBow()
@@ -21,4 +26,9 @@ PickupBow()
     }
     bow = struct::get("base_bow_pickup_struct", "targetname");
     self BuildAndActivateTrigger(bow.var_67b5dd94);
+}
+
+CheckQuestProgress(quest)
+{
+    return level clientfield::get("quest_state_" + quest);
 }

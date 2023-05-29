@@ -1,6 +1,7 @@
 ActivateDempsey()
 {
-    while(!IsDefined(level.simon_complete)) wait 0.05;
+    if(level flag::get("start_channeling_stone_step")) return;
+    while(!IsDefined(struct::get("death_ray_button").s_unitrigger)) wait 0.05;
     wait 0.5;
     button = struct::get("death_ray_button");
     button notify("trigger_activated");
@@ -8,9 +9,9 @@ ActivateDempsey()
 
 ActivateKeeper()
 {
-    level waittill(#"hash_b5927dd");
-    wait 2;
+    while(!level flag::get("start_channeling_stone_step")) wait 0.05;
     vril = struct::get("vril_generator");
+    while(!IsDefined(vril.s_unitrigger)) wait 0.05;
     foreach(stub in level._unitriggers.trigger_stubs)
 	{
         if(vril.origin == stub.origin)
@@ -26,6 +27,7 @@ ActivateKeeper()
 
 FillKeeperSouls()
 {
+    if(level flag::get("see_keeper")) return;
     level flag::wait_till("start_channeling_stone_step");
     stone_replace = GetEnt("cs_stone_2", "targetname");
     stone_replace notify("trigger_activated");

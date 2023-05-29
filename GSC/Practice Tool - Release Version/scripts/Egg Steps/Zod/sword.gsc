@@ -65,7 +65,6 @@ FinishAllMagicCircles()
 {
     if(level clientfield::get("keeper_quest_state_" + self.characterindex) < 2) self thread PickupOvum();
     while(level clientfield::get("keeper_quest_state_" + self.characterindex) < 2) wait 0.05;
-    wait 15;
     s_loc = struct::get_array("sword_quest_magic_circle_place", "targetname")[1];
     self BuildAndActivateTrigger(s_loc.unitrigger_stub);
     for(i = 0; i < 4; i++)
