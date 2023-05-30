@@ -82,6 +82,23 @@ namespace BO3PT
 	inline int zodEggIndex = 0;
 	inline int zodOvumIndex = 0;
 	inline int zodFlagIndex = 0;
+
+	inline std::vector<std::string> castleDragonSteps = { "Courtyard Dragon", "Church Dragon", "Undercroft Dragon" };
+	inline std::vector<std::string> castleStormSteps = { "Start Quest", "Shoot Bonfires", "Wallrun", "Fill Urns", "Forge Arrow", "Upgrade Bow" };
+	inline std::vector<std::string> castleFireSteps = { "Start Quest", "Shoot Obelisk", "Fill Circles", "Finish Golf", "Forge Arrow", "Upgrade Bow" };
+	inline std::vector<std::string> castleVoidSteps = { "Start Quest",  "Activate Urn", "Collect Skulls", "Fill Crawlers", "Forge Arrow", "Upgrade Bow" };
+	inline std::vector<std::string> castleWolfSteps = { "Start Quest",  "Shoot Shrine", "Escort Wolf", "Forge Arrow", "Upgrade Bow" };
+	inline std::vector<std::string> castleTimeTravelSteps = { "Time Travel 1", "Time Travel 2" };
+	inline std::vector<std::string> castleSimonSteps = { "Complete Simon", "Call Dempsey" };
+	inline std::vector<std::string> castleKeeperSteps = { "Activate Keeper", "Complete Keeper" };
+	inline int castleDragonIndex = 0;
+	inline int castleStormIndex = 0;
+	inline int castleFireIndex = 0;
+	inline int castleVoidIndex = 0;
+	inline int castleWolfIndex = 0;
+	inline int castleTimeTravelIndex = 0;
+	inline int castleSimonIndex = 0;
+	inline int castleKeeperIndex = 0;
 #pragma endregion
 
 #pragma region GUIFunctions
@@ -396,10 +413,10 @@ namespace BO3PT
 
 	inline int deSplits[9] = { 0 };
 	inline std::vector<std::string> deDragonSplits = { "Church Dragon", "Courtyard Dragon", "Undercroft Dragon", "Pickup Bow" };
-	inline std::vector<std::string> deLightningBowSplits = { "Pickup Arrow", "Bonfires Shot", "Wall Ride", "Crackle", "Upgrade Lightning" };
-	inline std::vector<std::string> deFireBowSplits = { "Pickup Arrow", "Obelisk Shot", "Circles Filled", "Golf", "Upgrade Fire " };
-	inline std::vector<std::string> deVoidBowSplits = { "Pickup Arrow", "Activate Urn", "Pickup Skulls", "Crawler Kills", "Runes", "Upgrade Void" };
-	inline std::vector<std::string> deWolfBowSplits = { "Pickup Arrow", "Shrine Shot", "Activate Wolf", "Wolf Souls Filled", "Arrow Forged", "Upgrade Wolf" };
+	inline std::vector<std::string> deLightningBowSplits = { "Start Lightning", "Bonfires Shot", "Wall Ride", "Crackle", "Upgrade Lightning" };
+	inline std::vector<std::string> deFireBowSplits = { "Start Fire", "Obelisk Shot", "Circles Filled", "Golf", "Upgrade Fire" };
+	inline std::vector<std::string> deVoidBowSplits = { "Start Void", "Activate Urn", "Pickup Skulls", "Crawler Kills", "Runes", "Upgrade Void" };
+	inline std::vector<std::string> deWolfBowSplits = { "Start Wolf", "Shrine Shot", "Start Escort", "Wolf Souls Filled", "Arrow Forged", "Upgrade Wolf" };
 	inline std::vector<std::string> deWispSplits = { "Normal TP", "Time Travel 1", "Time Travel 2" };
 	inline std::vector<std::string> deSimonSplits = { "Safe Code Entered", "Simon 1", "Simon 2" };
 	inline std::vector<std::string> deKeeperSplits = { "Keeper Spawned", "Keeper 1", "Keeper 2", "Keeper 3", "Keeper 4", "Keeper Trapped" };

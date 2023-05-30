@@ -23,7 +23,7 @@ on_player_connect()
     level flag::wait_till("start_zombie_round_logic");
     if(!self IsHost()) return;
 
-    self thread StartInGameSplits();
+    //self thread StartInGameSplits();
 }
 
 on_player_spawned()
@@ -33,8 +33,6 @@ on_player_spawned()
     self thread TombSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
-
-    self thread [[ @zm_tomb_vo<scripts\zm\zm_tomb_vo.gsc>::richtofenrespondvoplay ]]("zm_box_final_complete", 1);
 }
 
 DebugTesting()

@@ -1,29 +1,60 @@
+DoWolfStep(num)
+{
+    switch(num)
+    {
+        case 0:
+            self thread ActivateWolfQuest();
+            break;
+        case 1:
+            self thread WolfShootShrine();
+            break;
+        case 2:
+            self thread WolfEscortWolf();
+            break;
+        case 3:
+            self thread WolfForgeArrow();
+            break;
+        case 4:
+            self thread WolfBuildBow();
+            break;
+        case 5:
+            self thread FinishWolf();
+            break;
+        default:
+            break;
+    }
+}
+
 FinishWolf()
 {
-    self ActivateWolfQuest();
-    self WolfShootShrine();
-    self WolfEscortWolf();
-    self WolfForgeArrow();
-    self WolfBuildBow();
+    self thread ActivateWolfQuest();
+    self thread WolfShootShrine();
+    self thread WolfEscortWolf();
+    self thread WolfForgeArrow();
+    self thread WolfBuildBow();
 }
 
 ActivateWolfQuest()
 {
     if(CheckQuestProgress("wolf") >= 1) return;
     level flag::set("wolf_howl_paintings");
-    if(!IsDefined(struct::get("quest_start_demon_gate").var_67b5dd94))
+    if(!IsDefined(struct::get("quest_start_wolf_howl").var_67b5dd94))
     {
         arrow_found = 0;
         while(!arrow_found)
         {
-            arrow = struct::get("quest_start_wolf_howl");
-            if(!IsDefined(arrow)) continue;
+            wall = struct::get("quest_start_wolf_howl");
+            if(!IsDefined(wall))
+            {
+                wait 0.05;
+                continue;
+            }
             foreach(stub in level._unitriggers.trigger_stubs)
             {
-                if(stub.origin == (arrow.origin + (-12, -72, 0)))
+                if(wall.origin + (-12, -72, 0) == stub.origin)
                 {
-                    arrow_found = 1;
                     self BuildAndActivateTrigger(stub);
+                    arrow_found = true;
                     break;
                 }
             }
@@ -62,33 +93,9 @@ WolfEscortWolf()
     skull = GetEnt("aq_wh_skadi_skull", "targetname");
     skull.var_67b5dd94 notify("trigger", self);
     wait 0.1;
-    org = self.origin;
     level.var_e6d07014 scene::skipto_end("ai_zm_dlc1_wolf_howl_entry", Array(level.var_e6d07014));
-    digs = Array("aq_wh_dig_struct_courtyard", "aq_wh_dig_struct_road", "aq_wh_dig_struct_undercroft");
-    foreach(dig in digs)
-    {
-        if(dig == "aq_wh_dig_struct_road" && !zm_zonemgr::zone_is_enabled("zone_tram_to_gatehouse"))
-        {
-            disable = 1;
-            level.zones["zone_tram_to_gatehouse"].is_enabled = 1;
-        }
-        target = struct::get(dig, "targetname");
-        level.var_e6d07014 ForceTeleport(target.origin);
-        self SetOrigin(target.origin + VectorScale((1, 0, 0), 128));
-        soul_dig = GetEnt("aq_wh_dig_volume_" + target.script_label, "targetname");
-        soul_dig flag::set("dig_spot_complete");
-        wait 0.1;
-        bones = GetEnt("aq_wh_bones_" + target.script_label, "targetname");
-        while(!IsDefined(bones.var_67b5dd94)) wait 0.05;
-        bones.var_67b5dd94 notify("trigger", self);
-        if(IsDefined(disable))
-        {
-            disable = undefined;
-            level.zones["zone_tram_to_gatehouse"].is_enabled = 0;
-        }
-    }
-    self Unlink();
-    self SetOrigin(org);
+    level notify(#"hash_e168806b");
+    level flag::set("wolf_howl_escort");
 }
 
 WolfForgeArrow()

@@ -1,3 +1,15 @@
+DoSimonStep(num)
+{
+    if(!num) self thread SimonSays();
+    else self thread ActivateDempsey();
+}
+
+DoAllSimon()
+{
+    self thread SimonSays();
+    self thread ActivateDempsey();
+}
+
 SimonSays()
 {
     if(IsDefined(struct::get("death_ray_button").s_unitrigger)) return;
@@ -27,4 +39,13 @@ SimonSays()
     monitor = struct::get("monitor_launch_platform_1");
     monitor.var_73527aa3 = 1;
     monitor notify("trigger_activated");
+}
+
+ActivateDempsey()
+{
+    if(level flag::get("start_channeling_stone_step")) return;
+    while(!IsDefined(struct::get("death_ray_button").s_unitrigger)) wait 0.05;
+    wait 0.5;
+    button = struct::get("death_ray_button");
+    button notify("trigger_activated");
 }

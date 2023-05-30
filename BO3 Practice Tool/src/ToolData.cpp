@@ -324,8 +324,8 @@ namespace BO3PT
             std::ofstream(practiceToolDirectory + "\\Game-Tool Interface.txt");
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt"))
             std::ofstream(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
-        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.txt"))
-            std::ofstream(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.txt");
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json"))
+            std::ofstream(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json");
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt"))
             std::ofstream(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
         if (!DoesPathExist(selfDirectory + "\\bindings.json"))
@@ -1884,9 +1884,9 @@ namespace BO3PT
 
         builder.SaveToFile(filename);
         if (writeSplits && appStatus == "Status: Active")
-            builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json");
         else
-            builder.WriteEmpty(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.txt");
+            builder.WriteEmpty(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json");
     }
 
     void CreateNewAutosplitPreset(const std::string& presetName)

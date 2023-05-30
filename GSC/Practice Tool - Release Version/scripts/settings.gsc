@@ -4,6 +4,7 @@ LoadSettings()
     InitPracticePatches();
     self thread LoadGums();
     self thread LoadPracticePatches();
+    self thread LoadSplits();
 
     self thread WatchInterface();
 }
@@ -27,13 +28,11 @@ InitMenuFuncs()
     level.menu_functions[3] = Array(::GivePowerup);
     egg_funcs = [];
     egg_funcs["zm_zod"] = Array(::FinishRitual, ::FillAllEggs, ::FillEgg, ::FinishAllMagicCircles, ::FinishMagicCircle, ::FinishAllFlags, ::FinishFlag);
-    egg_funcs["zm_castle"] = Array(::FillDragon, ::FillAllDragons, ::ActivateStormQuest, ::StormShootBonfires, ::StormWallrun, ::StormFillUrns, ::StormTriggerArrow, ::StormBuildBow, ::ActivateFireQuest, ::FireShootObelisk, ::FireFillCircles,
-        ::FireFinishGolf, ::FireFinishArrow, ::FireBuildBow, ::ActivateVoidQuest, ::VoidActivateUrn, ::VoidTriggerSkulls, ::VoidFillCrawlers, ::VoidCollectRunes, ::VoidBuildBow, ::ActivateWolfQuest, ::WolfShootShrine, ::WolfEscortWolf,
-        ::WolfForgeArrow, ::WolfBuildBow, ::TimeTravel, ::SimonSays, ::ActivateDempsey, ::ActivateKeeper, ::FillKeeperSouls);
+    egg_funcs["zm_castle"] = Array(::FillDragon, ::FillAllDragons, ::DoStormStep, ::DoFireStep, ::DoVoidStep, ::DoWolfStep, ::TimeTravel, ::DoSimonStep, ::DoAllSimon, ::DoKeeperStep, ::DoAllKeeper);
     egg_funcs["zm_island"] = Array(::CompleteSkulls, ::CompleteSkullRitual, ::FinishChallenges, ::SkullFadeMap, ::PickupBullet, ::ShootPlane, ::PickupGears, ::ElevatorFadeWall, ::StartTakeoBoss);
     egg_funcs["zm_stalingrad"] = Array(::FinishPAPGrophs, ::AcquireEgg, ::AwakenEgg, ::FinishNapalm, ::FinishMultiKills, ::FinishMeleeKills, ::IncubateEgg, ::FinishPostIncubate, ::PickupGauntlet, ::CompleteTubePuzzle, ::CompletePassword,
         ::PickupKeys, ::CompleteChallenges, ::DeliverPowerCore, ::StartNikolaiFight);
-    egg_fuincs["zm_genesis"] = Array(::ShootCharacterStones, ::FinishKeeper, ::FinishArnies, ::FinishBones, ::ActivateAndGuideSophia, ::PickupAndPlaceBook, ::PickupAndFillEggs, ::FinishFirstBoss, ::CollectToys);
+    egg_funcs["zm_genesis"] = Array(::ShootCharacterStones, ::FinishKeeper, ::FinishArnies, ::FinishBones, ::ActivateAndGuideSophia, ::PickupAndPlaceBook, ::PickupAndFillEggs, ::FinishFirstBoss, ::CollectToys);
     egg_funcs["zm_tomb"] = Array(::BuildIceStaff, ::CompleteIcePuzzle, ::CompleteIceTombstones, ::IceStaffUpgrade, ::BuildWindStaff, ::CompleteWindRings, ::CompleteWindSmoke, ::WindStaffUpgrade, ::BuildFireStaff, ::CompleteFireSouls, ::CompleteFireTorches,
         ::FireStaffUpgrade, ::BuildLightningStaff, ::CompleteLightningChords, ::CompleteLightningRelays, ::LightningStaffUpgrade, ::AFD, ::RainFire, ::UnleashHorde, ::SkewerWingedBeast, ::WieldIronFirst, ::RaiseHell);
     level.menu_functions[4] = egg_funcs[level.script];

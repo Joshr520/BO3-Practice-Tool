@@ -3,7 +3,7 @@ TimeTravel(num)
     upgrades = Array("demon_gate_upgraded", "elemental_storm_upgraded", "rune_prison_upgraded", "wolf_howl_upgraded");
 	level flag::wait_till_any(upgrades);
     level flag::set("ee_start_done");
-    if(num >= 1 && !level flag::get("mpd_canister_replacement"))
+    if(num >= 0 && !level flag::get("mpd_canister_replacement"))
     {
         level flag::set("time_travel_teleporter_ready");
         wait 0.25;
@@ -29,10 +29,11 @@ TimeTravel(num)
             if(fuse_found && canister_found) break;
             wait 0.05;
         }
+        IPrintLnBold("Done 1");
         wait 0.5;
         level flag::clear("time_travel_teleporter_ready");
     }
-    if(num >= 2 && !level flag::get("ee_safe_open"))
+    if(num >= 1 && !level flag::get("ee_safe_open"))
     {
         level flag::set("death_ray_trap_used");
         fuse_box = GetEnt("fuse_box", "targetname");
@@ -51,17 +52,20 @@ TimeTravel(num)
         }
         key = GetEnt("golden_key", "targetname");
         key notify("trigger_activated");
+        IPrintLnBold("Done 2");
         wait 0.5;
     }
-    if(num == 3 && !level flag::get("channeling_stone_replacement"))
+    if(num >= 1 && !level flag::get("channeling_stone_replacement"))
     {
         level flag::set("time_travel_teleporter_ready");
+        wait 0.25;
         key_slot = struct::get("golden_key_slot_past");
-        key_slot notify("trigger_activated");
+        self BuildAndActivateTrigger(key_slot.s_unitrigger);
         wait 0.5;
         tablet = GetEnt("stone_past", "targetname");
-        tablet notify("trigger_activated");
+        self BuildAndActivateTrigger(tablet.s_unitrigger);
         wait 0.5;
         level flag::clear("time_travel_teleporter_ready");
+        IPrintLnBold("Done 3");
     }
 }

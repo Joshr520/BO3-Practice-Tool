@@ -1,5 +1,5 @@
 // 0 = Lower Courtyard - 1 = Church - 2 = Undercroft
-FillDragon(nums)
+FillDragon(num)
 {   
     if(level.soul_catchers[num].is_charged) return;
     level.var_63e17dd5 = self;

@@ -1,11 +1,41 @@
+DoStormStep(num)
+{
+    switch(num)
+    {
+        case 0:
+            self thread ActivateStormQuest();
+            break;
+        case 1:
+            self thread StormShootBonfires();
+            break;
+        case 2:
+            self thread StormWallrun();
+            break;
+        case 3:
+            self thread StormFillUrns();
+            break;
+        case 4:
+            self thread StormTriggerArrow();
+            break;
+        case 5:
+            self thread StormBuildBow();
+            break;
+        case 6:
+            self thread FinishStorm();
+            break;
+        default:
+            break;
+    }
+}
+
 FinishStorm()
 {
-    self ActivateStormQuest();
-    self StormShootBonfires();
-    self StormWallrun();
-    self StormFillUrns();
-    self StormTriggerArrow();
-    self StormBuildBow();
+    self thread ActivateStormQuest();
+    self thread StormShootBonfires();
+    self thread StormWallrun();
+    self thread StormFillUrns();
+    self thread StormTriggerArrow();
+    self thread StormBuildBow();
 }
 
 ActivateStormQuest()
@@ -17,7 +47,11 @@ ActivateStormQuest()
         while(!weather_damage)
         {
             weather_trig = GetEnt("aq_es_weather_vane_trig", "targetname");
-            if(!IsDefined(weather_trig)) continue;
+            if(!IsDefined(weather_trig))
+            {
+                wait 0.05;
+                continue;
+            }
             weather_damage = 1;
             weather_trig notify("damage", 1, self, (-0.55191, 0.294189, -13.1041), (-183.448, 1878.71, 1270.1), "MOD_EXPLOSIVE", "", "", "", GetWeapon("elemental_bow"));
             wait 0.05;

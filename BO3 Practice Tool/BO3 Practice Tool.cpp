@@ -278,8 +278,8 @@ public:
                 }
                 ImGui::Spacing();
                 ImGui::Separator();
-                if (!steamPathFound || !procFound)
-                    ImGui::BeginDisabled();
+                //if (!steamPathFound || !procFound)
+                    //ImGui::BeginDisabled();
                 ImGui::PushFont(sidebarFont);
                 ImGui::Text("In Game");
                 ImGui::Separator(2.5f);
@@ -287,9 +287,9 @@ public:
                 // In Game
                 if (appStatus != "Status: Active" || currentMap == "core_frontend")
                 {
-                    if (sidebarCurrentItem > 3 && sidebarCurrentItem < 11)
-                        sidebarCurrentItem = 0;
-                    ImGui::BeginDisabled();
+                    //if (sidebarCurrentItem > 3 && sidebarCurrentItem < 11)
+                        //sidebarCurrentItem = 0;
+                    //ImGui::BeginDisabled();
                 }
                 for (int i = frontendItems; i < inGameItems; i++)
                 {
@@ -301,10 +301,10 @@ public:
                 }
                 ImGui::Spacing();
                 ImGui::Separator();
-                if (appStatus != "Status: Active" || currentMap == "core_frontend")
-                    ImGui::EndDisabled();
-                if (!steamPathFound || !procFound)
-                    ImGui::EndDisabled();
+                //if (appStatus != "Status: Active" || currentMap == "core_frontend")
+                    //ImGui::EndDisabled();
+                //if (!steamPathFound || !procFound)
+                    //ImGui::EndDisabled();
                 ImGui::PushFont(sidebarFont);
                 ImGui::Text("Resources");
                 ImGui::Separator(2.5f);
@@ -991,7 +991,6 @@ void AutosplitsPtr()
             DummySpace(0.0f, 25.0f);
             // row 2
             {
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 75);
                 if (CreateListBox("##Ovum Splits", soeOvumSplits, soeSplits[3], ImVec2(150.0f, 101.0f)))
                 {
 
@@ -1010,6 +1009,7 @@ void AutosplitsPtr()
                         addSplitView = false;
                     }
                 }
+                SAMELINE;
                 if (CreateListBox("##Flag Splits", soeFlagSplits, soeSplits[4], ImVec2(200.0f, 151.0f)))
                 {
 
@@ -2461,143 +2461,172 @@ void PowerupOptionsPtr()
 
 void EggStepOptionsPtr()
 {
-    if (ImGui::BeginTabBar("Egg Step Options Tabs"))
+    switch (hashstr(currentMap.c_str()))
     {
-        if (ImGui::BeginTabItem("SOE"))
+    case hashstr("zm_zod"):
+    {
+        // row 1
         {
-            std::vector<std::string> items = zodRitualSteps;
-            int size = (int)zodRitualSteps.size();
-            ImVec2 boxSize = ImVec2(300.0f, 150.0f);
-            // Ritual List
-            {
-                ImGui::BeginGroup();
-                ImGui::Text(ICON_FA_GEAR " Ritual Options");
-                if (ImGui::ListBoxHeader("##Ritual Options", boxSize))
-                {
-                    for (int i = 0; i < items.size(); i++)
-                    {
-                        const bool is_selected = (zodRitualIndex == i);
-                        if (ImGui::Selectable(items[i].c_str(), is_selected))
-                            zodRitualIndex = i;
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::ListBoxFooter();
-                }
-                SAMELINE;
-                ImGui::BeginGroup();
-                if (CreateButton("Complete Step##Ritual", ImVec2(125.0f, 25.0f)))
-                    NotifyGame({ 4, 0, zodRitualIndex });
-                if (CreateButton("Complete All Steps##Ritual", ImVec2(155.0f, 25.0f)))
-                    NotifyGame({ 4, 0, 4 });
-                ImGui::EndGroup();
-            }
-            // Egg List
-            {
-                items = zodEggSteps;
-                size = (int)zodEggSteps.size();
-                ImGui::BeginGroup();
-                ImGui::Text(ICON_FA_GEAR " Egg Options");
-                if (ImGui::ListBoxHeader("##Egg Options", boxSize))
-                {
-                    for (int i = 0; i < items.size(); i++)
-                    {
-                        const bool is_selected = (zodEggIndex == i);
-                        if (ImGui::Selectable(items[i].c_str(), is_selected))
-                            zodEggIndex = i;
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::ListBoxFooter();
-                }
-                SAMELINE;
-                ImGui::BeginGroup();
-                if (CreateButton("Complete Step##Egg", ImVec2(125.0f, 25.0f)))
-                    NotifyGame({ 4, 2, zodEggIndex });
-                if (CreateButton("Complete All Steps##Egg", ImVec2(155.0f, 25.0f)))
-                    NotifyGame({ 4, 1 });
-                ImGui::EndGroup();
-            }
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Ritual Options");
+            CreateListBox("##Ritual Options", zodRitualSteps, zodRitualIndex, ImVec2(300.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Ritual", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 0, zodRitualIndex });
+            if (CreateButton("Complete All Steps##Ritual", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 0, 4 });
             ImGui::EndGroup();
             ImGui::EndGroup();
-            // Ovum List
-            {
-                SAMELINE;
-                items = zodOvumSteps;
-                size = (int)zodOvumSteps.size();
-                ImGui::BeginGroup();
-                ImGui::Text(ICON_FA_GEAR " Ovum Options");
-                if (ImGui::ListBoxHeader("##Ovum Options", boxSize))
-                {
-                    for (int i = 0; i < items.size(); i++)
-                    {
-                        const bool is_selected = (zodOvumIndex == i);
-                        if (ImGui::Selectable(items[i].c_str(), is_selected))
-                            zodOvumIndex = i;
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::ListBoxFooter();
-                }
-                SAMELINE;
-                ImGui::BeginGroup();
-                if (CreateButton("Complete Step##Ovum", ImVec2(125.0f, 25.0f)))
-                    NotifyGame({ 4, 4, zodOvumIndex });
-                if (CreateButton("Complete All Steps##Ovum", ImVec2(155.0f, 25.0f)))
-                    NotifyGame({ 4, 3 });
-                ImGui::EndGroup();
-            }
-            // Flag List
-            {
-                items = zodFlagSteps;
-                size = (int)zodFlagSteps.size();
-                ImGui::BeginGroup();
-                ImGui::Text(ICON_FA_GEAR " Flag Options");
-                if (ImGui::ListBoxHeader("##Flag Options", boxSize))
-                {
-                    for (int i = 0; i < items.size(); i++)
-                    {
-                        const bool is_selected = (zodFlagIndex == i);
-                        if (ImGui::Selectable(items[i].c_str(), is_selected))
-                            zodFlagIndex = i;
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::ListBoxFooter();
-                }
-                SAMELINE;
-                ImGui::BeginGroup();
-                if (CreateButton("Complete Step##Flag", ImVec2(125.0f, 25.0f)))
-                    NotifyGame({ 4, 6, zodFlagIndex });
-                if (CreateButton("Complete All Steps##Flag", ImVec2(155.0f, 25.0f)))
-                    NotifyGame({ 4, 5 });
-                ImGui::EndGroup();
-            }
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Egg Options");
+            CreateListBox("##Egg Options", zodEggSteps, zodEggIndex, ImVec2(300.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Egg", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 2, zodEggIndex });
+            if (CreateButton("Complete All Steps##Egg", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 1 });
             ImGui::EndGroup();
             ImGui::EndGroup();
-            ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("DE"))
+        // row 2
         {
-            ImGui::EndTabItem();
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Ovum Options");
+            CreateListBox("##Ovum Options", zodOvumSteps, zodOvumIndex, ImVec2(300.0f, 150.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Ovum", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 4, zodOvumIndex });
+            if (CreateButton("Complete All Steps##Ovum", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 3 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Flag Options");
+            CreateListBox("##Flag Options", zodFlagSteps, zodFlagIndex, ImVec2(300.0f, 150.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Flag", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 6, zodFlagIndex });
+            if (CreateButton("Complete All Steps##Flag", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 5 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
         }
-        if (ImGui::BeginTabItem("ZNS"))
+        break;
+    }
+    case hashstr("zm_castle"):
+    {
+        // row 1
         {
-            ImGui::EndTabItem();
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Dragon Options");
+            CreateListBox("##Dragon Options", castleDragonSteps, castleDragonIndex, ImVec2(155.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Dragon", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 0, castleDragonIndex });
+            if (CreateButton("Complete All Steps##Dragon", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 1 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Storm Options");
+            CreateListBox("##Storm Options", castleStormSteps, castleStormIndex, ImVec2(145.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Storm", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 2, castleStormIndex });
+            if (CreateButton("Complete All Steps##Storm", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 2, 6 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Fire Options");
+            CreateListBox("##Fire Options", castleFireSteps, castleFireIndex, ImVec2(150.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Fire", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 3, castleFireIndex });
+            if (CreateButton("Complete All Steps##Fire", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 3, 6 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
         }
-        if (ImGui::BeginTabItem("GK"))
+        // row 2
         {
-            ImGui::EndTabItem();
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Void Options");
+            CreateListBox("##Void Options", castleVoidSteps, castleVoidIndex, ImVec2(150.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Void", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 4, castleVoidIndex });
+            if (CreateButton("Complete All Steps##Void", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 4, 6 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Wolf Options");
+            CreateListBox("##Wolf Options", castleWolfSteps, castleWolfIndex, ImVec2(150.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Wolf", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 5, castleWolfIndex });
+            if (CreateButton("Complete All Steps##Wolf", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 5, 5 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Time Travel Options");
+            CreateListBox("##Time Travel Options", castleTimeTravelSteps, castleTimeTravelIndex, ImVec2(150.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Time Travel", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 6, castleTimeTravelIndex });
+            if (CreateButton("Complete All Steps##Time Travel", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 6, 2 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
         }
-        if (ImGui::BeginTabItem("Rev"))
+        // row 2
         {
-            ImGui::EndTabItem();
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Simon Options");
+            CreateListBox("##Simon Options", castleSimonSteps, castleSimonIndex, ImVec2(150.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Simon", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 7, castleSimonIndex });
+            if (CreateButton("Complete All Steps##Simon", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 8 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Keeper Options");
+            CreateListBox("##Keeper Options", castleKeeperSteps, castleKeeperIndex, ImVec2(150.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Keeper", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 9, castleKeeperIndex });
+            if (CreateButton("Complete All Steps##Keeper", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 10 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
         }
-        if (ImGui::BeginTabItem("Origins"))
-        {
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
+        break;
+    }
+    default:
+        break;
     }
 }
 

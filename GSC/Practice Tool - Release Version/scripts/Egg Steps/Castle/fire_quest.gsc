@@ -1,11 +1,41 @@
+DoFireStep(num)
+{
+    switch(num)
+    {
+        case 0:
+            self thread ActivateFireQuest();
+            break;
+        case 1:
+            self thread FireShootObelisk();
+            break;
+        case 2:
+            self thread FireFillCircles();
+            break;
+        case 3:
+            self thread FireFinishGolf();
+            break;
+        case 4:
+            self thread FireFinishArrow();
+            break;
+        case 5:
+            self thread FireBuildBow();
+            break;
+        case 6:
+            self thread FinishFire();
+            break;
+        default:
+            break;
+    }
+}
+
 FinishFire()
 {
-    self ActivateFireQuest();
-    self FireShootObelisk();
-    self FireFillCircles();
-    self FireFinishGolf();
-    self FireFinishArrow();
-    self FireBuildBow();
+    self thread ActivateFireQuest();
+    self thread FireShootObelisk();
+    self thread FireFillCircles();
+    self thread FireFinishGolf();
+    self thread FireFinishArrow();
+    self thread FireBuildBow();
 }
 
 ActivateFireQuest()
@@ -17,7 +47,11 @@ ActivateFireQuest()
         while(!wall_damage)
         {
             wall_trig = GetEnt("aq_rp_clock_wall_trig", "targetname");
-            if(!IsDefined(wall_trig)) continue;
+            if(!IsDefined(wall_trig))
+            {
+                wait 0.05;
+                continue;
+            }
             wall_damage = 1;
             wall_trig notify("damage", 1, self, (-0.414551, -8.45129, 20.6498), (-1066.59, 1648.45, 1082.35), "MOD_EXPLOSIVE", "", "", "", GetWeapon("elemental_bow"));
             wait 0.05;

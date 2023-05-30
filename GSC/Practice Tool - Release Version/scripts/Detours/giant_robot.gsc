@@ -10,7 +10,7 @@ detour zm_tomb_giant_robot<scripts\zm\zm_tomb_giant_robot.gsc>::robot_cycling()
 		{
 			level flag::set("three_robot_round");
 		}
-		if(level flag::get("ee_all_staffs_placed") && !level flag::get("ee_mech_zombie_hole_opened") || level.round_number == 16)
+		if(level flag::get("ee_all_staffs_placed") && !level flag::get("ee_mech_zombie_hole_opened"))
 		{
 			level flag::set("three_robot_round");
 		}
@@ -35,7 +35,7 @@ detour zm_tomb_giant_robot<scripts\zm\zm_tomb_giant_robot.gsc>::robot_cycling()
                         random_number = RandomInt(3);
                         break;
                 }
-                if(level flag::get("ee_all_staffs_placed")) random_number = 0;
+                if(level flag::get("ee_all_staffs_placed") || level.round_number == 16) random_number = 0;
             }
 			if(random_number == 2 || level flag::get("all_robot_hatch"))
 			{
