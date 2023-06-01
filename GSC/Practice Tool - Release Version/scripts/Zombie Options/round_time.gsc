@@ -31,8 +31,7 @@ RoundTime()
 
 MonitorStartTimes()
 {
-    level flag::wait_till("start_zombie_round_logic");
-    wait 2.15;
+    WaitFadeIn();
     level.custom_start_time = GetTime();
     for(;;)
     {

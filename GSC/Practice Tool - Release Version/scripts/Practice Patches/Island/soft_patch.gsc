@@ -1,6 +1,6 @@
 IslandSoftPatch()
 {
-    level flag::wait_till("start_zombie_round_logic");
+    WaitFadeIn();
     if(level.script != "zm_island")
     {
         level flag::wait_till("initial_blackscreen_passed");

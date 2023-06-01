@@ -1,6 +1,6 @@
 TombSoftPatch()
 {
-    level flag::wait_till("start_zombie_round_logic");
+    WaitFadeIn();
     level flag::set("tomb_soft_patch");
     if(level.script != "zm_tomb")
     {

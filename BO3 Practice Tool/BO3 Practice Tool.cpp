@@ -238,7 +238,7 @@ public:
                     ImGui::BeginDisabled();
                 if (CreateButton("Toggle Status", ImVec2(ImGui::GetContentRegionAvail().x, 50.0f), &enabled, true))
                 {
-                    if (currentMap == ".")
+                    if (currentMap == "")
                     {
                         enabled = false;
                         appStatus = "Status: Inactive";
@@ -248,13 +248,19 @@ public:
                         appStatus = (appStatus == "Status: Inactive") ? "Status: Active" : "Status: Inactive";
                         if (appStatus == "Status: Inactive")
                         {
-                            writeGums = false;
                             WritePresetToGame(inactiveGumPreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
+                            WriteAutosplitPreset(inactiveSplitPreset);
                             WritePracticePatches(inactivePracticePatchIndexes);
                             ResetToggles();
                         }
                         else
+                        {
+                            if (writeGums)
+                                WritePresetToGame(gumPresets[currentGumPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
+                            if (writeSplits)
+                                WriteAutosplitPreset(splitPresets[currentSplitPreset]);
                             WritePracticePatches(practicePatchIndexes);
+                        }
                         auto injectThread = std::thread(InjectTool, enabled, std::ref(injectResponse));
                         injectThread.detach();
                     }
@@ -566,6 +572,7 @@ void SetupData()
     LogFile("Writing presets");
     WritePresetToGame(inactiveGumPreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
     WritePracticePatches(inactivePracticePatchIndexes);
+    WriteAutosplitPreset(inactiveSplitPreset);
     updateAvailable = UpdateAvailable();
 
     if (steamPathFound)
@@ -2485,7 +2492,12 @@ void EggStepOptionsPtr()
             SAMELINE;
             ImGui::BeginGroup();
             if (CreateButton("Complete Step##Egg", ImVec2(125.0f, 25.0f)))
-                NotifyGame({ 4, 2, zodEggIndex });
+            {
+                if (zodEggIndex < 2)
+                    NotifyGame({ 4, 2, zodEggIndex });
+                else
+                    NotifyGame({ 4, 2, zodEggIndex + 1 });
+            }
             if (CreateButton("Complete All Steps##Egg", ImVec2(155.0f, 25.0f)))
                 NotifyGame({ 4, 1 });
             ImGui::EndGroup();

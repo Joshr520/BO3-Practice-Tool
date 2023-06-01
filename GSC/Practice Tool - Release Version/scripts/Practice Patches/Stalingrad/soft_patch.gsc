@@ -1,6 +1,6 @@
 StalingradSoftPatch()
 {
-    level flag::wait_till("start_zombie_round_logic");
+    WaitFadeIn();
     if(level.script != "zm_stalingrad")
     {
         level flag::wait_till("initial_blackscreen_passed");

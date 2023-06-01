@@ -392,7 +392,7 @@ namespace BO3PT
 	inline int currentSplitPreset = 0;
 	inline bool writeSplits = false;
 	inline std::vector<SplitPreset> splitPresets;
-	inline SplitPreset inactiveSplitPreset = { "No Presets Available", { { "", 0} } };
+	inline SplitPreset inactiveSplitPreset = { "No Presets Available" };
 
 	void LoadSplitPresets();
 	void WriteAutosplitPreset(const SplitPreset& preset);

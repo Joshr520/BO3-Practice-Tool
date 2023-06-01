@@ -1,6 +1,6 @@
 WaitRitual(name)
 {
-    level waittill("ritual_" + name + "_succeed");
+    level flag::wait_till("ritual_" + name + "_complete");
 }
 
 WaitRiftTP(str_areaname, str_pos)
@@ -25,24 +25,23 @@ WaitEgg(num)
     }
 }
 
-WaitSword(upgraded)
+WaitSword(sword_state)
 {
-    self waittill(#"hash_b29853d8");
-    if(!upgraded && self.sword_quest.upgrade_stage == 1) return;
-    else self waittill(#"hash_b29853d8");
+    for(;;)
+    {
+        self waittill(#"hash_b29853d8");
+        if(self.sword_quest.upgrade_stage == sword_state) return;
+    }
 }
 
-// 0 = junction, 1 = canals, 2 = footlight, 3 = waterfront
+// 0 = waterfront, 1 = canals, 2 = footlight, 3 = junction
 WaitForOvum(num)
 {
     for(;;)
     {
         level flag::wait_till("magic_circle_in_progress");
         wait 0.05;
-        foreach(player in GetPlayers())
-        {
-            if(level clientfield::get("keeper_egg_location_" + player.characterindex) == num) return;
-        }
+        foreach(player in GetPlayers()) if(level clientfield::get("keeper_egg_location_" + player.characterindex) == num) return;
         level flag::wait_till_clear("magic_circle_in_progress");
     }
 }
@@ -57,7 +56,7 @@ WaitFlag(num)
     for(;;)
     {
         level waittill("ee_keeper_resurrected");
-        if([[ @zm_zod_ee<scripts\zm\zm_zod_ee.gsc>::function_832f1b2a ]]() >= num) return;
+        if(level [[ @zm_zod_ee<scripts\zm\zm_zod_ee.gsc>::function_832f1b2a ]]() >= num) return;
     }
 }
 

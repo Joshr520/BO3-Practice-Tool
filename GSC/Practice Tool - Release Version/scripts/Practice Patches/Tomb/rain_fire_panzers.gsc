@@ -1,6 +1,6 @@
 AFDGstrikePractice()
 {
-    level flag::wait_till("start_zombie_round_logic");
+    WaitFadeIn();
     if(level.script != "zm_tomb")
     {
         level flag::wait_till("initial_blackscreen_passed");

@@ -2,8 +2,7 @@ RevInGameTimer()
 {
     level endon("game_ended");
 
-    level flag::wait_till("start_zombie_round_logic");
-    wait 2.1;
+    WaitFadeIn();
     start_time = GetTime();
     timer = InitHud(0);
     timer SetTimerUp(0);

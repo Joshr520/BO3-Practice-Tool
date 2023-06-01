@@ -24,6 +24,17 @@ on_player_connect()
     if(!self IsHost()) return;
 
     //self thread StartInGameSplits();
+
+    WaitFadeIn();
+
+    message = hud::createfontstring("big", 1.1);
+    hud::setpoint("TOP", "MIDDLE", 20, 0);
+    message SetText("BO3 Practice Tool Loaded: ^6github.com/Joshr520/BO3-Practice-Tool");
+    wait 3;
+    message FadeOverTime(5);
+    message.alpha = 0;
+    wait 5;
+    message Destroy();
 }
 
 on_player_spawned()
@@ -142,6 +153,11 @@ WriteToScreen(text)
 IsScenePlaying(scene)
 {
     return self scene::is_playing(scene);
+}
+
+WaitFadeIn()
+{
+    while(!IsTrue(level clientfield::get("sndZMBFadeIn"))) wait 0.05;
 }
 
 TradeWeaponLimit(player)

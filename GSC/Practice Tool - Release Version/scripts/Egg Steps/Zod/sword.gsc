@@ -24,11 +24,10 @@ FillEgg(id)
     if(self.sword_quest.all_kills_completed) return;
 
     self.sword_quest.kills[id] = 12;
+    level.sword_quest.statues[id].trigger notify("trigger", self); // for autosplit purposes
 
-    foreach(statue in level.sword_quest.statues)
-    {
-        if(id != 2 && self.sword_quest.kills[statue.statue_id] < 12) return;
-    }
+    foreach(index, statue in level.sword_quest.statues) if(index != 2 && self.sword_quest.kills[statue.statue_id] < 12) return;
+
     level.sword_quest.statues[2].trigger notify("trigger", self);
     self.sword_quest.all_kills_completed = 1;
     self.sword_quest.upgrade_stage = 1;

@@ -1862,6 +1862,12 @@ namespace BO3PT
 
     void WriteAutosplitPreset(const SplitPreset& preset)
     {
+        if (preset.presetName != inactiveSplitPreset.presetName && (!writeSplits || appStatus == "Status: Inactive"))
+        {
+            WriteAutosplitPreset(inactiveSplitPreset);
+            return;
+        }
+
         std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + preset.presetName + ".json";
 
         Walnut::JSONBuilder builder;
@@ -1882,11 +1888,9 @@ namespace BO3PT
             splitData.AddMember(key, value, builder.GetAllocator());
         }
 
-        builder.SaveToFile(filename);
-        if (writeSplits && appStatus == "Status: Active")
-            builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json");
-        else
-            builder.WriteEmpty(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json");
+        if (preset.presetName != inactiveSplitPreset.presetName)
+            builder.SaveToFile(filename);
+        builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json");
     }
 
     void CreateNewAutosplitPreset(const std::string& presetName)

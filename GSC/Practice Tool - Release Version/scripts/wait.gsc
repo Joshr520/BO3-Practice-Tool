@@ -27,3 +27,13 @@ WaitF9()
 {
     while(!compiler::waitkey(0x78)) wait 0.05;
 }
+
+WaitPgUp()
+{
+    while(!compiler::waitkey(0x21)) wait 0.05;
+}
+
+WaitPgDown()
+{
+    while(!compiler::waitkey(0x22)) wait 0.05;
+}
