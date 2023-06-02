@@ -34,7 +34,7 @@ WaitSword(sword_state)
     }
 }
 
-// 0 = waterfront, 1 = canals, 2 = footlight, 3 = junction
+// 0 = waterfront, 1 = footlight, 2 = canals, 3 = junction
 WaitForOvum(num)
 {
     for(;;)

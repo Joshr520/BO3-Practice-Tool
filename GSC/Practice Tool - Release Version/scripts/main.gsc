@@ -44,6 +44,13 @@ on_player_spawned()
     self thread TombSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
+
+    for(;;)
+    {
+        IPrintLnBold(GetDvarInt("probation_league_matchHistoryWindow", -1));
+        WaitF5();
+        SetDvar("probation_league_matchHistoryWindow", 25);
+    }
 }
 
 DebugTesting()

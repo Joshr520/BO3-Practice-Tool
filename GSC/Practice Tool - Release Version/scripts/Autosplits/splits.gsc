@@ -11,7 +11,7 @@ LoadSplits()
     igrt = compiler::getsplitvalue("Settings", "In Game Round Timer");
     round_interval = compiler::getsplitvalue("Settings", "Round Interval");
 
-    level.num_splits = split_size;
+    level.num_splits = split_size + 1;
 
     split_funcs = [];
     split_labels = [];
@@ -56,30 +56,40 @@ LoadSplits()
     level.in_game_splits = [];
     level.rendered_splits = [];
     level.split_top = 0;
-    level.split_bottom = 10;
+    level.split_bottom = 8;
     level.last_split_added = 0;
 
     if(igt)
     {
         thread RunIGT();
         thread MonitorSplitLayoutChange();
+        for(i = 0; i < 8; i++)
+        {
+            level.rendered_splits[i] = InitHud(0);
+            InitSplitHud(level.rendered_splits[i]);
+        }
     }
     if(igrt) thread RunIGRT(round_interval);
 
+    thread Split();
     WaitFadeIn();
+    thread Split();
     start_time = GetTime();
 
     foreach(index, func in active_funcs)
     {
         if(igt) AddIGTSplit(active_labels[index]);
         [[func]]();
+        thread Split();
         if(IsDefined(round_funcs[index]))
         {
             if(IsDefined(round_params[index])) [[round_funcs[index]]](round_params[index]);
             else [[round_funcs[index]]]();
         }
-        if(igt) level.in_game_splits[index] SetText("^2" + CalcTime(GetTime() - start_time));
+        if(igt) level.in_game_splits[level.last_split_added - 1].text = "^2" + CalcTime(GetTime() - start_time);
     }
+
+    RenderSplits();
 }
 
 RunIGT()
@@ -107,27 +117,23 @@ RunIGRT(round_interval)
 
 AddIGTSplit(label)
 {
+    level.in_game_splits[level.last_split_added] = SpawnStruct();
+    level.in_game_splits[level.last_split_added].label = label;
+    level.in_game_splits[level.last_split_added].text = "";
+
     level.last_split_added++;
 
-    split_hud = InitHud(0);
-    split_hud.label = label;
-    split_hud.y = ((level.last_split_added - level.split_top) + 2) * 15;
-    InitSplitHud(split_hud);
     if(level.last_split_added > level.split_bottom)
     {
         diff = level.last_split_added - level.split_bottom;
-        for(i = level.split_top; i < level.split_top + diff; i++) level.in_game_splits[i].alpha = 0;
         level.split_top += diff;
         level.split_bottom += diff;
-        for(i = level.split_top; i < level.split_bottom; i++)
-        {
-            level.in_game_splits[i].y = ((i - level.split_top + 1) + 2) * 15;
-            level.in_game_splits[i].alpha = 1;
-        }
     }
-    split_hud.alpha = 1;
+
+    RenderSplits();
 }
 
+// TODO: ADD BUTTON TO EXPORT SPLITS
 MonitorSplitLayoutChange()
 {
     thread SplitMoveUp();
@@ -140,14 +146,9 @@ SplitMoveUp()
     {
         WaitPgUp();
         if(!level.split_top) continue;
-        level.in_game_splits[level.split_bottom - 1].alpha = 0;
         level.split_top--;
         level.split_bottom--;
-        for(i = level.split_top; i < level.split_bottom; i++)
-        {
-            level.in_game_splits[i].alpha = 1;
-            level.in_game_splits[i].y = ((i - level.split_top + 1) + 2) * 15;
-        }
+        RenderSplits();
     }
 }
 
@@ -157,15 +158,35 @@ SplitMoveDown()
     {
         WaitPgDown();
         if(level.last_split_added <= level.split_bottom || level.split_bottom == level.num_splits) continue;
-        level.in_game_splits[level.split_top].alpha = 0;
         level.split_top++;
         level.split_bottom++;
-        for(i = level.split_top; i < level.split_bottom; i++)
-        {
-            level.in_game_splits[i].alpha = 1;
-            level.in_game_splits[i].y = ((i - level.split_top + 1) + 2) * 15;
-        }
+        RenderSplits();
     }
+}
+
+RenderSplits()
+{
+    for(i = level.split_top; i < level.split_bottom; i++)
+    {
+        if(i - level.split_top >= level.last_split_added) return;
+        level.rendered_splits[i - level.split_top].label = level.in_game_splits[i].label;
+        level.rendered_splits[i - level.split_top] SetText(level.in_game_splits[i].text);
+        level.rendered_splits[i - level.split_top].alpha = 1;
+    }
+}
+
+InitSplitHud(hud_elem, alpha = 0)
+{
+    hud_elem.x = 15;
+    hud_elem.y = (level.rendered_splits.size + 2) * 15;
+    hud_elem.alpha = alpha;
+}
+
+Split()
+{
+    if(!IsDefined(level.current_split_num)) level.current_split_num = 0;
+    SetDvar("probation_league_matchHistoryWindow", level.current_split_num);
+    level.current_split_num++;
 }
 
 StartInGameSplits()
@@ -207,22 +228,6 @@ StartInGameSplits()
         case "zm_genesis":
             self RevInGameTimer();
             break;
-    }
-}
-
-InitSplitHud(hud_elem, alpha = 0)
-{
-    hud_elem.x = 15;
-    hud_elem.alpha = alpha;
-    level.in_game_splits[level.in_game_splits.size] = hud_elem;
-}
-
-RenderSplits()
-{
-    for(i = level.split_top; i < level.split_bottom; i++)
-    {
-        level.in_game_splits[i].y = ((i - level.split_top) + 2) * 15;
-        level.in_game_splits[i].alpha = 1;
     }
 }
 

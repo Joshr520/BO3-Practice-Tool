@@ -1848,7 +1848,7 @@ namespace BO3PT
         splitPresets.clear();
         for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Autosplits"))
         {
-            if (std::filesystem::is_regular_file(file))
+            if (std::filesystem::is_regular_file(file) && file.path().extension().string() == ".json")
             {
                 SplitPreset preset = ParseSplitJson(file.path().string());
                 preset.presetName = file.path().stem().string();
