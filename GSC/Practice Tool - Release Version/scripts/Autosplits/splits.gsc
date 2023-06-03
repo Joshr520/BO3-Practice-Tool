@@ -9,7 +9,6 @@ LoadSplits()
     split_type = compiler::getsplitvalue("Settings", "Split Type");
     igt = compiler::getsplitvalue("Settings", "In Game Timer");
     igrt = compiler::getsplitvalue("Settings", "In Game Round Timer");
-    round_interval = compiler::getsplitvalue("Settings", "Round Interval");
 
     level.num_splits = split_size + 1;
 
@@ -18,8 +17,14 @@ LoadSplits()
     split_funcs["zm_zod"] = Array(::SplitMagicianRitual, ::SplitFemmeRitual, ::SplitDetectoveRitual, ::SplitBoxerRitual, ::SplitPAPRitual, ::SplitCanalsRift, ::SplitFootlightRift, ::SplitWaterfrontRift, ::SplitRiftCanals, ::SplitRiftFootlight,
     ::SplitRiftWaterfront, ::SplitCanalsEgg, ::SplitFootlightEgg, ::SplitWaterfrontEgg, ::SplitRiftEgg, ::SplitPickupSword, ::SplitJunctionOvum, ::SplitCanalsOvum, ::SplitFootlightOvum, ::SplitWaterfrontOvum, ::SplitUpgradedSword, ::SplitBook,
     ::SplitFlag1, ::SplitFlag2, ::SplitFlag3, ::SplitFlag4);
+    /*split_funcs["zm_castle"] = Array(::SplitChurchDragon, ::SplitCourtyardDragon, ::SplitUndercroftDragon, ::SplitBow, ::SplitStartLightning, ::SplitBonfires, ::SplitWallRide, ::SplitCrackle, ::SplitUpgradeLightning, ::SplitStartFire, ::SplitObelisk,
+    ::SplitCircles, ::SplitGolf, ::SplitFireUpgrade, ::SplitVoidStart, ::SplitActivateUrn, ::SplitSkulls, ::SplitCrawlers, ::SplitRunes, ::SplitVoidUpgrade, ::SplitWolfStart, ::SplitShrine, ::SplitStartEscort, ::SplitEscortFilled, ::SplitWolfForged,
+    ::SplitWolfUpgrade, ::SplitTP, ::SplitTimeTravel1, ::SplitTimeTravel2, ::SplitCodeEntered, ::SplitSimon1, ::SplitSimon2, ::SplitKeeperSpawned, ::SplitKeeper1, ::SplitKeeper2, ::SplitKeeper3, ::SplitKeeper4, ::SplitKeeperTrapped, ::SplitBossEnter, ::SplitBossExit);*/
     split_labels["zm_zod"] = Array(&"Magician Ritual: ", &"Femme Ritual: ", &"Detective Ritual: ", &"Boxer Ritual: ", &"PAP Ritual: ", &"Canals Rift: ", &"Footlight Rift: ", &"Waterfront Rift: ", &"Rift Canals: ", &"Rift Footlight: ", &"Rift Waterfront: ",
     &"Canals Egg: ", &"Footlight Egg: ", &"Waterfront Egg: ", &"Rift Egg: ", &"Sword: ", &"Junction Ovum: ", &"Canals Ovum: ", &"Footlight Ovum: ", &"Waterfront Ovum: ", &"Upgraded Sword: ", &"Book: ", &"Flag 1: ", &"Flag 2: ", &"Flag 3: ", &"Flag 4: ");
+    split_labels["zm_castle"] = Array(&"Church Dragon", &"Courtyard Dragon", &"Undercroft Dragon", &"Pickup Bow", &"Start Lightning", &"Bonfires Shot", &"Wall Ride", &"Crackle", &"Upgrade Lightning", &"Start Fire", "Obelisk Shot", &"Circles Filled",
+    &"Golf", &"Upgrade Fire", &"Start Void", &"Activate Urn", &"Pickup Skulls", &"Crawler Kills", &"Runes", &"Upgrade Void", &"Start Wofl", &"Shrine Shot", &"Start Escort", &"Wolf Souls Filled", &"Wolf Arrow Forged", &"Upgrade Wolf", &"Normal TP",
+    &"Time Travel 1", &"Time Travel 2", &"Safe Code Entered", &"Simon 1", &"Simon 2", &"Keeper Spawned", &"Keeper 1", &"Keeper 2", &"Keeper 3", &"Keeper 5", &"Keeper Trapped", &"Boss Enter", &"Boss Exit");
     active_funcs = [];
     active_labels = [];
     round_funcs = [];
@@ -42,16 +47,28 @@ LoadSplits()
         }
     }
 
-    switch(maps[map])
+    if(split_type == 2)
     {
-        case "zm_zod":
-            active_funcs[active_funcs.size] = ::WaitZodEnd;
-            break;
-        default:
-            break;
+        active_funcs[active_funcs.size] = ::WaitPAP;
+        active_labels[active_labels.size] = &"PAP: ";
     }
+    else if(split_type == 1)
+    {
 
-    active_labels[active_labels.size] = &"End: ";
+    }
+    else
+    {
+        switch(maps[map])
+        {
+            case "zm_zod":
+                if(!split_type) active_funcs[active_funcs.size] = ::WaitZodEnd;
+                break;
+            default:
+                break;
+        }
+        if(!split_type) active_labels[active_labels.size] = &"Egg End: ";
+        else active_labels[active_labels.size] = &"Song Started: ";
+    }
 
     level.in_game_splits = [];
     level.rendered_splits = [];
@@ -66,10 +83,10 @@ LoadSplits()
         for(i = 0; i < 8; i++)
         {
             level.rendered_splits[i] = InitHud(0);
-            InitSplitHud(level.rendered_splits[i]);
+            InitSplitHud(level.rendered_splits[i], 1);
         }
     }
-    if(igrt) thread RunIGRT(round_interval);
+    if(igrt) thread RunIGRT();
 
     thread Split();
     WaitFadeIn();
@@ -86,7 +103,8 @@ LoadSplits()
             if(IsDefined(round_params[index])) [[round_funcs[index]]](round_params[index]);
             else [[round_funcs[index]]]();
         }
-        if(igt) level.in_game_splits[level.last_split_added - 1].text = "^2" + CalcTime(GetTime() - start_time);
+        level.in_game_splits[level.last_split_added - 1].text = "^2" + CalcTime(GetTime() - start_time);
+        level.in_game_splits[level.last_split_added - 1].time = CalcTime(GetTime() - start_time);
     }
 
     RenderSplits();
@@ -103,7 +121,7 @@ RunIGT()
     timer.alpha = 1;
 }
 
-RunIGRT(round_interval)
+RunIGRT()
 {
     WaitFadeIn();
     round_timer = InitHud(0);
@@ -120,6 +138,7 @@ AddIGTSplit(label)
     level.in_game_splits[level.last_split_added] = SpawnStruct();
     level.in_game_splits[level.last_split_added].label = label;
     level.in_game_splits[level.last_split_added].text = "";
+    level.in_game_splits[level.last_split_added].time = "";
 
     level.last_split_added++;
 
@@ -133,11 +152,12 @@ AddIGTSplit(label)
     RenderSplits();
 }
 
-// TODO: ADD BUTTON TO EXPORT SPLITS
 MonitorSplitLayoutChange()
 {
     thread SplitMoveUp();
     thread SplitMoveDown();
+    thread SplitHide();
+    thread ExportSplits();
 }
 
 SplitMoveUp()
@@ -164,6 +184,32 @@ SplitMoveDown()
     }
 }
 
+SplitHide()
+{
+    for(;;)
+    {
+        WaitEnd();
+        foreach(rendered_split in level.rendered_splits) rendered_split.alpha = 0;
+        WaitEnd();
+        foreach(rendered_split in level.rendered_splits) rendered_split.alpha = 1;
+    }
+}
+
+ExportSplits()
+{
+    for(;;)
+    {
+        WaitHome();
+        data = "";
+        foreach(split in level.in_game_splits)
+        {
+            if(split.text == "") break;
+            data += MakeLocalizedString(split.label) + split.time + "\n";
+        }
+        compiler::setclipboard(data);
+    }
+}
+
 RenderSplits()
 {
     for(i = level.split_top; i < level.split_bottom; i++)
@@ -171,7 +217,6 @@ RenderSplits()
         if(i - level.split_top >= level.last_split_added) return;
         level.rendered_splits[i - level.split_top].label = level.in_game_splits[i].label;
         level.rendered_splits[i - level.split_top] SetText(level.in_game_splits[i].text);
-        level.rendered_splits[i - level.split_top].alpha = 1;
     }
 }
 
@@ -187,48 +232,6 @@ Split()
     if(!IsDefined(level.current_split_num)) level.current_split_num = 0;
     SetDvar("probation_league_matchHistoryWindow", level.current_split_num);
     level.current_split_num++;
-}
-
-StartInGameSplits()
-{
-    if(level.basic_timer)
-    {
-        WaitFadeIn();
-        level.in_game_splits = [];
-        timer = InitHud(0);
-        timer SetTimerUp(0);
-        timer.label = &"^3Time: ^2";
-        InitSplitHud(timer);
-
-        round_timer = InitHud(0);
-        round_timer SetTenthsTimerUp(0.05);
-        round_timer.label = &"^3Round Time: ^2";
-        InitSplitHud(round_timer);
-        thread ManageInGameRoundTimer(round_timer);
-        return;
-    }
-    if(!level.map_specific_timer) return;
-    switch(level.script)
-    {
-        case "zm_zod":
-
-            break;
-        case "zm_factory":
-
-            break;
-        case "zm_castle":
-
-            break;
-        case "zm_island":
-
-            break;
-        case "zm_stalingrad":
-            self GKInGameTimer();
-            break;
-        case "zm_genesis":
-            self RevInGameTimer();
-            break;
-    }
 }
 
 ManageInGameRoundTimer(round_timer)
@@ -248,4 +251,58 @@ WaitSplitCurrentRound()
 WaitSplitRound(round)
 {
     while(level.round_number < round) level waittill("end_of_round");
+}
+
+WaitPAP()
+{
+    self waittill("pap_taken");
+}
+
+WaitSong()
+{
+    level endon("plant_lullaby");
+    if(level.script == "zm_island") thread WatchLullaby();
+    songs = Array("snakeskinboots", "snakeskinboots_instr", "coldhardcash", "musicEasterEgg", "dead_again", "dead_flowers", "dead_ended", "ace_of_spades", "the_gift", "lullaby_for_a_dead_man", "the_one", "115", "abracadavre", "pareidolia",
+    "cominghome", "archangel", "aether", "shepherd_of_fire");
+    for(;;)
+    {
+        while(!IsTrue(level.musicsystem.currentstate)) wait 0.05;
+        if(IsInArray(songs, level.musicsystem.currentstate)) return;
+        state = level.musicsystem.currentstate;
+        while(level.musicsystem.currentstate == state) wait 0.05;
+    }
+}
+
+WatchLullaby()
+{
+    play = struct::get("plantMusicPlay", "targetname");
+    pods = GetEntArray("plantMusicPods", "targetname");
+    solution = array(1, 3, 5, 6, 7, 5);
+    for(;;)
+    {
+        play waittill("trigger_activated");
+        water_levels = [[ @zm_island_side_ee_song<scripts\zm\zm_island_side_ee_song.gsc>::function_c5359566 ]]();
+        match = 1;
+		for(i = 0; i < water_levels.size; i++)
+		{
+			if(water_levels[i] != solution[i])
+			{
+				match = 0;
+				break;
+			}
+            if(IsTrue(match))
+            {
+                level notify("plant_lullaby");
+                return;
+            }
+            else
+            {
+                for(i = 0; i < pods.size; i++)
+                {
+                    pods[i] playsound("mus_podegg_note_" + pods[i].var_b3a7fe6c);
+                    wait(0.6);
+                }
+            }
+		}
+    }
 }

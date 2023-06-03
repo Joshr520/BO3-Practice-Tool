@@ -386,7 +386,6 @@ namespace BO3PT
 		int numSplits = 0;
 		int map = 0;
 		int splitType = 0;
-		int roundInterval = 1;
 	};
 
 	inline int currentSplitPreset = 0;
@@ -402,7 +401,7 @@ namespace BO3PT
 	void WriteLayoutXML(const std::string& preset, int numSplits);
 	SplitPreset ParseSplitJson(std::string_view filename);
 
-	inline std::vector<std::string> generalSplitData = { "Egg Autosplit", "Split on every X round ends", "Song Autosplit", "PAP Autosplit" };
+	inline std::vector<std::string> generalSplitData = { "Egg Autosplit", "Song Autosplit", "PAP Autosplit" };
 
 	inline int soeSplits[5] = { 0 };
 	inline std::vector<std::string> soeRitualSplits = { "Magician Ritual", "Femme Ritual", "Detective Ritual", "Boxer Ritual", "PAP Ritual" };

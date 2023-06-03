@@ -23,8 +23,6 @@ on_player_connect()
     level flag::wait_till("start_zombie_round_logic");
     if(!self IsHost()) return;
 
-    //self thread StartInGameSplits();
-
     WaitFadeIn();
 
     message = hud::createfontstring("big", 1.1);
@@ -41,16 +39,13 @@ on_player_spawned()
 {
     if(self IsTestClient()) return;
 
-    self thread TombSoftPatch();
+    //self thread TombSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
 
-    for(;;)
-    {
-        IPrintLnBold(GetDvarInt("probation_league_matchHistoryWindow", -1));
-        WaitF5();
-        SetDvar("probation_league_matchHistoryWindow", 25);
-    }
+    WaitSong();
+
+    IPrintLnBold("Song Playing");
 }
 
 DebugTesting()

@@ -18,6 +18,7 @@ WaitRiftTP(str_areaname, str_pos)
 // // Statue Order - Canals, Footlight, Initial, Waterfront, Rift
 WaitEgg(num)
 {
+    while(!IsDefined(level.sword_quest.statues[num].trigger)) wait 0.05;
     for(;;)
     {
         level.sword_quest.statues[num].trigger waittill("trigger", player);

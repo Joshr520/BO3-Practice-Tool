@@ -37,3 +37,13 @@ WaitPgDown()
 {
     while(!compiler::waitkey(0x22)) wait 0.05;
 }
+
+WaitEnd()
+{
+    while(!compiler::waitkey(0x23)) wait 0.05;
+}
+
+WaitHome()
+{
+    while(!compiler::waitkey(0x24)) wait 0.05;
+}

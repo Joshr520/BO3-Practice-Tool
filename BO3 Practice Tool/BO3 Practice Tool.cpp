@@ -1860,19 +1860,6 @@ void AutosplitsPtr()
 
                 ImGui::EndTable();
             }
-            if (splitPresets[currentSplitPreset].splitType == 1)
-            {
-                SAMELINE;
-                ImGui::SetNextItemWidth(150);
-                if (ImGui::InputInt("Interval", &splitPresets[currentSplitPreset].roundInterval))
-                {
-                    if (splitPresets[currentSplitPreset].roundInterval < 1)
-                        splitPresets[currentSplitPreset].roundInterval = 1;
-                    else if (splitPresets[currentSplitPreset].roundInterval > 255)
-                        splitPresets[currentSplitPreset].roundInterval = 255;
-                    WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                }
-            }
         }
     }
 }
@@ -2468,6 +2455,7 @@ void PowerupOptionsPtr()
 
 void EggStepOptionsPtr()
 {
+    HelpMarker("This can be buggy and may not work correctly for every situation. The game may crash in certain events, use at your own risk. For best results, don't do multiple steps from different boxes at once.");
     switch (hashstr(currentMap.c_str()))
     {
     case hashstr("zm_zod"):

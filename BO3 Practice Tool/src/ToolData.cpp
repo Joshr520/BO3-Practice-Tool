@@ -1878,7 +1878,6 @@ namespace BO3PT
         settings.AddMember("Amount of Splits", preset.numSplits, builder.GetAllocator());
         settings.AddMember("Map Index", preset.map, builder.GetAllocator());
         settings.AddMember("Split Type", preset.splitType, builder.GetAllocator());
-        settings.AddMember("Round Interval", preset.roundInterval, builder.GetAllocator());
 
         rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
         for (std::pair<std::string, int> pair : preset.splits)
@@ -1905,7 +1904,6 @@ namespace BO3PT
         settings.AddMember("Amount of Splits", 0, builder.GetAllocator());
         settings.AddMember("Map Index", 0, builder.GetAllocator());
         settings.AddMember("Split Type", 0, builder.GetAllocator());
-        settings.AddMember("Round Interval", 1, builder.GetAllocator());
 
         rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
 
@@ -2234,9 +2232,7 @@ namespace BO3PT
                     if (value.IsInt())
                         returnPreset.splitType = value.GetInt();
                     break;
-                case hashstr("Round Interval"):
-                    if (value.IsInt())
-                        returnPreset.roundInterval = value.GetInt();
+                default:
                     break;
                 }
             }
