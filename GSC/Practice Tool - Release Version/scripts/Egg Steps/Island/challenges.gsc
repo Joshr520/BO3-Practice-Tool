@@ -1,4 +1,4 @@
-FinishChallenges(num)
+FinishChallenge(num)
 {
     while(!self flag::exists("flag_player_collected_reward_1")) wait 0.05;
     switch(num)
@@ -25,4 +25,11 @@ FinishChallenges(num)
             }
             break;
     }
+}
+
+FinishChallenges()
+{
+    self thread FinishChallenge(1);
+    self thread FinishChallenge(2);
+    self thread FinishChallenge(3);
 }

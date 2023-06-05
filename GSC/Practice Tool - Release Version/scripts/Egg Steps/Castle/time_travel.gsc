@@ -29,7 +29,6 @@ TimeTravel(num)
             if(fuse_found && canister_found) break;
             wait 0.05;
         }
-        IPrintLnBold("Done 1");
         wait 0.5;
         level flag::clear("time_travel_teleporter_ready");
     }
@@ -52,7 +51,6 @@ TimeTravel(num)
         }
         key = GetEnt("golden_key", "targetname");
         key notify("trigger_activated");
-        IPrintLnBold("Done 2");
         wait 0.5;
     }
     if(num >= 1 && !level flag::get("channeling_stone_replacement"))
@@ -66,6 +64,5 @@ TimeTravel(num)
         self BuildAndActivateTrigger(tablet.s_unitrigger);
         wait 0.5;
         level flag::clear("time_travel_teleporter_ready");
-        IPrintLnBold("Done 3");
     }
 }

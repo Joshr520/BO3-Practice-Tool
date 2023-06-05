@@ -29,7 +29,7 @@ InitMenuFuncs()
     egg_funcs = [];
     egg_funcs["zm_zod"] = Array(::FinishRitual, ::FillAllEggs, ::FillEgg, ::FinishAllMagicCircles, ::FinishMagicCircle, ::FinishAllFlags, ::FinishFlag);
     egg_funcs["zm_castle"] = Array(::FillDragon, ::FillAllDragons, ::DoStormStep, ::DoFireStep, ::DoVoidStep, ::DoWolfStep, ::TimeTravel, ::DoSimonStep, ::DoAllSimon, ::DoKeeperStep, ::DoAllKeeper);
-    egg_funcs["zm_island"] = Array(::CompleteSkulls, ::CompleteSkullRitual, ::FinishChallenges, ::SkullFadeMap, ::PickupBullet, ::ShootPlane, ::PickupGears, ::ElevatorFadeWall, ::StartTakeoBoss);
+    egg_funcs["zm_island"] = Array(::CompleteSkull, ::CompleteSkulls, ::FinishChallenges, ::SkullFadeMap, ::PickupBullet, ::ShootPlane, ::PickupGears, ::ElevatorFadeWall, ::StartTakeoBoss, ::DoAllZNSSteps);
     egg_funcs["zm_stalingrad"] = Array(::FinishPAPGrophs, ::AcquireEgg, ::AwakenEgg, ::FinishNapalm, ::FinishMultiKills, ::FinishMeleeKills, ::IncubateEgg, ::FinishPostIncubate, ::PickupGauntlet, ::CompleteTubePuzzle, ::CompletePassword,
         ::PickupKeys, ::CompleteChallenges, ::DeliverPowerCore, ::StartNikolaiFight);
     egg_funcs["zm_genesis"] = Array(::ShootCharacterStones, ::FinishKeeper, ::FinishArnies, ::FinishBones, ::ActivateAndGuideSophia, ::PickupAndPlaceBook, ::PickupAndFillEggs, ::FinishFirstBoss, ::CollectToys);

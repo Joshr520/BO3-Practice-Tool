@@ -68,7 +68,7 @@ ActivateFireQuest()
 FireShootObelisk()
 {
     if(CheckQuestProgress("rune") >= 2) return;
-    while(level clientfield::get("quest_state_rune") < 1) wait 0.05;
+    while(CheckQuestProgress("rune") < 1) wait 0.05;
     if(level.var_c62829c7 != self) level.var_c62829c7 = self;
     obelisk_damage = 0;
     level flag::set("rune_prison_obelisk_magma_enabled");
@@ -90,7 +90,7 @@ FireShootObelisk()
 FireFillCircles()
 {
     if(CheckQuestProgress("rune") >= 3) return;
-    while(level clientfield::get("quest_state_rune") < 2) wait 0.05;
+    while(CheckQuestProgress("rune") < 2) wait 0.05;
     level flag::wait_till("rune_prison_magma_ball");
     wait 1;
     if(level.var_c62829c7 != self) level.var_c62829c7 = self;
@@ -130,7 +130,7 @@ FireFillCircles()
 FireFinishGolf()
 {
     if(CheckQuestProgress("rune") >= 4) return;
-    while(level clientfield::get("quest_state_rune") < 3) wait 0.05;
+    while(CheckQuestProgress("rune") < 3) wait 0.05;
     wait 1;
     if(level.var_c62829c7 != self) level.var_c62829c7 = self;
     clock_trig = struct::get("aq_rp_clock_use_struct", "targetname");

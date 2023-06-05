@@ -16,7 +16,7 @@ ShootPlane()
     level flag::set("aa_gun_ee_complete");
 }
 
-PickupGears(nums)
+PickupGears()
 {
     level flag::wait_till("trilogy_released");
     wait 1;
@@ -25,7 +25,6 @@ PickupGears(nums)
     gear_3 = struct::get_array("aa_gun_elevator_part_landing", "targetname");
     for(i = 0; i < 3; i++)
     {
-        if(!IsInArray(nums, i)) continue;
         if(i == 2)
         {
             level flag::wait_till("aa_gun_ee_complete");
@@ -83,4 +82,15 @@ StartTakeoBoss()
         wait 0.1;
 	}
     level flag::set("flag_init_takeo_fight");
+}
+
+DoAllZNSSteps()
+{
+    self thread FinishChallenges();
+    self thread SkullFadeMap();
+    self thread PickupBullet();
+    self thread ShootPlane();
+    self thread PickupGears();
+    self thread ElevatorFadeWall();
+    self thread StartTakeoBoss();
 }

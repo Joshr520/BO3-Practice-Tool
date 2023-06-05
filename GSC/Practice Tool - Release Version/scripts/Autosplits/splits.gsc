@@ -3,12 +3,16 @@ LoadSplits()
     if(!compiler::loadsplitjson()) return;
     maps = ["zm_zod", "zm_factory", "zm_castle", "zm_island", "zm_stalingrad", "zm_genesis", "zm_prototype", "zm_asylum", "zm_sumpf", "zm_theater", "zm_cosmodrome", "zm_temple", "zm_moon", "zm_tomb"];
     map = compiler::getsplitvalue("Settings", "Map Index");
-    if(maps[map] != level.script) return;
 
     split_size = compiler::getsplitvalue("Settings", "Amount of Splits");
     split_type = compiler::getsplitvalue("Settings", "Split Type");
     igt = compiler::getsplitvalue("Settings", "In Game Timer");
     igrt = compiler::getsplitvalue("Settings", "In Game Round Timer");
+
+    if(igt) thread RunIGT();
+    if(igrt) thread RunIGRT();
+
+    if(maps[map] != level.script) return;
 
     level.num_splits = split_size + 1;
 
@@ -17,14 +21,16 @@ LoadSplits()
     split_funcs["zm_zod"] = Array(::SplitMagicianRitual, ::SplitFemmeRitual, ::SplitDetectoveRitual, ::SplitBoxerRitual, ::SplitPAPRitual, ::SplitCanalsRift, ::SplitFootlightRift, ::SplitWaterfrontRift, ::SplitRiftCanals, ::SplitRiftFootlight,
     ::SplitRiftWaterfront, ::SplitCanalsEgg, ::SplitFootlightEgg, ::SplitWaterfrontEgg, ::SplitRiftEgg, ::SplitPickupSword, ::SplitJunctionOvum, ::SplitCanalsOvum, ::SplitFootlightOvum, ::SplitWaterfrontOvum, ::SplitUpgradedSword, ::SplitBook,
     ::SplitFlag1, ::SplitFlag2, ::SplitFlag3, ::SplitFlag4);
-    /*split_funcs["zm_castle"] = Array(::SplitChurchDragon, ::SplitCourtyardDragon, ::SplitUndercroftDragon, ::SplitBow, ::SplitStartLightning, ::SplitBonfires, ::SplitWallRide, ::SplitCrackle, ::SplitUpgradeLightning, ::SplitStartFire, ::SplitObelisk,
+    split_funcs["zm_castle"] = Array(::SplitChurchDragon, ::SplitCourtyardDragon, ::SplitUndercroftDragon, ::SplitBow, ::SplitStartLightning, ::SplitBonfires, ::SplitWallRide, ::SplitCrackle, ::SplitUpgradeLightning, ::SplitStartFire, ::SplitObelisk,
     ::SplitCircles, ::SplitGolf, ::SplitFireUpgrade, ::SplitVoidStart, ::SplitActivateUrn, ::SplitSkulls, ::SplitCrawlers, ::SplitRunes, ::SplitVoidUpgrade, ::SplitWolfStart, ::SplitShrine, ::SplitStartEscort, ::SplitEscortFilled, ::SplitWolfForged,
-    ::SplitWolfUpgrade, ::SplitTP, ::SplitTimeTravel1, ::SplitTimeTravel2, ::SplitCodeEntered, ::SplitSimon1, ::SplitSimon2, ::SplitKeeperSpawned, ::SplitKeeper1, ::SplitKeeper2, ::SplitKeeper3, ::SplitKeeper4, ::SplitKeeperTrapped, ::SplitBossEnter, ::SplitBossExit);*/
+    ::SplitWolfUpgrade, ::SplitTP, ::SplitTimeTravel1, ::SplitTimeTravel2, ::SplitCodeEntered, ::SplitSimon1, ::SplitSimon2, ::SplitKeeperSpawned, ::SplitKeeper1, ::SplitKeeper2, ::SplitKeeper3, ::SplitKeeper4, ::SplitKeeperTrapped, ::SplitBossEnter, ::SplitBossExit);
+    split_funcs["zm_island"] = Array(::SplitSkull1, ::SplitSkull2, ::SplitSkull3, ::SplitSkull4, ::SplitSkullWeapon, ::SplitBunkerOpen, ::SplitPowerOn, ::SplitKTPickup, ::SplitMasamunePickup, ::SplitPoster, ::SplitBullet, ::SplitPlane, ::SplitElevator, ::SplitIslandBossEnter);
     split_labels["zm_zod"] = Array(&"Magician Ritual: ", &"Femme Ritual: ", &"Detective Ritual: ", &"Boxer Ritual: ", &"PAP Ritual: ", &"Canals Rift: ", &"Footlight Rift: ", &"Waterfront Rift: ", &"Rift Canals: ", &"Rift Footlight: ", &"Rift Waterfront: ",
     &"Canals Egg: ", &"Footlight Egg: ", &"Waterfront Egg: ", &"Rift Egg: ", &"Sword: ", &"Junction Ovum: ", &"Canals Ovum: ", &"Footlight Ovum: ", &"Waterfront Ovum: ", &"Upgraded Sword: ", &"Book: ", &"Flag 1: ", &"Flag 2: ", &"Flag 3: ", &"Flag 4: ");
-    split_labels["zm_castle"] = Array(&"Church Dragon", &"Courtyard Dragon", &"Undercroft Dragon", &"Pickup Bow", &"Start Lightning", &"Bonfires Shot", &"Wall Ride", &"Crackle", &"Upgrade Lightning", &"Start Fire", "Obelisk Shot", &"Circles Filled",
-    &"Golf", &"Upgrade Fire", &"Start Void", &"Activate Urn", &"Pickup Skulls", &"Crawler Kills", &"Runes", &"Upgrade Void", &"Start Wofl", &"Shrine Shot", &"Start Escort", &"Wolf Souls Filled", &"Wolf Arrow Forged", &"Upgrade Wolf", &"Normal TP",
-    &"Time Travel 1", &"Time Travel 2", &"Safe Code Entered", &"Simon 1", &"Simon 2", &"Keeper Spawned", &"Keeper 1", &"Keeper 2", &"Keeper 3", &"Keeper 5", &"Keeper Trapped", &"Boss Enter", &"Boss Exit");
+    split_labels["zm_castle"] = Array(&"Church Dragon: ", &"Courtyard Dragon: ", &"Undercroft Dragon: ", &"Pickup Bow: ", &"Start Lightning: ", &"Bonfires Shot: ", &"Wall Ride: ", &"Crackle: ", &"Upgrade Lightning: ", &"Start Fire: ", &"Obelisk Shot: ",
+     &"Circles Filled: ", &"Golf: ", &"Upgrade Fire: ", &"Start Void: ", &"Activate Urn: ", &"Pickup Skulls: ", &"Crawler Kills: ", &"Runes: ", &"Upgrade Void: ", &"Start Wofl: ", &"Shrine Shot: ", &"Start Escort: ", &"Wolf Souls Filled: ", &"Wolf Arrow Forged: ",
+     &"Upgrade Wolf: ", &"Normal TP: ", &"Time Travel 1: ", &"Time Travel 2: ", &"Safe Code Entered: ", &"Simon 1: ", &"Simon 2: ", &"Keeper Spawned: ", &"Keeper 1: ", &"Keeper 2: ", &"Keeper 3: ", &"Keeper 4: ", &"Keeper Trapped: ", &"Boss Enter: ", &"Boss Exit: ");
+    split_labels["zm_island"] = Array(&"Skull 1: ", &"Skull 2: ", &"Skull 3: ", &"Skull 4: ", &"Skull Ritual: ", &"Bunker Open: ", &"Power On: ", &"KT-4: ", &"Masamune: ", &"Poster: ", &"Bullet: ", &"Plane Shot: ", &"Elevator On: ", &"Boss Enter: ");
     active_funcs = [];
     active_labels = [];
     round_funcs = [];
@@ -36,6 +42,7 @@ LoadSplits()
         round = compiler::getsplitvalue("Split Data", "Value", i);
 
         if(!IsDefined(split_funcs[level.script][func_num])) return;
+        if(!IsDefined(level.tracking_keeper) && IsSubStr(MakeLocalizedString(split_labels[level.script][func_num]), "Keeper")) thread TrackKeeper();
 
         active_funcs[active_funcs.size] = split_funcs[level.script][func_num];
         active_labels[active_labels.size] = split_labels[level.script][func_num];
@@ -54,20 +61,26 @@ LoadSplits()
     }
     else if(split_type == 1)
     {
-
+        active_funcs[active_funcs.size] = ::WaitSong;
+        active_labels[active_labels.size] = &"Song Started: ";
     }
     else
     {
         switch(maps[map])
         {
             case "zm_zod":
-                if(!split_type) active_funcs[active_funcs.size] = ::WaitZodEnd;
+                active_funcs[active_funcs.size] = ::WaitZodEnd;
+                break;
+            case "zm_castle":
+                active_funcs[active_funcs.size] = ::WaitCastleEnd;
+                break;
+            case "zm_island":
+                active_funcs[active_funcs.size] = ::WaitIslandEnd;
                 break;
             default:
                 break;
         }
-        if(!split_type) active_labels[active_labels.size] = &"Egg End: ";
-        else active_labels[active_labels.size] = &"Song Started: ";
+        active_labels[active_labels.size] = &"Egg End: ";
     }
 
     level.in_game_splits = [];
@@ -78,7 +91,6 @@ LoadSplits()
 
     if(igt)
     {
-        thread RunIGT();
         thread MonitorSplitLayoutChange();
         for(i = 0; i < 8; i++)
         {
@@ -86,7 +98,6 @@ LoadSplits()
             InitSplitHud(level.rendered_splits[i], 1);
         }
     }
-    if(igrt) thread RunIGRT();
 
     thread Split();
     WaitFadeIn();

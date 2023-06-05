@@ -42,10 +42,6 @@ on_player_spawned()
     //self thread TombSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
-
-    WaitSong();
-
-    IPrintLnBold("Song Playing");
 }
 
 DebugTesting()

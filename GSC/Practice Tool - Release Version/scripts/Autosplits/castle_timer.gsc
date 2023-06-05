@@ -1,5 +1,6 @@
 WaitDragonFull(num)
 {
+    while(!IsDefined(level.soul_catchers[num])) wait 0.05;
     dragon = level.soul_catchers[num];
     dragon waittill("fully_charged");
 }
@@ -40,18 +41,12 @@ WaitStormCrackle()
 
 WaitStormUpgraded()
 {
-    trig = struct::get("upgraded_bow_struct_elemental_storm", "targetname");
-    for(;;)
-    {
-        trig.var_67b5dd94 waittill("trigger", player);
-        if ([[ @zm_castle_weap_quest_upgrade<scripts\zm\zm_castle_weap_quest_upgrade.gsc>::function_9dfa159b ]]()) continue;
-        weapons = player GetWeaponsListPrimaries();
-        if(weapons.size == 1 && IsSubStr(weapons[0].name, "elemental_bow")) continue;
-    }
+    level flag::wait_till("elemental_storm_spawned");
 }
 
 WaitStartFire()
 {
+    while(!IsDefined(struct::get("quest_start_rune_prison").var_67b5dd94)) wait 0.05;
     struct::get("quest_start_rune_prison").var_67b5dd94 waittill("trigger", player);
 }
 
@@ -72,19 +67,12 @@ WaitFireGolf()
 
 WaitFireUpgraded()
 {
-    trig = struct::get("upgraded_bow_struct_rune_prison", "targetname");
-    for(;;)
-    {
-        trig.var_67b5dd94 waittill("trigger", player);
-        if ([[ @zm_castle_weap_quest_upgrade<scripts\zm\zm_castle_weap_quest_upgrade.gsc>::function_9dfa159b ]]()) continue;
-        weapons = player GetWeaponsListPrimaries();
-        if(weapons.size == 1 && IsSubStr(weapons[0].name, "elemental_bow")) continue;
-        return;
-    }
+    level flag::wait_till("rune_prison_spawned");
 }
 
 WaitStartVoid()
 {
+    while(!IsDefined(struct::get("quest_start_demon_gate").var_67b5dd94)) wait 0.05;
     struct::get("quest_start_demon_gate").var_67b5dd94 waittill("trigger", player);
 }
 
@@ -110,33 +98,23 @@ WaitVoidRunes()
 
 WaitVoidUpgraded()
 {
-    trig = struct::get("upgraded_bow_struct_demon_gate", "targetname");
-    for(;;)
-    {
-        trig.var_67b5dd94 waittill("trigger", player);
-        if ([[ @zm_castle_weap_quest_upgrade<scripts\zm\zm_castle_weap_quest_upgrade.gsc>::function_9dfa159b ]]()) continue;
-        weapons = player GetWeaponsListPrimaries();
-        if(weapons.size == 1 && IsSubStr(weapons[0].name, "elemental_bow")) continue;
-        return;
-    }
+    level flag::wait_till("demon_gate_spawned");
 }
 
 WaitStartWolf()
 {
+    while(!IsDefined(struct::get("quest_start_wolf_howl").var_67b5dd94)) wait 0.05;
     struct::get("quest_start_wolf_howl").var_67b5dd94 waittill("trigger", player);
 }
 
 WaitWolfShrine()
 {
-    for(;;)
-    {
-        level.var_52978d72 waittill("projectile_impact", weapon, point, radius, attacker, normal);
-        if([[ @zm_castle_weap_quest_upgrade<scripts\zm\zm_castle_weap_quest_upgrade.gsc>::function_51a90202 ]](weapon, 1, point, GetEnt("aq_wh_skull_shrine_trig", "targetname"))) return;
-    }
+    while(CheckQuestProgress("wolf") < 2) wait 0.05;
 }
 
 WaitWolfSpawnWolf()
 {
+    while(!IsDefined(GetEnt("aq_wh_skadi_skull", "targetname").var_67b5dd94)) wait 0.05;
     for(;;)
     {
         GetEnt("aq_wh_skadi_skull", "targetname").var_67b5dd94 waittill("trigger", player);
@@ -156,20 +134,12 @@ WaitWolfArrowForged()
 
 WaitWolfUpgraded()
 {
-    trig = struct::get("upgraded_bow_struct_wolf_howl", "targetname");
-    for(;;)
-    {
-        trig.var_67b5dd94 waittill("trigger", player);
-        if ([[ @zm_castle_weap_quest_upgrade<scripts\zm\zm_castle_weap_quest_upgrade.gsc>::function_9dfa159b ]]()) continue;
-        weapons = player GetWeaponsListPrimaries();
-        if(weapons.size == 1 && IsSubStr(weapons[0].name, "elemental_bow")) continue;
-        return;
-    }
+    level flag::wait_till("wolf_howl_spawned");
 }
 
 WaitTeleport(num)
 {
-    foreach(tp in level.var_27b3c884) tp thread WaitAnyTP();
+    if(!IsDefined(level.tp_watch)) foreach(tp in level.var_27b3c884) tp thread WaitAnyTP();
     for(;;)
     {
         level waittill("teleport_activated");
@@ -182,6 +152,7 @@ WaitTeleport(num)
 
 WaitAnyTP()
 {
+    level.tp_watch = true;
     for(;;)
     {
         self waittill("trigger", player);
@@ -214,6 +185,18 @@ WaitSimon(num)
     }
 }
 
+TrackKeeper()
+{
+    level.tracking_keeper = true;
+    level.keeper_num = 1;
+    for(i = 0; i < 4; i++)
+    {
+        level flag::wait_till("next_channeling_stone");
+        level.keeper_num++;
+        level flag::wait_till_clear("next_channeling_stone");
+    }
+}
+
 WaitKeeper(num)
 {
     switch(num)
@@ -225,9 +208,10 @@ WaitKeeper(num)
         case 2:
         case 3:
         case 4:
-            for(i = 0; i < num; i++)
+            for(;;)
             {
                 level flag::wait_till("next_channeling_stone");
+                if(level.keeper_num >= num) return;
                 level flag::wait_till_clear("next_channeling_stone");
             }
             break;
@@ -245,5 +229,5 @@ WaitBoss(num)
 
 WaitCastleEnd()
 {
-    while(!level IsScenePlaying("cin_cas_01_outro_3rd_static_poses")) wait 0.05;
+    while(!level IsScenePlaying("cin_cas_01_outro_3rd_sh010")) wait 0.05;
 }

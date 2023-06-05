@@ -84,7 +84,7 @@ namespace BO3PT
 	inline int zodFlagIndex = 0;
 
 	inline std::vector<std::string> castleDragonSteps = { "Courtyard Dragon", "Church Dragon", "Undercroft Dragon" };
-	inline std::vector<std::string> castleStormSteps = { "Start Quest", "Shoot Bonfires", "Wallrun", "Fill Urns", "Forge Arrow", "Upgrade Bow" };
+	inline std::vector<std::string> castleLighntingSteps = { "Start Quest", "Shoot Bonfires", "Wallrun", "Fill Urns", "Forge Arrow", "Upgrade Bow" };
 	inline std::vector<std::string> castleFireSteps = { "Start Quest", "Shoot Obelisk", "Fill Circles", "Finish Golf", "Forge Arrow", "Upgrade Bow" };
 	inline std::vector<std::string> castleVoidSteps = { "Start Quest",  "Activate Urn", "Collect Skulls", "Fill Crawlers", "Forge Arrow", "Upgrade Bow" };
 	inline std::vector<std::string> castleWolfSteps = { "Start Quest",  "Shoot Shrine", "Escort Wolf", "Forge Arrow", "Upgrade Bow" };
@@ -92,13 +92,18 @@ namespace BO3PT
 	inline std::vector<std::string> castleSimonSteps = { "Complete Simon", "Call Dempsey" };
 	inline std::vector<std::string> castleKeeperSteps = { "Activate Keeper", "Complete Keeper" };
 	inline int castleDragonIndex = 0;
-	inline int castleStormIndex = 0;
+	inline int castleLighntingIndex = 0;
 	inline int castleFireIndex = 0;
 	inline int castleVoidIndex = 0;
 	inline int castleWolfIndex = 0;
 	inline int castleTimeTravelIndex = 0;
 	inline int castleSimonIndex = 0;
 	inline int castleKeeperIndex = 0;
+
+	inline std::vector<std::string> islandSkullSteps = { "Skull 1", "Skull 2", "Skull 3", "Skull 4", "Skull Ritual" };
+	inline std::vector<std::string> islandEESteps = { "Finish Challenges", "Poster", "Bullet", "Shoot Plane", "Pickup Gears", "Open Elevator", "Start Boss" };
+	inline int islandSkullIndex = 0;
+	inline int islandEEIndex = 0;
 #pragma endregion
 
 #pragma region GUIFunctions
@@ -419,20 +424,20 @@ namespace BO3PT
 	inline std::vector<std::string> deWispSplits = { "Normal TP", "Time Travel 1", "Time Travel 2" };
 	inline std::vector<std::string> deSimonSplits = { "Safe Code Entered", "Simon 1", "Simon 2" };
 	inline std::vector<std::string> deKeeperSplits = { "Keeper Spawned", "Keeper 1", "Keeper 2", "Keeper 3", "Keeper 4", "Keeper Trapped" };
-	inline std::vector<std::string> deBossSplits = { "Boss Enter", "Boss Exit" };
+	inline std::vector<std::string> deBossSplits = { "DE Boss Enter", "Boss Exit" };
 
 	inline int znsSplits[4] = { 0 };
 	inline std::vector<std::string> znsSkullSplits = { "Skull 1", "Skull 2", "Skull 3", "Skull 4", "Skull Ritual" };
 	inline std::vector<std::string> znsBlockerSplits = { "Bunker Open", "Power On" };
 	inline std::vector<std::string> znsWWSplits = { "KT-4", "Masamune" };
-	inline std::vector<std::string> znsEESplits = { "Poster", "Bullet", "Plane Shot", "Elevator On", "Boss Enter" };
+	inline std::vector<std::string> znsEESplits = { "Poster", "Bullet", "Plane Shot", "Elevator On", "ZNS Boss Enter" };
 
 	inline int gkSplits[5] = { 0 };
 	inline std::vector<std::string> gkPAPSplits = { "Groph 1", "Groph 2", "Groph 3" };
 	inline std::vector<std::string> gkGauntletSplits = { "Pickup Egg", "Egg On Fire", "Incubation Start", "Pickup Gauntlet" };
 	inline std::vector<std::string> gkDragonSplits = { "Fly Supply", "Fly Tank", "Fly DC" };
 	inline std::vector<std::string> gkLockdownSplits = { "Lockdown Start", "Lockdown End" };
-	inline std::vector<std::string> gkChallengeSplits = { "Start Challenges", "Start Download", "Boss Enter" };
+	inline std::vector<std::string> gkChallengeSplits = { "Start Challenges", "Start Download", "GK Boss Enter" };
 
 	inline int revSplits[6] = { 0 };
 	inline std::vector<std::string> revStartSplits = { "Spawn Gen", "DE Gen", "Verruckt Gen", "Mob Gen", "Keeper Start" };

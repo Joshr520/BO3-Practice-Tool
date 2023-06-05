@@ -1,6 +1,6 @@
 WaitSkull(num)
 {
-    level flag::wait_till("skullquest_ritual_complete" + num);
+    while(level.var_3846d9a8 < num) wait 0.05;
 }
 
 WaitSkullWeapon()
@@ -57,10 +57,10 @@ WaitElevator()
 
 WaitZNSBossEnter()
 {
-    level flag::wait_till("flag_init_takeo_fight");
+    level waittill(#"hash_add73e69");
 }
 
-WaitZNSEnd()
+WaitIslandEnd()
 {
     level flag::wait_till("flag_play_outro_cutscene");
 }

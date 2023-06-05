@@ -953,7 +953,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ soeRitualSplits[soeSplits[0]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -972,7 +971,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ soeRiftSplits[soeSplits[1]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -991,7 +989,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ soeEggSplits[soeSplits[2]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -1013,7 +1010,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ soeOvumSplits[soeSplits[3]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1032,7 +1028,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ soeFlagSplits[soeSplits[4]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 
@@ -1058,7 +1053,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ deDragonSplits[deSplits[0]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1077,7 +1071,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ deLightningBowSplits[deSplits[1]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1096,7 +1089,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ deFireBowSplits[deSplits[2]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -1118,7 +1110,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ deVoidBowSplits[deSplits[3]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1137,7 +1128,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ deWolfBowSplits[deSplits[4]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1156,7 +1146,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ deWispSplits[deSplits[5]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -1178,7 +1167,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ deSimonSplits[deSplits[6]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1197,7 +1185,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ deKeeperSplits[deSplits[7]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1216,7 +1203,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ deBossSplits[deSplits[8]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -1241,7 +1227,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ znsSkullSplits[znsSplits[0]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1260,7 +1245,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ znsBlockerSplits[znsSplits[1]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1279,7 +1263,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ znsWWSplits[znsSplits[2]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -1301,7 +1284,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ znsEESplits[znsSplits[3]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -1326,7 +1308,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ gkPAPSplits[gkSplits[0]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1345,7 +1326,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ gkGauntletSplits[gkSplits[1]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1364,7 +1344,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ gkDragonSplits[gkSplits[2]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -1386,7 +1365,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ gkLockdownSplits[gkSplits[3]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1405,7 +1383,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ gkChallengeSplits[gkSplits[4]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -1430,7 +1407,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ revStartSplits[revSplits[0]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1449,7 +1425,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ revApothExitSplits[revSplits[1]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1468,7 +1443,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ revReelSplits[revSplits[2]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 
@@ -1491,7 +1465,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ revRuneSplits[revSplits[3]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1510,7 +1483,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ revEndSplits[revSplits[4]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1529,7 +1501,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ revEggSplits[revSplits[5]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -1559,7 +1530,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ tombStaffSplits[tombSplits[0]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
                 SAMELINE;
@@ -1578,7 +1548,6 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].splits.push_back({ tombEndSplits[tombSplits[1]], addSplitRound });
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                        addSplitView = false;
                     }
                 }
             }
@@ -2536,13 +2505,13 @@ void EggStepOptionsPtr()
             ImGui::EndGroup();
             SAMELINE;
             ImGui::BeginGroup();
-            ImGui::Text(ICON_FA_GEAR " Storm Options");
-            CreateListBox("##Storm Options", castleStormSteps, castleStormIndex, ImVec2(145.0f, 151.0f));
+            ImGui::Text(ICON_FA_GEAR " Lighnting Options");
+            CreateListBox("##Lighnting Options", castleLighntingSteps, castleLighntingIndex, ImVec2(145.0f, 151.0f));
             SAMELINE;
             ImGui::BeginGroup();
-            if (CreateButton("Complete Step##Storm", ImVec2(125.0f, 25.0f)))
-                NotifyGame({ 4, 2, castleStormIndex });
-            if (CreateButton("Complete All Steps##Storm", ImVec2(155.0f, 25.0f)))
+            if (CreateButton("Complete Step##Lighnting", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 2, castleLighntingIndex });
+            if (CreateButton("Complete All Steps##Lighnting", ImVec2(155.0f, 25.0f)))
                 NotifyGame({ 4, 2, 6 });
             ImGui::EndGroup();
             ImGui::EndGroup();
@@ -2620,6 +2589,36 @@ void EggStepOptionsPtr()
                 NotifyGame({ 4, 9, castleKeeperIndex });
             if (CreateButton("Complete All Steps##Keeper", ImVec2(155.0f, 25.0f)))
                 NotifyGame({ 4, 10 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+        }
+        break;
+    }
+    case hashstr("zm_island"):
+    {
+        // row 1
+        {
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Skull Options");
+            CreateListBox("##Skull Options", islandSkullSteps, islandSkullIndex, ImVec2(300.0f, 126.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Skull", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 0, islandSkullIndex + 1 });
+            if (CreateButton("Complete All Steps##Skull", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 1 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " EE Options");
+            CreateListBox("##EE Options", islandEESteps, islandEEIndex, ImVec2(300.0f, 176.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##EE", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, islandEEIndex + 2 });
+            if (CreateButton("Complete All Steps##EE", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 9 });
             ImGui::EndGroup();
             ImGui::EndGroup();
         }
