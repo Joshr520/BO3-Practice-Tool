@@ -22,6 +22,7 @@ InitValveSolutions()
 
 CompleteTubePuzzle()
 {
+    if(level flag::get("tube_puzzle_complete")) return;
     level flag::set("generator_charged");
 	level flag::set("generator_on");
     wait 1;
@@ -71,6 +72,8 @@ RotateTube(trig, tube, rotate, index)
 
 CompletePassword()
 {
+    if(!level flag::get("ee_cylinder_acquired")) self CompleteTubePuzzle();
+    if([[ @zm_stalingrad_ee_main<scripts\zm\zm_stalingrad_ee_main.gsc>::function_432361e1 ]]()) return;
     level flag::wait_till("ee_cylinder_acquired");
     wait 1;
     sophia = struct::get("ee_sophia_struct", "targetname");
@@ -80,7 +83,7 @@ CompletePassword()
 	{
         self thread RotateLetter(letter);
     }
-    while(!PasswordSolved()) wait 0.05;
+    while(![[ @zm_stalingrad_ee_main<scripts\zm\zm_stalingrad_ee_main.gsc>::function_432361e1 ]]()) wait 0.05;
     sophia notify("trigger_activated", self);
 }
 
@@ -93,26 +96,14 @@ RotateLetter(letter)
     }
 }
 
-PasswordSolved()
-{
-	foreach(letter in level.var_4c56821d)
-	{
-		if(letter.var_c957db9f != letter.var_92f9e88c)
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
 PickupKeys()
 {
-    self thread PickupGersh();
-    self thread PickupBomb();
-    self thread PickupGroph();
+    if(IsDefined(GetEnt("ee_keys_anomaly_damage_trig", "targetname"))) self thread PickupGersh();
+    if(IsDefined(GetEnt("ee_keys_puddle_damage_trig", "targetname"))) self thread PickupBomb();
+    if(IsDefined(GetEnt("ee_keys_safe_damage_trig", "targetname"))) self thread PickupGroph();
     self thread PickupDrone();
-    self thread Pickup935();
-    self thread PickupMangler();
+    if(IsDefined(GetEnt("ee_sewer_damage_trig", "targetname"))) self thread Pickup935();
+    if(IsDefined(struct::get("ee_keys_raz_struct", "targetname"))) self thread PickupMangler();
 }
 
 PickupGersh()
@@ -160,6 +151,7 @@ PickupDrone()
     wait 0.25;
     level scene::skip_scene("p7_fxanim_zm_stal_pickups_figure_drone_bundle", 0, 0, 0);
     wait 1;
+    if(!IsDefined(GetEnt("pickup_drone", "targetname"))) return;
     pickup = GetEnt("pickup_drone", "targetname");
     pickup notify("trigger_activated", self);
 }
@@ -444,6 +436,7 @@ CompleteGershChallenge()
 
 DeliverPowerCore()
 {
+    if(level flag::get("weapon_cores_delivered")) return;
     level flag::wait_till("scenarios_complete");
     wait 3;
     pickup = level.var_a090a655 GetTagOrigin("tag_weapon_cores") + (0, 3, 2);

@@ -1,6 +1,7 @@
 AcquireEgg()
 {
     egg = GetEnt("egg_drop_damage", "targetname");
+    if(!IsDefined(egg)) return;
     level flag::set("dragon_pavlov_first_time");
     wait 0.1;
     egg notify("damage");
@@ -13,7 +14,8 @@ AcquireEgg()
 
 AwakenEgg()
 {
-    level flag::wait_till("dragon_egg_acquired");
+    if(level flag::get("egg_awakened")) return;
+    if(!level flag::get("dragon_egg_acquired")) self AcquireEgg();
     wait 1;
     self BuildAndActivateTrigger(level.var_de98e3ce.var_9cd2418f[0].s_unitrigger);
     wait 0.5;
@@ -28,6 +30,8 @@ AwakenEgg()
 
 FinishNapalm()
 {
+    if(level flag::get("gauntlet_step_2_complete")) return;
+    if(!level flag::get("egg_cooled_hazard")) self AwakenEgg();
     level flag::wait_till("egg_awakened");
     wait 1;
     level notify(#"hash_68bf9f79");
@@ -36,6 +40,8 @@ FinishNapalm()
 
 FinishMultiKills()
 {
+    if(!level flag::get("gauntlet_step_2_complete")) self FinishNapalm();
+    if(level flag::get("gauntlet_step_3_complete")) return;
     level flag::wait_till("gauntlet_step_2_complete");
     wait 1;
     level notify(#"hash_b227a45b");
@@ -44,6 +50,8 @@ FinishMultiKills()
 
 FinishMeleeKills()
 {
+    if(!level flag::get("gauntlet_step_3_complete")) self FinishMultiKills();
+    if(level flag::get("gauntlet_step_4_complete")) return;
     level flag::wait_till("gauntlet_step_3_complete");
     wait 1;
     level notify(#"hash_9b46a273");
@@ -52,6 +60,7 @@ FinishMeleeKills()
 
 IncubateEgg()
 {
+    if(!level flag::get("gauntlet_step_4_complete")) self FinishMeleeKills();
     level flag::wait_till("gauntlet_step_4_complete");
     wait 1;
     incubate = struct::get("gauntlet_incubation_start", "script_noteworthy").s_unitrigger;
@@ -73,7 +82,8 @@ IncubateEgg()
 
 FinishPostIncubate()
 {
-    level waittill(#"hash_8c192d5a");
+    if(level flag::get("egg_cooled_incubator")) return;
+    while(!IsDefined(level.var_de98e3ce.var_987fcd7a)) wait 0.05;
     wait 1;
     level notify("start_of_round");
     wait 0.5;
@@ -84,6 +94,8 @@ FinishPostIncubate()
 
 PickupGauntlet()
 {
+    if(!level flag::get("egg_cooled_incubator")) self FinishPostIncubate();
+    if(level flag::get("dragon_gauntlet_acquired")) return;
     level flag::wait_till("gauntlet_quest_complete");
     wait 1;
     org = self GetOrigin();

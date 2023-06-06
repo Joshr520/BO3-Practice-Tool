@@ -2624,6 +2624,46 @@ void EggStepOptionsPtr()
         }
         break;
     }
+    case hashstr("zm_stalingrad"):
+    {
+        // row 1
+        {
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " PAP Options");
+            CreateListBox("##PAP Options", stalingradPAPSteps, stalingradPAPIndex, ImVec2(125, 26.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##PAP", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, 0 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Gauntlet Options");
+            CreateListBox("##Gauntlet Options", stalingradGauntletSteps, stalingradGauntletIndex, ImVec2(185.0f, 201.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Gauntlet", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, stalingradGauntletIndex + 1 });
+            if (CreateButton("Complete All Steps##Gauntlet", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 8 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            SAMELINE;
+            ImGui::BeginGroup();
+            ImGui::Text(ICON_FA_GEAR " Main Options");
+            CreateListBox("##Main Options", stalingradEESteps, stalingradEEIndex, ImVec2(175.0f, 151.0f));
+            SAMELINE;
+            ImGui::BeginGroup();
+            if (CreateButton("Complete Step##Main", ImVec2(125.0f, 25.0f)))
+                NotifyGame({ 4, stalingradEEIndex + 9 });
+            if (CreateButton("Complete All Steps##Main", ImVec2(155.0f, 25.0f)))
+                NotifyGame({ 4, 14 });
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+        }
+        break;
+    }
     default:
         break;
     }

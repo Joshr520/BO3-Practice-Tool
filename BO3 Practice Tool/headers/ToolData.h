@@ -104,6 +104,13 @@ namespace BO3PT
 	inline std::vector<std::string> islandEESteps = { "Finish Challenges", "Poster", "Bullet", "Shoot Plane", "Pickup Gears", "Open Elevator", "Start Boss" };
 	inline int islandSkullIndex = 0;
 	inline int islandEEIndex = 0;
+
+	inline std::vector<std::string> stalingradPAPSteps = { "Finish Grophs" };
+	inline std::vector<std::string> stalingradGauntletSteps = { "Pickup Egg", "Awaken Egg", "Napalm Kills", "Multi Kills", "Melee Kills", "Incubation Lockdown", "Incubation", "Pickup Gauntlet" };
+	inline std::vector<std::string> stalingradEESteps = { "Tube Puzzle", "Password", "Pickup Trophies", "Challenges", "Deliver Power Core", "Start Nikolai Fight" };
+	inline int stalingradPAPIndex = 0;
+	inline int stalingradGauntletIndex = 0;
+	inline int stalingradEEIndex = 0;
 #pragma endregion
 
 #pragma region GUIFunctions

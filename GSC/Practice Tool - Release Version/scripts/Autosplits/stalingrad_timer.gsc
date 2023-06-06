@@ -56,7 +56,7 @@ GKInGameTimer()
     finish = InitHud(0);
     finish.label = &"Finish: ";
     finish InitSplitHud(finish);
-    WaitStalingradFinish();
+    WaitStalingradEnd();
     finish SetText("^2" + CalcTime(GetTime() - start_time));
 }
 
@@ -152,7 +152,7 @@ WaitStalingradBoss()
     GetEnt("ee_sewer_to_arena_trig", "targetname") waittill("trigger", player);
 }
 
-WaitStalingradFinish()
+WaitStalingradEnd()
 {
     level waittill(#"hash_9b1cee4c");
 }

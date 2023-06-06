@@ -25,12 +25,16 @@ LoadSplits()
     ::SplitCircles, ::SplitGolf, ::SplitFireUpgrade, ::SplitVoidStart, ::SplitActivateUrn, ::SplitSkulls, ::SplitCrawlers, ::SplitRunes, ::SplitVoidUpgrade, ::SplitWolfStart, ::SplitShrine, ::SplitStartEscort, ::SplitEscortFilled, ::SplitWolfForged,
     ::SplitWolfUpgrade, ::SplitTP, ::SplitTimeTravel1, ::SplitTimeTravel2, ::SplitCodeEntered, ::SplitSimon1, ::SplitSimon2, ::SplitKeeperSpawned, ::SplitKeeper1, ::SplitKeeper2, ::SplitKeeper3, ::SplitKeeper4, ::SplitKeeperTrapped, ::SplitBossEnter, ::SplitBossExit);
     split_funcs["zm_island"] = Array(::SplitSkull1, ::SplitSkull2, ::SplitSkull3, ::SplitSkull4, ::SplitSkullWeapon, ::SplitBunkerOpen, ::SplitPowerOn, ::SplitKTPickup, ::SplitMasamunePickup, ::SplitPoster, ::SplitBullet, ::SplitPlane, ::SplitElevator, ::SplitIslandBossEnter);
+    split_funcs["zm_stalingrad"] = Array(::SplitGroph1, ::SplitGroph2, ::SplitGroph3, ::SplitPickupEgg, ::SplitEggBathed, ::SplitIncubationStart, ::SplitPickupGauntlet, ::SplitFlySupply, ::SplitFlyTank, ::SplitFlyDC, ::SplitLockdownStart, ::SplitLockdownEnd,
+    ::SplitStartChallenges, ::SplitStartDownload, ::SplitStalingradBossEnter);
     split_labels["zm_zod"] = Array(&"Magician Ritual: ", &"Femme Ritual: ", &"Detective Ritual: ", &"Boxer Ritual: ", &"PAP Ritual: ", &"Canals Rift: ", &"Footlight Rift: ", &"Waterfront Rift: ", &"Rift Canals: ", &"Rift Footlight: ", &"Rift Waterfront: ",
     &"Canals Egg: ", &"Footlight Egg: ", &"Waterfront Egg: ", &"Rift Egg: ", &"Sword: ", &"Junction Ovum: ", &"Canals Ovum: ", &"Footlight Ovum: ", &"Waterfront Ovum: ", &"Upgraded Sword: ", &"Book: ", &"Flag 1: ", &"Flag 2: ", &"Flag 3: ", &"Flag 4: ");
     split_labels["zm_castle"] = Array(&"Church Dragon: ", &"Courtyard Dragon: ", &"Undercroft Dragon: ", &"Pickup Bow: ", &"Start Lightning: ", &"Bonfires Shot: ", &"Wall Ride: ", &"Crackle: ", &"Upgrade Lightning: ", &"Start Fire: ", &"Obelisk Shot: ",
      &"Circles Filled: ", &"Golf: ", &"Upgrade Fire: ", &"Start Void: ", &"Activate Urn: ", &"Pickup Skulls: ", &"Crawler Kills: ", &"Runes: ", &"Upgrade Void: ", &"Start Wofl: ", &"Shrine Shot: ", &"Start Escort: ", &"Wolf Souls Filled: ", &"Wolf Arrow Forged: ",
      &"Upgrade Wolf: ", &"Normal TP: ", &"Time Travel 1: ", &"Time Travel 2: ", &"Safe Code Entered: ", &"Simon 1: ", &"Simon 2: ", &"Keeper Spawned: ", &"Keeper 1: ", &"Keeper 2: ", &"Keeper 3: ", &"Keeper 4: ", &"Keeper Trapped: ", &"Boss Enter: ", &"Boss Exit: ");
     split_labels["zm_island"] = Array(&"Skull 1: ", &"Skull 2: ", &"Skull 3: ", &"Skull 4: ", &"Skull Ritual: ", &"Bunker Open: ", &"Power On: ", &"KT-4: ", &"Masamune: ", &"Poster: ", &"Bullet: ", &"Plane Shot: ", &"Elevator On: ", &"Boss Enter: ");
+    split_labels["zm_stalingrad"] = Array(&"Groph 1: ", &"Groph 2: ", &"Groph 3: ", &"Pickup Egg: ", &"Egg Bathed: ", &"Incubation Start: ", &"Pickup Gauntlet: ", &"Fly Supply: ", &"Fly Tank: ", &"Fly DC: ", &"Lockdown Start: ", &"Lockdown End: ",
+    &"Start Challenges: ", &"Start Download: ", &"Boss Enter: ");
     active_funcs = [];
     active_labels = [];
     round_funcs = [];
@@ -76,6 +80,10 @@ LoadSplits()
                 break;
             case "zm_island":
                 active_funcs[active_funcs.size] = ::WaitIslandEnd;
+                break;
+            case "zm_stalingrad":
+                active_funcs[active_funcs.size] = ::WaitStalingradEnd;
+                thread MonitorLockdownTimer();
                 break;
             default:
                 break;
