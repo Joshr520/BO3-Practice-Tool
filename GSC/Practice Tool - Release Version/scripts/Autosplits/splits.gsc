@@ -27,6 +27,10 @@ LoadSplits()
     split_funcs["zm_island"] = Array(::SplitSkull1, ::SplitSkull2, ::SplitSkull3, ::SplitSkull4, ::SplitSkullWeapon, ::SplitBunkerOpen, ::SplitPowerOn, ::SplitKTPickup, ::SplitMasamunePickup, ::SplitPoster, ::SplitBullet, ::SplitPlane, ::SplitElevator, ::SplitIslandBossEnter);
     split_funcs["zm_stalingrad"] = Array(::SplitGroph1, ::SplitGroph2, ::SplitGroph3, ::SplitPickupEgg, ::SplitEggBathed, ::SplitIncubationStart, ::SplitPickupGauntlet, ::SplitFlySupply, ::SplitFlyTank, ::SplitFlyDC, ::SplitLockdownStart, ::SplitLockdownEnd,
     ::SplitStartChallenges, ::SplitStartDownload, ::SplitStalingradBossEnter);
+    split_funcs["zm_genesis"] = Array(::SplitGenSpawn, ::SplitGenDE, ::SplitGenVerruckt, ::SplitGenMob, ::SplitKeeperStart, ::SplitEnterBeast, ::SplitLeaveBeastMob, ::SplitLeaveBeastVerruckt, ::SplitLeaveBeastDE, ::SplitLeaveBeastSpawn, ::SplitReelPickup1,
+    ::SplitReelPlace1, ::SplitReelPickup2, ::SplitReelPlace2, ::SplitReelPickup3, ::SplitReelPlace3, ::SplitHouseTP, ::SplitEgg1, ::SplitEgg2, ::SplitEgg3, ::SplitEgg4, ::SplitRune1, ::SplitRune2, ::SplitRune3, ::SplitRune4, ::SplitBoss1, ::SplitSymbols,
+    ::SplitBossRush, ::SplitBoss2);
+    split_funcs["zm_tomb"] = Array(::SplitIceCraft, ::SplitWindCraft, ::SplitFireCraft, ::SplitLightningCraft, ::SplitUpgrade, ::SplitBoxes, ::SplitFists);
     split_labels["zm_zod"] = Array(&"Magician Ritual: ", &"Femme Ritual: ", &"Detective Ritual: ", &"Boxer Ritual: ", &"PAP Ritual: ", &"Canals Rift: ", &"Footlight Rift: ", &"Waterfront Rift: ", &"Rift Canals: ", &"Rift Footlight: ", &"Rift Waterfront: ",
     &"Canals Egg: ", &"Footlight Egg: ", &"Waterfront Egg: ", &"Rift Egg: ", &"Sword: ", &"Junction Ovum: ", &"Canals Ovum: ", &"Footlight Ovum: ", &"Waterfront Ovum: ", &"Upgraded Sword: ", &"Book: ", &"Flag 1: ", &"Flag 2: ", &"Flag 3: ", &"Flag 4: ");
     split_labels["zm_castle"] = Array(&"Church Dragon: ", &"Courtyard Dragon: ", &"Undercroft Dragon: ", &"Pickup Bow: ", &"Start Lightning: ", &"Bonfires Shot: ", &"Wall Ride: ", &"Crackle: ", &"Upgrade Lightning: ", &"Start Fire: ", &"Obelisk Shot: ",
@@ -35,6 +39,10 @@ LoadSplits()
     split_labels["zm_island"] = Array(&"Skull 1: ", &"Skull 2: ", &"Skull 3: ", &"Skull 4: ", &"Skull Ritual: ", &"Bunker Open: ", &"Power On: ", &"KT-4: ", &"Masamune: ", &"Poster: ", &"Bullet: ", &"Plane Shot: ", &"Elevator On: ", &"Boss Enter: ");
     split_labels["zm_stalingrad"] = Array(&"Groph 1: ", &"Groph 2: ", &"Groph 3: ", &"Pickup Egg: ", &"Egg Bathed: ", &"Incubation Start: ", &"Pickup Gauntlet: ", &"Fly Supply: ", &"Fly Tank: ", &"Fly DC: ", &"Lockdown Start: ", &"Lockdown End: ",
     &"Start Challenges: ", &"Start Download: ", &"Boss Enter: ");
+    split_labels["zm_genesis"] = Array(&"Spawn Gen: ", &"DE Gen: ", &"Verruckt Gen: ", &"Mob Gen: ", &"Keeper Start: ", &"Enter Beast: ", &"Exit Beast Mob: ", &"Exit Beast Verruckt: ", &"Exit Beast DE: ", &"Exit Beast Spawn: ", &"Pickup Reel 1: ",
+    &"Place Reel 1: ", &"Pickup Reel 2: ", &"Place Reel 2: ", &"Pickup Reel 3: ", &"Place Reel 3: ", &"House: ", &"Egg 1: ", &"Egg 2: ", &"Egg 3: ", &"Egg 4: ", &"Rune 1: ", &"Rune 2: ", &"Rune 3: ", &"Rune 4: ",
+    &"Boss 1: ", &"Symbols: ", &"Basketball: ", &"Boss 2: ");
+    split_labels["zm_tomb"] = Array(&"Ice Staff: ", &"Wind Staff: ", &"Fire Staff: ", &"Lightning Staff: ", &"Upgrade: ", &"Boxes: ", &"Fists: ");
     active_funcs = [];
     active_labels = [];
     round_funcs = [];
@@ -84,6 +92,12 @@ LoadSplits()
             case "zm_stalingrad":
                 active_funcs[active_funcs.size] = ::WaitStalingradEnd;
                 thread MonitorLockdownTimer();
+                break;
+            case "zm_genesis":
+                active_funcs[active_funcs.size] = ::WaitGenesisEnd;
+                break;
+            case "zm_tomb":
+                active_funcs[active_funcs.size] = ::WaitTombEnd;
                 break;
             default:
                 break;

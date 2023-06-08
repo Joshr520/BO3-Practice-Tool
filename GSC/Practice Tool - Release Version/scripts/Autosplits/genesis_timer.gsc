@@ -60,7 +60,7 @@ RevInGameTimer()
     finish = InitHud(0);
     finish.label = &"Finish: ";
     InitSplitHud(finish);
-    WaitRevFinish();
+    WaitGenesisEnd();
     finish SetText("^2" + CalcTime(GetTime() - start_time));
 }
 
@@ -68,6 +68,19 @@ RevInGameTimer()
 WaitGenOn(num)
 {
     level flag::wait_till("power_on" + num);
+}
+
+WaitBeastEnter()
+{
+    foreach(player in GetPlayers()) player thread BeastEnterWatch();
+    level waittill("beast_enter_detected");
+}
+
+BeastEnterWatch()
+{
+    level endon("beast_enter_detected");
+    while(!IsTrue(self.var_a393601c)) wait 0.05;
+    level notify("beast_enter_detected");
 }
 
 // 1 = mob, 2 = spawn, 3 = de, 4 = verruckt
@@ -137,13 +150,15 @@ WaitEggFill(num)
 EggFillSplit()
 {
     level.egg_fill_split = 1;
-    foreach(pod in level.var_2a7689da) pod.var_165d49f6 thread WaitPodSouls();
+    while(!IsDefined(level.var_2a7689da)) wait 0.05;
+    foreach(pod in level.var_2a7689da) pod thread WaitPodSouls();
 }
 
 WaitPodSouls()
 {
-    self waittill(#"hash_71f0e810");
-    level waittill("egg_fill_split" + level.egg_fill_split);
+    while(!IsDefined(self.var_165d49f6)) wait 0.05;
+    self.var_165d49f6 waittill(#"hash_71f0e810");
+    level notify("egg_fill_split" + level.egg_fill_split);
     level.egg_fill_split++;
 }
 
@@ -182,7 +197,7 @@ WaitBossRush()
     level waittill(#"hash_f81a82d1");
 }
 
-WaitRevFinish()
+WaitGenesisEnd()
 {
     while(!level IsScenePlaying("genesis_ee_sams_room")) wait 0.05;
     wait 0.3;

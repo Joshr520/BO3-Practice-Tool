@@ -450,9 +450,9 @@ namespace BO3PT
 	inline std::vector<std::string> revStartSplits = { "Spawn Gen", "DE Gen", "Verruckt Gen", "Mob Gen", "Keeper Start" };
 	inline std::vector<std::string> revApothExitSplits = { "Enter Beast", "Exit Beast Mob", "Exit Beast Verruckt", "Exit Beast DE", "Exit Beast Spawn" };
 	inline std::vector<std::string> revReelSplits = { "Pickup Reel 1", "Place Reel 1", "Pickup Reel 2", "Place Reel 2", "Pickup Reel 3", "Place Reel 3" };
-	inline std::vector<std::string> revEggSplits = { "Sophia TP", "Egg 1 Fill", "Egg 2 Fill", "Egg 3 Fill", "Egg 4 Fill" };
-	inline std::vector<std::string> revRuneSplits = { "Rune 1 Grab", "Rune 2 Grab", "Rune 3 Grab", "Rune 4 Grab", "Boss 1 Enter" };
-	inline std::vector<std::string> revEndSplits = { "Symbols", "Boss Rush Finish", "Basketball Finish" };
+	inline std::vector<std::string> revEggSplits = { "Sophia TP", "Egg 1", "Egg 2", "Egg 3", "Egg 4" };
+	inline std::vector<std::string> revRuneSplits = { "Rune 1", "Rune 2", "Rune 3", "Rune 4", "Boss 1 Enter" };
+	inline std::vector<std::string> revEndSplits = { "Symbols", "Basketball", "Boss 2" };
 
 	inline int tombSplits[2] = { 0 };
 	inline std::vector<std::string> tombStaffSplits = { "Ice Craft", "Wind Craft", "Fire Craft", "Lightning Craft" };

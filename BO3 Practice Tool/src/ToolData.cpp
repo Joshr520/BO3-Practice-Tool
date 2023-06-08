@@ -379,19 +379,22 @@ namespace BO3PT
 
     void NotifyGame(const std::vector<int>& passList)
     {
-        // REPLACE WITH PIPE WHEN READY
-
         if (appStatus == "Status: Inactive")
             return;
         std::string outData;
         for (int i = 0; i < passList.size(); i++)
         {
-            outData.append(std::to_string(passList[i]) + ",");
+            outData.append(std::to_string(passList[i]) + " ");
         }
-        outData.replace(outData.size() - 1, 1, "");
-        std::ofstream outFile(bo3Directory + "\\Practice Tool\\Tool-Game Interface.txt");
-        outFile << outData;
-        outFile.close();
+
+        HANDLE pipe = CreateFileA("\\\\.\\pipe\\t7Compiler", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        if (!pipe)
+        {
+            return;
+        }
+
+        WriteFile(pipe, outData.c_str(), static_cast<DWORD>(outData.size()), nullptr, NULL);
+        CloseHandle(pipe);
     }
 
     void InjectTool(bool enable, bool& injectResponse)
@@ -1862,12 +1865,6 @@ namespace BO3PT
 
     void WriteAutosplitPreset(const SplitPreset& preset)
     {
-        if (preset.presetName != inactiveSplitPreset.presetName && (!writeSplits || appStatus == "Status: Inactive"))
-        {
-            WriteAutosplitPreset(inactiveSplitPreset);
-            return;
-        }
-
         std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + preset.presetName + ".json";
 
         Walnut::JSONBuilder builder;
@@ -1889,7 +1886,10 @@ namespace BO3PT
 
         if (preset.presetName != inactiveSplitPreset.presetName)
             builder.SaveToFile(filename);
-        builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json");
+        if (preset.presetName != inactiveSplitPreset.presetName && (!writeSplits || appStatus == "Status: Inactive"))
+            WriteAutosplitPreset(inactiveSplitPreset);
+        else
+            builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json");
     }
 
     void CreateNewAutosplitPreset(const std::string& presetName)

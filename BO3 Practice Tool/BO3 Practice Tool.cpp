@@ -88,7 +88,7 @@ const char* sidebarItems[] = { "Gobblegum Loadout", "Autosplits", "Practice Patc
                     "Craftable Options", "Blocker Options", "Map Options", "Gum Tracker", "Zombie Calculator", "Code Guides", "GK Valve Solver" };
 
 static ImVec4 fakeColor = { 0, 0, 0, 0 };
-static std::string internalVersion = "Beta-v0.2.0";
+static std::string internalVersion = "Beta-v0.4.0"; // 0.4.0 because skipped many significant patches
 static Walnut::Image* discordIcon;
 
 // Gum data
@@ -284,8 +284,8 @@ public:
                 }
                 ImGui::Spacing();
                 ImGui::Separator();
-                //if (!steamPathFound || !procFound)
-                    //ImGui::BeginDisabled();
+                if (!steamPathFound || !procFound)
+                    ImGui::BeginDisabled();
                 ImGui::PushFont(sidebarFont);
                 ImGui::Text("In Game");
                 ImGui::Separator(2.5f);
@@ -293,9 +293,9 @@ public:
                 // In Game
                 if (appStatus != "Status: Active" || currentMap == "core_frontend")
                 {
-                    //if (sidebarCurrentItem > 3 && sidebarCurrentItem < 11)
-                        //sidebarCurrentItem = 0;
-                    //ImGui::BeginDisabled();
+                    if (sidebarCurrentItem > 3 && sidebarCurrentItem < 11)
+                        sidebarCurrentItem = 0;
+                    ImGui::BeginDisabled();
                 }
                 for (int i = frontendItems; i < inGameItems; i++)
                 {
@@ -307,10 +307,10 @@ public:
                 }
                 ImGui::Spacing();
                 ImGui::Separator();
-                //if (appStatus != "Status: Active" || currentMap == "core_frontend")
-                    //ImGui::EndDisabled();
-                //if (!steamPathFound || !procFound)
-                    //ImGui::EndDisabled();
+                if (appStatus != "Status: Active" || currentMap == "core_frontend")
+                    ImGui::EndDisabled();
+                if (!steamPathFound || !procFound)
+                    ImGui::EndDisabled();
                 ImGui::PushFont(sidebarFont);
                 ImGui::Text("Resources");
                 ImGui::Separator(2.5f);
@@ -497,6 +497,10 @@ public:
                 CloseHandle(pHandle);
                 pHandle = NULL;
                 ResetToggles();
+                enabled = false;
+                appStatus = "Status: Inactive";
+                auto thread = std::thread(SearchForGame);
+                thread.detach();
             }
             if (pHandle && pHandle != INVALID_HANDLE_VALUE && !ReadProcessMemory(pHandle, roundAddr, &currentRound, sizeof(currentRound), NULL))
             {
@@ -506,6 +510,10 @@ public:
                 CloseHandle(pHandle);
                 pHandle = NULL;
                 ResetToggles();
+                enabled = false;
+                appStatus = "Status: Inactive";
+                auto thread = std::thread(SearchForGame);
+                thread.detach();
             }
             currentMap = readMap;
 
@@ -1410,7 +1418,7 @@ void AutosplitsPtr()
                     }
                 }
                 SAMELINE;
-                if (CreateListBox("##Apoth Splits", revApothExitSplits, revSplits[1], ImVec2(150.0f, 101.0f)))
+                if (CreateListBox("##Apoth Splits", revApothExitSplits, revSplits[1], ImVec2(155.0f, 126.0f)))
                 {
 
                 }
@@ -1428,7 +1436,7 @@ void AutosplitsPtr()
                     }
                 }
                 SAMELINE;
-                if (CreateListBox("##Reel Splits", revReelSplits, revSplits[2], ImVec2(150.0f, 151.0f)))
+                if (CreateListBox("##Reel Splits", revReelSplits, revSplits[2], ImVec2(145.0f, 151.0f)))
                 {
 
                 }
@@ -1450,6 +1458,24 @@ void AutosplitsPtr()
             DummySpace(0.0f, 25.0f);
             // row 2
             {
+                if (CreateListBox("##Rev Egg Splits", revEggSplits, revSplits[5], ImVec2(150.0f, 126.0f)))
+                {
+
+                }
+                SAMELINE;
+                if (CreateButton("Add Split##Rev Egg", ImVec2(100.0f, 25.0f)))
+                {
+                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
+                        {
+                            return pair.first == revEggSplits[revSplits[5]];
+                        }) == splitPresets[currentSplitPreset].splits.end())
+                    {
+                        splitPresets[currentSplitPreset].splits.push_back({ revEggSplits[revSplits[5]], addSplitRound });
+                        splitPresets[currentSplitPreset].numSplits++;
+                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
+                    }
+                }
+                SAMELINE;
                 if (CreateListBox("##Rev Rune Splits", revRuneSplits, revSplits[3], ImVec2(150.0f, 126.0f)))
                 {
 
@@ -1484,25 +1510,7 @@ void AutosplitsPtr()
                         splitPresets[currentSplitPreset].numSplits++;
                         WriteAutosplitPreset(splitPresets[currentSplitPreset]);
                     }
-                }
-                SAMELINE;
-                if (CreateListBox("##Rev Egg Splits", revEggSplits, revSplits[5], ImVec2(150.0f, 126.0f)))
-                {
-
-                }
-                SAMELINE;
-                if (CreateButton("Add Split##Rev Egg", ImVec2(100.0f, 25.0f)))
-                {
-                    if (std::find_if(splitPresets[currentSplitPreset].splits.begin(), splitPresets[currentSplitPreset].splits.end(), [&](const auto& pair)
-                        {
-                            return pair.first == revEggSplits[revSplits[5]];
-                        }) == splitPresets[currentSplitPreset].splits.end())
-                    {
-                        splitPresets[currentSplitPreset].splits.push_back({ revEggSplits[revSplits[5]], addSplitRound });
-                        splitPresets[currentSplitPreset].numSplits++;
-                        WriteAutosplitPreset(splitPresets[currentSplitPreset]);
-                    }
-                }
+                }                
             }
             break;
         }
@@ -1709,8 +1717,7 @@ void AutosplitsPtr()
 - Select if you want an in game timer (displays total game time with precision down to the second)
 - Select if you want an in game round timer (displays current round time in seconds::milliseconds)
 - Select the map to choose the splits for (defaults to SOE)
-- Select the type of autosplits you want to setup. This determines the ending point of the splits. If you choose "Egg Autosplit" and add no other splits, it will only split once the egg is completed
-- If you've selected "Split on every X Round", a text box will appear for you to type the interval into)");
+- Select the type of autosplits you want to setup. This determines the ending point of the splits. If you choose "Egg Autosplit" and add no other splits, it will only split once the egg is completed)");
 
             if (showChangeMapError)
             {

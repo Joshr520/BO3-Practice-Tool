@@ -58,27 +58,27 @@ WatchInterface()
 {
     level endon("disconnect");
 
-    file = "Practice Tool/Tool-Game Interface.txt";
-    compiler::resetfile(file);
+    compiler::startserver();
+
     level flag::wait_till("initial_blackscreen_passed");
-    compiler::resetfile(file);
+
     for(;;)
     {
         wait 0.05;
-        array_num = compiler::readsettings(file, 1, 0);
+
+        array_num = compiler::readserver();
         if(array_num < 0 || !IsDefined(level.menu_functions[array_num])) continue;
-        func_num = compiler::readsettings(file, 2, 0);
+        func_num = compiler::readserver();
         if(func_num < 0 || !IsDefined(level.menu_functions[array_num][func_num])) continue;
+
         params = [];
-        param = 0;
-        num = 3;
-        param = compiler::readsettings(file, num, 0);
+        param = compiler::readserver();
         while(param >= 0)
         {
             params[params.size] = param;
-            num++;
-            param = compiler::readsettings(file, num, 0);
+            param = compiler::readserver();
         }
+
         func = level.menu_functions[array_num][func_num];
         switch(params.size)
         {
@@ -94,8 +94,9 @@ WatchInterface()
             case 3:
                 self thread [[func]](params[0], params[1], params[2]);
                 break;
+            default:
+                break;
         }
-        compiler::resetfile(file);
     }
 }
 
