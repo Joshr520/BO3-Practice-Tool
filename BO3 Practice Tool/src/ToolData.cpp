@@ -1923,6 +1923,9 @@ namespace BO3PT
 
     void WriteSplitXML(const std::string& preset, const std::vector<std::pair<std::string, int>>& splits)
     {
+        if (!DoesPathExist(selfDirectory + "/Exported Splits"))
+            std::filesystem::create_directory(selfDirectory + "/Exported Splits");
+
         Walnut::XMLBuilder builder("1.0", "Run");
 
         rapidxml::xml_node<>* runNode = builder.GetRootNode();
@@ -1964,11 +1967,14 @@ namespace BO3PT
 
         builder.AddNode(builder.GetRootNode(), "AutoSplitterSettings");
 
-        builder.SaveToFile(selfDirectory + PRESET_DIRECTORY + "/" + preset + ".lss");
+        builder.SaveToFile(selfDirectory + "/Exported Splits/" + preset + ".lss");
     }
 
     void WriteLayoutXML(const std::string& preset, int numSplits)
     {
+        if (!DoesPathExist(selfDirectory + "/Exported Splits"))
+            std::filesystem::create_directory(selfDirectory + "/Exported Splits");
+
         Walnut::XMLBuilder builder("1.0", "Layout");
 
         rapidxml::xml_node<>* root = builder.GetRootNode();
@@ -2193,7 +2199,7 @@ namespace BO3PT
         builder.AddNode(detailedTimerSettings, "DecimalsSize", "35");
         builder.AddNode(detailedTimerSettings, "SegmentTimerDecimalsSize", "35");
 
-        builder.SaveToFile(selfDirectory + PRESET_DIRECTORY + "/" + preset + ".lsl");
+        builder.SaveToFile(selfDirectory + "/Exported Splits/" + preset + ".lsl");
     }
 
     SplitPreset ParseSplitJson(std::string_view filename)

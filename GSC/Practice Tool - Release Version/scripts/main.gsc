@@ -152,7 +152,7 @@ IsScenePlaying(scene)
 
 WaitFadeIn()
 {
-    while(!IsTrue(level clientfield::get("sndZMBFadeIn"))) wait 0.05;
+    while(!IsDefined(level.n_gameplay_start_time)) wait 0.05;
 }
 
 TradeWeaponLimit(player)
