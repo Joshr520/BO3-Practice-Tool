@@ -1965,6 +1965,17 @@ namespace BO3PT
             builder.AddNode(segmentNode, "SegmentHistory");
         }
 
+        rapidxml::xml_node<>* segmentNode = builder.AddNode(segmentsNode, "Segment");
+
+        builder.AddNode(segmentNode, "Name", "End");
+        builder.AddNode(segmentNode, "Icon");
+
+        rapidxml::xml_node<>* splitTimesNode = builder.AddNode(segmentNode, "SplitTimes");
+        rapidxml::xml_node<>* splitTimeNode = builder.AddNode(splitTimesNode, "SplitTime");
+        builder.AddAttribute(splitTimeNode, "name", "Personal Best");
+        builder.AddNode(segmentNode, "BestSegmentTime");
+        builder.AddNode(segmentNode, "SegmentHistory");
+
         builder.AddNode(builder.GetRootNode(), "AutoSplitterSettings");
 
         builder.SaveToFile(selfDirectory + "/Exported Splits/" + preset + ".lss");
@@ -2062,7 +2073,7 @@ namespace BO3PT
         builder.AddNode(splitsSettings, "CurrentSplitTopColor", "FF3373F4");
         builder.AddNode(splitsSettings, "CurrentSplitBottomColor", "FF153574");
         builder.AddNode(splitsSettings, "VisualSplitCount", std::to_string(min(numSplits, 6)));
-        builder.AddNode(splitsSettings, "SplitPreviewCount", "1");
+        builder.AddNode(splitsSettings, "SplitPreviewCount", std::to_string(max(min(numSplits, 6) - 2, 0)));
         builder.AddNode(splitsSettings, "DisplayIcons", "True");
         builder.AddNode(splitsSettings, "ShowThinSeparators", "True");
         builder.AddNode(splitsSettings, "AlwaysShowLastSplit", "True");

@@ -102,6 +102,8 @@ WatchInterface()
 
 LoadGums()
 {
+    level flag::wait_till("start_zombie_round_logic");
+    
     file = "Practice Tool/Settings/Active Gum Preset.txt";
     gum_nums = [];
     gum_nums[gum_nums.size] = compiler::readsettings(file, 1, 0);
