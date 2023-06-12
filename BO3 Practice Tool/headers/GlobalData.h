@@ -21,8 +21,6 @@ namespace BO3PT
 	inline std::vector<Walnut::Image*> valveSolverImgList;
 	inline std::unordered_map<std::string, Walnut::Image*> iceCodeImgList;
 
-	void LogFile(const std::string& text, bool initialBoot = false);
-	void NLog(const std::string& text);
 	constexpr unsigned long hashstr(const char* str, int h = 0) { return !str[h] ? 55 : (hashstr(str, h + 1) * 33) + (unsigned char)(str[h]); }
 	std::string ParseTimeFromMilli(int milliseconds);
 	template <typename T>

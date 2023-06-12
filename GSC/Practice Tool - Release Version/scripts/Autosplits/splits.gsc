@@ -118,6 +118,7 @@ LoadSplits()
         {
             level.rendered_splits[i] = InitHud(0);
             InitSplitHud(level.rendered_splits[i], 1);
+            if(igrt) level.rendered_splits[i].y += 15;
         }
     }
 
@@ -256,7 +257,7 @@ RenderSplits()
 InitSplitHud(hud_elem, alpha = 0)
 {
     hud_elem.x = 15;
-    hud_elem.y = (level.rendered_splits.size + 2) * 15;
+    hud_elem.y = (level.rendered_splits.size + 1) * 15;
     hud_elem.alpha = alpha;
 }
 

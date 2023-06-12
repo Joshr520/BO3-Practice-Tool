@@ -1,5 +1,16 @@
 FlytrapPractice()
 {
+    WaitFadeIn();
+    if(level.script != "zm_factory")
+    {
+        level flag::wait_till("initial_blackscreen_passed");
+        thread WriteToScreen("Wrong Map For Loaded Patch - Correct Map: Giant");
+        return;
+    }
+
+    level flag::wait_till("initial_blackscreen_passed");
+    thread WriteToScreen("Fltytrap Practice Starting");
+
     self thread OpenAllDoors();
     self.score = 50000;
     self thread InfiniteAmmo(1);

@@ -122,7 +122,7 @@ namespace BO3PT
 	void FakeButton(const std::string& name, const ImVec2& size, const ImVec4& color);
 	void SwapGumSelection(int newGum, int gumSlot);
 	void VerifyFileStructure();
-	void WritePracticePatches(const int patch[8]);
+	void WritePracticePatches(const int patch[9]);
 	void NotifyGame(const std::vector<int>& passList);
 	void InjectTool(bool enable, bool& injectResponse);
 	void ResetToggles();

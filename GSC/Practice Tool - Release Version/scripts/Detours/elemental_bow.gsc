@@ -24,3 +24,4 @@ detour zm_weap_elemental_bow<scripts\zm\_zm_weap_elemental_bow.gsc>::function_7b
 		}
 	}
 }
+

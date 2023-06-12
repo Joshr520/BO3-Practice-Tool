@@ -6,37 +6,6 @@
 
 namespace BO3PT
 {
-    std::mutex logMutex;
-    void LogFile(const std::string& text, bool initialBoot)
-    {
-        std::lock_guard<std::mutex> lock(logMutex);
-
-        std::ofstream logFile;
-        if (initialBoot)
-            logFile.open(selfDirectory + "/log.txt");
-        else
-            logFile.open(selfDirectory + "/log.txt", std::ios::app);
-        logFile << text << "\n";
-        logFile.flush();
-        logFile.close();
-    }
-
-    std::mutex nlogMutex;
-    void NLog(const std::string& text)
-    {
-        std::lock_guard<std::mutex> lock(nlogMutex);
-
-        HWND notepad, edit;
-        notepad = FindWindowA(NULL, "Untitled - Notepad");
-        if (!notepad)
-        {
-            notepad = FindWindowA(NULL, "*Untitled - Notepad");
-        }
-        edit = FindWindowExA(notepad, NULL, "EDIT", NULL);
-        SendMessageA(edit, EM_REPLACESEL, TRUE, (LPARAM)text.c_str());
-        SendMessageA(edit, EM_REPLACESEL, TRUE, (LPARAM)"\n");
-    }
-
     std::string ParseTimeFromMilli(int milliseconds)
     {
         std::string finalTime = "";

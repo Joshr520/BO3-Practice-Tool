@@ -1,7 +1,6 @@
 #include "memHelp.h"
-#include "GlobalData.h"
 
-using namespace BO3PT;
+#include "Walnut/Logger.h"
 
 namespace MemHelp
 {
@@ -32,17 +31,17 @@ namespace MemHelp
         PROCESSENTRY32W pt;
         HANDLE hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         pt.dwSize = sizeof(PROCESSENTRY32W);
-        LogFile("Starting Enumeration");
+        Walnut::Logger::Log(Walnut::MessageType::Info, "Starting Enumeration");
         if (Process32FirstW(hsnap, &pt)) {
             do {
                 if (!_wcsicmp(pt.szExeFile, name)) {
-                    LogFile("BlackOps3.exe Found");
+                    Walnut::Logger::Log(Walnut::MessageType::Success, "BlackOps3.exe Found");
                     CloseHandle(hsnap);
                     return pt.th32ProcessID;
                 }
             } while (Process32NextW(hsnap, &pt));
         }
-        LogFile("BlackOps3.exe Not Found");
+        Walnut::Logger::Log(Walnut::MessageType::Warning, "BlackOps3.exe Not Found");
         CloseHandle(hsnap);
         return 0;
     }

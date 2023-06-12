@@ -51,7 +51,8 @@ InitPracticePatches()
     level.practice_patches["zm_stalingrad"] = Array(::StalingradSoftPatch, ::LockdownPractice, ::ChallengesPractice, ::GershQuoteSkipPractice, ::BossQuoteSkipPractice);
     level.practice_patches["zm_genesis"] = Array(::GenesisSoftPatch, ::BonesPractice, ::Boss1Practice, ::Boss2Practice, ::BasketballPractice, ::SquidShardsPractice);
     level.practice_patches["zm_moon"] = Array();
-    level.practice_patches["zm_tomb"] = Array(::WindOrbPracticeShots);
+    level.practice_patches["zm_tomb"] = Array(::TombSoftPatch, ::WindOrbPracticeShots, ::PuzzlePractice, ::TempLineups, ::RainFireLineups, ::AFDGstrikePractice);
+    level.practice_patches["general"] = Array(::SpawnerDebug);
 }
 
 WatchInterface()
@@ -142,7 +143,14 @@ LoadGums()
 LoadPracticePatches()
 {
     file = "Practice Tool/Settings/Practice Presets.txt";
-    practice_patch = -1;
+    practice_patch = compiler::readsettings(file, 9, 0);
+
+    if(practice_patch >= 0)
+    {
+        self thread [[level.practice_patches["general"][practice_patch]]]();
+        return;
+    }
+
     switch(level.script)
     {
         case "zm_zod":

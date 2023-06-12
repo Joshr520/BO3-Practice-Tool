@@ -1,11 +1,13 @@
 FireBowShotsPractice()
 {
-    level flag::wait_till("initial_blackscreen_passed");
+    WaitFadeIn();
     if(level.script != "zm_castle")
     {
+        level flag::wait_till("initial_blackscreen_passed");
         thread WriteToScreen("Wrong Map For Loaded Patch - Correct Map: DE");
         return;
     }
+    level flag::wait_till("initial_blackscreen_passed");
     thread WriteToScreen("Fire Bow Shots Practice Starting");
     self.score = 50000;
     self thread OpenAllDoors();

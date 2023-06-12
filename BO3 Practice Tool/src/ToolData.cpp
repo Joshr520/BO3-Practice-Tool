@@ -4,6 +4,7 @@
 #include "Walnut/Random.h"
 #include "Walnut/FileFormats/xml.h"
 #include "Walnut/FileFormats/json.h"
+#include "Walnut/Logger.h"
 #include "Keybinds.h"
 
 #define CURL_STATICLIB
@@ -22,19 +23,19 @@ DWORD WaitToKillCompiler(PROCESS_INFORMATION processInfo)
     DWORD result = WaitForSingleObject(processInfo.hProcess, 3000);
     if (result == WAIT_TIMEOUT)
     {
-        LogFile("Killing compiler for timeout");
+        Walnut::Logger::Log(Walnut::MessageType::Info, "Killing compiler for timeout");
         TerminateProcess(processInfo.hProcess, 0);
     }
     else if (result == WAIT_OBJECT_0)
     {
         if (!GetExitCodeProcess(processInfo.hProcess, &exitCode))
         {
-            LogFile("GetExitCodeProcess failed with error code: " + std::to_string(GetLastError()));
+            Walnut::Logger::Log(Walnut::MessageType::Error, "GetExitCodeProcess failed with error code: " + std::to_string(GetLastError()));
         }
     }
     else
     {
-        LogFile("WaitForSingleObject failed with error code: " + std::to_string(GetLastError()));
+        Walnut::Logger::Log(Walnut::MessageType::Error, "WaitForSingleObject failed with error code: " + std::to_string(GetLastError()));
     }
     return exitCode;
 }
@@ -354,20 +355,19 @@ namespace BO3PT
                 }
                 catch (const std::filesystem::filesystem_error& e)
                 {
-                    LogFile("Failed to move file " + oldFile + " to " + newFile);
-                    LogFile("Error message: " + std::string(e.what()));
+                    Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to move file " + oldFile + " to " + newFile + " with error message: " + std::string(e.what()));
                     std::filesystem::remove(oldFile);
                 }
             }
             if (!std::filesystem::remove(startDirectory))
-                LogFile("Couldn't remove GSC directory with error code: " + std::error_code(errno, std::system_category()).message());
+                Walnut::Logger::Log(Walnut::MessageType::Error, "Couldn't remove GSC directory with error code: " + std::error_code(errno, std::system_category()).message());
         }
     }
 
-    void WritePracticePatches(const int patch[8])
+    void WritePracticePatches(const int patch[9])
     {
         std::string outData;
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 9; i++)
         {
             outData.append(std::to_string(patch[i] - 1) + ",");
         }
@@ -429,13 +429,13 @@ namespace BO3PT
         {
             DWORD exitCode = WaitToKillCompiler(processInfo);
             if (exitCode != 0)
-                LogFile("Compiler process failed with error code: " + std::to_string(exitCode));
+                Walnut::Logger::Log(Walnut::MessageType::Error, "Compiler process failed with error code: " + std::to_string(exitCode));
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
         }
         else
         {
-            LogFile("Failed to inject tool with error code: " + std::to_string(GetLastError()));
+            Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to inject tool with error code: " + std::to_string(GetLastError()));
             enabled = false;
             appStatus = "Status: Inactive";
         }
@@ -594,7 +594,7 @@ namespace BO3PT
         {
             char errorMsg[256];
             strerror_s(errorMsg, sizeof(errorMsg), err);
-            LogFile("Opening file " + filename + " failed with error code: " + errorMsg);
+            Walnut::Logger::Log(Walnut::MessageType::Error, "Opening file " + filename + " failed with error code: " + errorMsg);
             return 0;
         }
         curl_easy_setopt(curl, CURLOPT_URL, downloadURL.c_str());
@@ -606,7 +606,7 @@ namespace BO3PT
         curl_global_cleanup();
         if (res != CURLE_OK)
         {
-            LogFile("curl download failed with error code: " + res);
+            Walnut::Logger::Log(Walnut::MessageType::Error, "curl download failed with error code: " + res);
             return 0;
         }
 
@@ -617,19 +617,19 @@ namespace BO3PT
         mz_zip_zero_struct(&zip_archive);
         if (!mz_zip_reader_init_file(&zip_archive, filename.c_str(), 0))
         {
-            LogFile("Failed to open zip file: " + filename);
+            Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to open zip file: " + filename);
             return 0;
         }
 
         int num_files = mz_zip_reader_get_num_files(&zip_archive);
-        LogFile("Extracting " + num_files + std::string(" files from ") + filename + " to " + output_directory.string());
+        Walnut::Logger::Log(Walnut::MessageType::Info, "Extracting " + num_files + std::string(" files from ") + filename + " to " + output_directory.string());
 
         for (int i = 0; i < num_files; i++)
         {
             mz_zip_archive_file_stat file_stat;
             if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat))
             {
-                LogFile("Failed to get file stat for index " + i);
+                Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to get file stat for index " + i);
                 continue;
             }
 
@@ -649,7 +649,7 @@ namespace BO3PT
             if (!wantedFileFound)
                 continue;
 
-            LogFile("Extracting " + std::string(file_stat.m_filename) + " to " + output_file_path.string());
+            Walnut::Logger::Log(Walnut::MessageType::Info, "Extracting " + std::string(file_stat.m_filename) + " to " + output_file_path.string());
 
             std::filesystem::create_directories(output_file_path.parent_path());
 
@@ -666,11 +666,13 @@ namespace BO3PT
                     std::filesystem::remove(output_file_path);
                 if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0))
                 {
-                    LogFile("Failed to extract file " + std::string(file_stat.m_filename));
+                    Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to extract file " + std::string(file_stat.m_filename));
                     return 0;
                 }
             }
         }
+        Walnut::Logger::Log(Walnut::MessageType::Success, "Extraction completed successfully");
+
         mz_zip_reader_end(&zip_archive);
         std::filesystem::remove(filename);
 
@@ -680,7 +682,7 @@ namespace BO3PT
             PROCESS_INFORMATION processInfo = { 0 };
             LPSTR args = &ptexe[0];
             if (!CreateProcessA(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo))
-                LogFile("Failed to start new practice tool exe");
+                Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to start new practice tool exe");
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
             done = 1;
@@ -1900,7 +1902,7 @@ namespace BO3PT
 
         rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
         settings.AddMember("In Game Timer", false, builder.GetAllocator());
-        settings.AddMember("In Game Round Timer", true, builder.GetAllocator());
+        settings.AddMember("In Game Round Timer", false, builder.GetAllocator());
         settings.AddMember("Amount of Splits", 0, builder.GetAllocator());
         settings.AddMember("Map Index", 0, builder.GetAllocator());
         settings.AddMember("Split Type", 0, builder.GetAllocator());
@@ -2073,7 +2075,7 @@ namespace BO3PT
         builder.AddNode(splitsSettings, "CurrentSplitTopColor", "FF3373F4");
         builder.AddNode(splitsSettings, "CurrentSplitBottomColor", "FF153574");
         builder.AddNode(splitsSettings, "VisualSplitCount", std::to_string(min(numSplits, 6)));
-        builder.AddNode(splitsSettings, "SplitPreviewCount", std::to_string(max(min(numSplits, 6) - 2, 0)));
+        builder.AddNode(splitsSettings, "SplitPreviewCount", "0");
         builder.AddNode(splitsSettings, "DisplayIcons", "True");
         builder.AddNode(splitsSettings, "ShowThinSeparators", "True");
         builder.AddNode(splitsSettings, "AlwaysShowLastSplit", "True");
@@ -2263,7 +2265,7 @@ namespace BO3PT
                 if (it->name.IsString() && it->value.IsInt())
                     returnPreset.splits.push_back({ it->name.GetString(), it->value.GetInt() });
                 else
-                    LogFile("Autosplits json error: Incorrect typings found at key " + std::string(it->name.GetString()));
+                    Walnut::Logger::Log(Walnut::MessageType::Error, "Autosplits json error: Incorrect typings found at key " + std::string(it->name.GetString()));
             }
         }
 

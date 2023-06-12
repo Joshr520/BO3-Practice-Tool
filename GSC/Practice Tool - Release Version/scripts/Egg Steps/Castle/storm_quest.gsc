@@ -94,8 +94,6 @@ StormWallrun()
     while(CheckQuestProgress("storm") < 2) wait 0.05;
     if(level.var_f8d1dc16 != self) level.var_f8d1dc16 = self;
     wallruns = GetEntArray("aq_es_wallrun_trigger", "targetname");
-    self.var_a4f04654 = 4;
-    level.var_49593fd9 = [];
     foreach(wallrun in wallruns)
     {
         wallrun notify("trigger", self);

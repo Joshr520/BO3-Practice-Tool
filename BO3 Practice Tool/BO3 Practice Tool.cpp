@@ -7,6 +7,7 @@
 #include "Walnut/Application.h"
 #include "Walnut/Image.h"
 #include "Walnut/FileFormats/json.h"
+#include "Walnut/Logger.h"
 
 #include "ToolData.h"
 #include "GlobalData.h"
@@ -110,9 +111,10 @@ static std::vector<std::string> islandPracticeList = { "None", "Soft Patch" };
 static std::vector<std::string> stalingradPracticeList = { "None", "Soft Patch", "Lockdown Practice", "Challenges Practice", "Gersh Quote Skips", "Boss Quote Skip" };
 static std::vector<std::string> genesisPracticeList = { "None", "Soft Patch", "Bones Practice", "Boss 1 Practice", "Boss 2 Practice", "Basketball Practice", "Squid Shards Practice" };
 static std::vector<std::string> moonPracticeList = { "None" };
-static std::vector<std::string> tombPracticeList = { "None", "Wind Orb Practice" };
-static int practicePatchIndexes[8] = { 0 };
-static int inactivePracticePatchIndexes[8] = { 0 };
+static std::vector<std::string> tombPracticeList = { "None", "Soft Patch", "Wind Orb Practice", "Puzzle Practice", "Temp Lineups", "Rain Fire Lineups", "Rain Fire Panzers" };
+static std::vector<std::string> generalPracticeList = { "None", "Spawner Debug"};
+static int practicePatchIndexes[9] = { 0 };
+static int inactivePracticePatchIndexes[9] = { 0 };
 
 // Player options data
 static std::string weaponSelectName = "none";
@@ -155,7 +157,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 		GetCurrentDirectoryA(256, buf);
 		selfDirectory = buf;
 
-		LogFile("-------------Practice Tool Startup-------------", true);
+        Walnut::Logger::InitLogger(selfDirectory + "/log.txt");
+		Walnut::Logger::Log(Walnut::MessageType::Success, "Practice Tool Startup");
 
 		Walnut::Application* app = Walnut::CreateApplication(__argc, __argv);
 		app->Run();
@@ -242,6 +245,7 @@ public:
                     {
                         enabled = false;
                         appStatus = "Status: Inactive";
+                        Walnut::Logger::Log(Walnut::MessageType::Error, "Game not loaded enough to toggle on");
                     }
                     else
                     {
@@ -252,6 +256,7 @@ public:
                             WriteAutosplitPreset(inactiveSplitPreset);
                             WritePracticePatches(inactivePracticePatchIndexes);
                             ResetToggles();
+                            Walnut::Logger::Log(Walnut::MessageType::Info, "Toggling tool off");
                         }
                         else
                         {
@@ -260,9 +265,9 @@ public:
                             if (writeSplits)
                                 WriteAutosplitPreset(splitPresets[currentSplitPreset]);
                             WritePracticePatches(practicePatchIndexes);
+                            Walnut::Logger::Log(Walnut::MessageType::Info, "Toggling tool on");
                         }
-                        auto injectThread = std::thread(InjectTool, enabled, std::ref(injectResponse));
-                        injectThread.detach();
+                        std::thread(InjectTool, enabled, std::ref(injectResponse)).detach();
                     }
                 }
                 ImGui::Separator();
@@ -484,6 +489,8 @@ public:
         ImGui::End();
         ImGui::End();
 
+        Walnut::Logger::DrawLogWindow();
+
         if (procFound)
         {
             char* prevMap = readMap;
@@ -493,7 +500,7 @@ public:
             {
                 procFound = false;
                 error = GetLastError();
-                LogFile("Failed to read game memory with error code: " + error);
+                Walnut::Logger::Log(Walnut::MessageType::Warning, "Failed to read game memory with error code: " + error);
                 CloseHandle(pHandle);
                 pHandle = NULL;
                 ResetToggles();
@@ -506,7 +513,7 @@ public:
             {
                 procFound = false;
                 error = GetLastError();
-                LogFile("Failed to read game memory with error code: " + error);
+                Walnut::Logger::Log(Walnut::MessageType::Warning, "Failed to read game memory with error code: " + error);
                 CloseHandle(pHandle);
                 pHandle = NULL;
                 ResetToggles();
@@ -520,7 +527,6 @@ public:
             if ((strcmp(readMap, "core_frontend") && !strcmp(prevMap, "core_frontend")) || (!currentRound && prevRound))
             {
                 ResetToggles();
-                LogFile("Map change or restart detected, resetting toggles");
             }
         }
     }
@@ -544,14 +550,14 @@ void SetupData()
         Walnut::JSONBuilder::WriteEmpty(selfDirectory + "\\settings.json");
     Walnut::JSONBuilder builder(std::string_view(selfDirectory + "\\settings.json"));
 
-    LogFile("Searching for BO3 directory");
+    Walnut::Logger::Log(Walnut::MessageType::Info, "Searching for BO3 directory");
     if (builder.GetDocument().HasMember("Steam Path") && builder.GetDocument()["Steam Path"].IsString())
     {
         bo3Directory = builder.GetDocument()["Steam Path"].GetString();
-        LogFile("BO3 directory found");
+        Walnut::Logger::Log(Walnut::MessageType::Success, "BO3 directory found");
     }
     else
-        LogFile("BO3 directory not saved - prompting user for input");
+        Walnut::Logger::Log(Walnut::MessageType::Info, "BO3 directory not saved - prompting user for input");
     if (DoesPathExist(bo3Directory))
     {
         steamPathFound = true;
@@ -566,8 +572,8 @@ void SetupData()
         std::stringstream log;
         log << "Base Address: " << baseAddr << "\n";
         log << "Map Address: " << mapNameAddr << "\n";
-        log << "Round Address: " << roundAddr << "\n";
-        LogFile(log.str());
+        log << "Round Address: " << roundAddr;
+        Walnut::Logger::Log(Walnut::MessageType::Success, "Loading Process Addresses:\n" + log.str());
         pHandle = OpenProcess(PROCESS_ALL_ACCESS, false, pID);
         if (pHandle != INVALID_HANDLE_VALUE)
             procFound = true;
@@ -577,7 +583,7 @@ void SetupData()
         auto thread = std::thread(SearchForGame);
         thread.detach();
     }
-    LogFile("Writing presets");
+    Walnut::Logger::Log(Walnut::MessageType::Info, "Writing presets");
     WritePresetToGame(inactiveGumPreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
     WritePracticePatches(inactivePracticePatchIndexes);
     WriteAutosplitPreset(inactiveSplitPreset);
@@ -606,7 +612,7 @@ void SetupData()
         funcList.emplace_back(std::function<void()>(GKValveSolverPtr));
     }
 
-    LogFile("Setup Finished");
+    Walnut::Logger::Log(Walnut::MessageType::Success, "Setup Finished");
     setupDone = true;
 }
 
@@ -616,7 +622,7 @@ void SearchForGame()
     DWORD tempID = 0;
     appStatus = "Status: Inactive";
     enabled = false;
-    LogFile("Started async process - looking for BO3");
+    Walnut::Logger::Log(Walnut::MessageType::Info, "Started async process - looking for BO3");
     for (;;)
     {
         codHWND = FindWindowA("CoDBlackOps", NULL);
@@ -637,7 +643,7 @@ void SearchForGame()
                 if (pHandle != INVALID_HANDLE_VALUE)
                 {
                     procFound = true;
-                    LogFile("Ending async process - BO3 found");
+                    Walnut::Logger::Log(Walnut::MessageType::Success, "Ending async process - BO3 found");
                     return;
                 }
             }
@@ -652,11 +658,11 @@ bool UpdateAvailable()
     if (DoesPathExist(selfDirectory + "/BO3 Practice Tool.old.exe"))
     {
         if (std::filesystem::remove(selfDirectory + "/BO3 Practice Tool.old.exe"))
-            LogFile("Deleting old exe");
+            Walnut::Logger::Log(Walnut::MessageType::Info, "Deleting old exe");
         else
-            LogFile("Couldn't remove old exe with error code: " + std::error_code(errno, std::system_category()).message());
+            Walnut::Logger::Log(Walnut::MessageType::Error, "Couldn't remove old exe with error code: " + std::error_code(errno, std::system_category()).message());
     }
-    LogFile("Checking for updates");
+    Walnut::Logger::Log(Walnut::MessageType::Info, "Checking for updates");
 
     CURL* curl = curl_easy_init();
     CURLcode res;
@@ -673,13 +679,13 @@ bool UpdateAvailable()
         curl_easy_cleanup(curl);
         if (res != CURLE_OK)
         {
-            LogFile("curl GET failed with error code: " + std::to_string(res));
+            Walnut::Logger::Log(Walnut::MessageType::Error, "curl GET failed with error code: " + std::to_string(res));
             return 0;
         }
         Walnut::JSONBuilder builder(buffer);
         if (builder.GetDocument().HasParseError())
         {
-            LogFile("JSON returned from get invalid");
+            Walnut::Logger::Log(Walnut::MessageType::Error, "JSON returned from get invalid");
             return 0;
         }
         const char* downloadGet = "";
@@ -694,10 +700,10 @@ bool UpdateAvailable()
 
         if (!CheckVersions(tagName, internalVersion))
         {
-            LogFile("New version not available");
+            Walnut::Logger::Log(Walnut::MessageType::Info, "New version not available");
             return 0;
         }
-        LogFile("New version detected");
+        Walnut::Logger::Log(Walnut::MessageType::Info, "New version detected");
     }
 
     return 1;
@@ -1929,8 +1935,8 @@ void PracticePatchesPtr()
     SAMELINE;
     DummySpace(15.0f, 0.0f);
     SAMELINE;
+    ImGui::BeginGroup();
     {
-        ImGui::BeginGroup();
         ImGui::Text(ICON_FA_LOCATION_DOT " Moon");
         if (CreateListBox("##Moon", moonPracticeList, practicePatchIndexes[6], ImVec2(200.0f, 200.0f)))
         {
@@ -1944,10 +1950,22 @@ void PracticePatchesPtr()
     SAMELINE;
     DummySpace(15.0f, 0.0f);
     SAMELINE;
+    ImGui::BeginGroup();
     {
-        ImGui::BeginGroup();
         ImGui::Text(ICON_FA_LOCATION_DOT " Origins");
         if (CreateListBox("##Origins", tombPracticeList, practicePatchIndexes[7], ImVec2(200.0f, 200.0f)))
+        {
+            if (appStatus == "Status: Active")
+                WritePracticePatches(practicePatchIndexes);
+            else
+                WritePracticePatches(inactivePracticePatchIndexes);
+        }
+    }
+    ImGui::EndGroup();
+    ImGui::BeginGroup();
+    {
+        ImGui::Text(ICON_FA_LOCATION_DOT " General");
+        if (CreateListBox("##General", generalPracticeList, practicePatchIndexes[8], ImVec2(200.0f, 150.0f)))
         {
             if (appStatus == "Status: Active")
                 WritePracticePatches(practicePatchIndexes);
@@ -3051,7 +3069,6 @@ void GumTrackerPtr()
             {
                 gumTrackContextIndex = gumTrackIndexes[i];
                 gumTrackCurrentIndex = i;
-                NLog("Hover " + std::to_string(gumTrackCurrentIndex));
             }
             ImGui::EndGroup();
             ImGui::PopStyleVar(ImGui::GetCurrentContext()->StyleVarStack.Size);

@@ -182,6 +182,7 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClInclude Include="Walnut\Input\Input.h" />
     <ClInclude Include="Walnut\Input\KeyCodes.h" />
     <ClInclude Include="Walnut\Layer.h" />
+    <ClInclude Include="Walnut\Logger.h" />
     <ClInclude Include="Walnut\Random.h" />
     <ClInclude Include="Walnut\Timer.h" />
     <ClInclude Include="Walnut\FileFormats\xml.h" />
@@ -205,6 +206,7 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClCompile Include="Walnut\FileFormats\json.cpp" />
     <ClCompile Include="Walnut\Image.cpp" />
     <ClCompile Include="Walnut\Input\Input.cpp" />
+    <ClCompile Include="Walnut\Logger.cpp" />
     <ClCompile Include="Walnut\Random.cpp" />
     <ClCompile Include="Walnut\FileFormats\xml.cpp" />
   </ItemGroup>
