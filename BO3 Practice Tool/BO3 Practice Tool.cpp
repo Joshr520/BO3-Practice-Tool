@@ -165,6 +165,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 		delete app;
 	}
 
+    Walnut::Logger::Log(Walnut::MessageType::Success, "Practice Tool Finish");
+    Walnut::Logger::Log(Walnut::MessageType::Info, "Resetting presets");
+    WritePresetToGame(inactiveGumPreset, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
+    WritePracticePatches(inactivePracticePatchIndexes);
+    WriteAutosplitPreset(inactiveSplitPreset);
+
     return 0;
 }
 
