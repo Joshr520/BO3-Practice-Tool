@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <functional>
 
+
 #include "Walnut/Image.h"
 #include "Walnut/Timer.h"
 #include "imgui.h"
@@ -76,7 +77,7 @@ namespace BO3PT
 #pragma region EggStepOptions
 	inline std::vector<std::string> zodRitualSteps = { "Magician Ritual", "Femme Ritual", "Detective Ritual", "Boxer Ritual", "PAP Ritual" };
 	inline std::vector<std::string> zodEggSteps = { "Canals Egg", "Footlight Egg", "Waterfront Egg", "Rift Egg" };
-	inline std::vector<std::string> zodOvumSteps = { "Magician Ovum", "Femme Ovum", "Detective Ovum", "Boxer Ovum" };
+	inline std::vector<std::string> zodOvumSteps = { "Magician Ovum", "Detective Ovum", "Femme Ovum", "Boxer Ovum" };
 	inline std::vector<std::string> zodFlagSteps = { "Flag 1", "Flag 2", "Flag 3", "Flag 4" };
 	inline int zodRitualIndex = 0;
 	inline int zodEggIndex = 0;
@@ -115,7 +116,7 @@ namespace BO3PT
 
 #pragma region GUIFunctions
 	void InitVariables();
-	void InitImages();
+	void LoadImages(int sidebarIndex);
 	void HelpMarker(const std::string& text);
 	void DummySpace(float x, float y);
 	void SetToggleButtonColor(bool active);
@@ -366,8 +367,8 @@ namespace BO3PT
 #pragma region IceCodeGuide
 	struct IceCodePair
 	{
-		Walnut::Image* digitImage;
-		Walnut::Image* symbolImage;
+		std::shared_ptr<Walnut::Image> digitImage;
+		std::shared_ptr<Walnut::Image> symbolImage;
 	};
 
 	inline int gameProgress = 0;
@@ -383,7 +384,7 @@ namespace BO3PT
 	inline std::vector<IceCodePair> randomIceCodePairs;
 	inline Walnut::Timer gameTimer;
 
-	void InitIceCodePairs();
+	void LoadIceCodePairs();
 	void RandomizeCodes();
 	void ProgressGame(bool success, int numCode);
 #pragma endregion

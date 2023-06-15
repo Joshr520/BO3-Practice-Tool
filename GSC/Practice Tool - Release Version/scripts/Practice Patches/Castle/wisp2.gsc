@@ -14,6 +14,7 @@ Wisp2Practice()
     level flag::clear("spawn_zombies");
     level flag::set("story_playing");
     level flag::set("castle_teleporter_used");
+    level flag::set("ee_start_done");
     Timescale(10);
     self.score = 4500;
     self thread OpenAllDoors();

@@ -180,5 +180,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Fonts\DroidSans.embed" />
+    <None Include="Fonts\fa-solid-900.embed" />
   </ItemGroup>
 </Project>

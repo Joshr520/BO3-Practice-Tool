@@ -14,6 +14,8 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <thread>
+#include <set>
 
 using namespace BO3PT;
 
@@ -45,6 +47,9 @@ static size_t WriteToFile(char* ptr, size_t size, size_t nmemb, void* f)
     FILE* file = (FILE*)f;
     return fwrite(ptr, size, nmemb, file);
 }
+
+static bool bgbLoaded = false;
+static bool codesLoaded = false;
 
 namespace BO3PT
 {
@@ -171,7 +176,6 @@ namespace BO3PT
 #pragma region GUIFunctions
     void InitVariables()
     {
-        InitImages();
         InitHotKeyBinds();
         InitBGBDescriptions();
         InitClassicGumsList();
@@ -182,7 +186,6 @@ namespace BO3PT
         InitPerksList();
         InitPowerupList();
         InitCraftablesList();
-        InitIceCodePairs();
         zombiesForRound = GetZombieCountForRound(1, 1);
         specialZombiesForRound = GetZombieCountForRound(1, 1);
         hordesForRound = zombiesForRound / 24.0f;
@@ -206,50 +209,129 @@ namespace BO3PT
         CalcLockdownTime(1, 1);
         InitValveSolutions();
         CalcValveProbabilities();
-    }
-
-    void InitImages()
-    {
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Gum Images/Classics"))
-        {
-            const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
-                continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            bgbImgList.emplace_back(img);
-        }
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Gum Images/Megas"))
-        {
-            const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
-                continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            bgbImgList.emplace_back(img);
-        }
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Soe Code"))
-        {
-            const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
-                continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            codeImgList.emplace_back(img);
-            soeCodeCombo.emplace_back(img->GetFilename());
-        }
+        // Currently only 1 image is loaded for valves, so I'm not bothering to load and unload it for ram benefits
         for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/GK Valve Solver"))
         {
             const std::string& name = entry.path().filename().string();
             if (name.find(".png") == name.npos)
                 continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            valveSolverImgList.emplace_back(img);
+            valveSolverImgList.emplace_back(std::make_unique<Walnut::Image>(entry.path().string()));
         }
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Ice Code"))
+    }
+
+    void LoadImages(int sidebarIndex)
+    {
+        switch (sidebarIndex)
         {
-            const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
-                continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            iceCodeImgList.insert({ img->GetFilename(), img });
+        case 0:
+        case 12:
+        {
+            if (codesLoaded)
+            {
+                codeImgList.clear();
+                soeCodeCombo.clear();
+                iceCodeImgList.clear();
+                iceCodePairs.clear();
+                randomIceCodePairs.clear();
+                codesLoaded = false;
+            }
+            if (bgbLoaded)
+                break;
+
+            struct ImageComparator
+            {
+                bool operator()(const std::unique_ptr<Walnut::Image>& left, const std::unique_ptr<Walnut::Image>& right) const
+                {
+                    return left->GetFilename() < right->GetFilename();
+                }
+            };
+
+            std::set<std::unique_ptr<Walnut::Image>, ImageComparator> classicsSet;
+            std::set<std::unique_ptr<Walnut::Image>, ImageComparator> megasSet;
+
+            std::thread classicsThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Gum Images/Classics"))
+                {
+                    const std::string& name = entry.path().filename().string();
+                    if (name.find(".png") == name.npos)
+                        continue;
+                    std::unique_ptr<Walnut::Image> image = std::make_unique<Walnut::Image>(entry.path().string());
+                    classicsSet.insert(std::move(image));
+                }
+                });
+
+            std::thread megasThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Gum Images/Megas"))
+                {
+                    const std::string& name = entry.path().filename().string();
+                    if (name.find(".png") == name.npos)
+                        continue;
+                    megasSet.insert(std::make_unique<Walnut::Image>(entry.path().string()));
+                }
+                });
+
+            classicsThread.join();
+            megasThread.join();
+            std::transform(classicsSet.begin(), classicsSet.end(), std::back_inserter(bgbImgList), [](const std::unique_ptr<Walnut::Image>& ptr) { return std::move(const_cast<std::unique_ptr<Walnut::Image>&>(ptr)); });
+            std::transform(megasSet.begin(), megasSet.end(), std::back_inserter(bgbImgList), [](const std::unique_ptr<Walnut::Image>& ptr) { return std::move(const_cast<std::unique_ptr<Walnut::Image>&>(ptr)); });
+            bgbLoaded = true;
+            break;
+        }
+        case 14:
+        {
+            if (bgbLoaded)
+            {
+                bgbImgList.clear();
+                bgbLoaded = false;
+            }
+            if (codesLoaded)
+                break;
+
+            std::thread soeCodeThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Soe Code"))
+                {
+                    const std::string& name = entry.path().filename().string();
+                    if (name.find(".png") == name.npos)
+                        continue;
+                    std::shared_ptr<Walnut::Image> img = std::make_shared<Walnut::Image>(entry.path().string());
+                    codeImgList.emplace_back(img);
+                    soeCodeCombo.emplace_back(img->GetFilename());
+                }
+                });
+
+            std::thread iceCodeThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Ice Code"))
+                {
+                    const std::string& name = entry.path().filename().string();
+                    if (name.find(".png") == name.npos)
+                        continue;
+                    std::shared_ptr<Walnut::Image> img = std::make_shared<Walnut::Image>(entry.path().string());
+                    iceCodeImgList.insert({ img->GetFilename(), img });
+                }
+                });
+
+            soeCodeThread.join();
+            iceCodeThread.join();
+            LoadIceCodePairs();
+            codesLoaded = true;
+            break;
+        }
+        default:
+            if (bgbLoaded)
+            {
+                bgbImgList.clear();
+                bgbLoaded = false;
+            }
+            if (codesLoaded)
+            {
+                codeImgList.clear();
+                soeCodeCombo.clear();
+                iceCodeImgList.clear();
+                iceCodePairs.clear();
+                randomIceCodePairs.clear();
+                codesLoaded = false;
+            }
+            break;
         }
     }
 
@@ -1772,7 +1854,7 @@ namespace BO3PT
 #pragma endregion
 
 #pragma region IceCodeGuide
-    void InitIceCodePairs()
+    void LoadIceCodePairs()
     {
         iceCodePairs.emplace_back(IceCodePair({ iceCodeImgList["dot-digit"], iceCodeImgList["dot-symbol"] }));
         iceCodePairs.emplace_back(IceCodePair({ iceCodeImgList["i-digit"], iceCodeImgList["i-symbol"] }));

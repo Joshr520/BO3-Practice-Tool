@@ -4,6 +4,7 @@
 #include "imgui_impl_vulkan.h"
 
 #include "Application.h"
+#include "Logger.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -49,6 +50,7 @@ namespace Walnut {
 
 	}
 
+	std::mutex imgMutex;
 	Image::Image(std::string_view path)
 		: m_Filepath(path), m_Filename(std::filesystem::path(m_Filepath).filename().stem().string())
 	{
@@ -231,8 +233,7 @@ namespace Walnut {
 			check_vk_result(err);
 			vkUnmapMemory(device, m_StagingBufferMemory);
 		}
-
-
+		
 		// Copy to Image
 		{
 			VkCommandBuffer command_buffer = Application::GetCommandBuffer(true);
@@ -271,6 +272,8 @@ namespace Walnut {
 			use_barrier.subresourceRange.levelCount = 1;
 			use_barrier.subresourceRange.layerCount = 1;
 			vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, &use_barrier);
+
+			std::unique_lock<std::mutex> lock(imgMutex);
 
 			Application::FlushCommandBuffer(command_buffer);
 		}

@@ -23,6 +23,8 @@
 #include "GlobalData.h"
 #include "SDL_syswm.h"
 
+#include "Fonts/DroidSans.embed"
+
 extern bool g_ApplicationRunning;
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
@@ -531,14 +533,12 @@ namespace Walnut {
 		// Load default font
 		ImFontConfig fontConfig;
 		fontConfig.FontDataOwnedByAtlas = false;
-		mainFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSans.ttf", 20);
+		mainFont = io.Fonts->AddFontFromMemoryTTF((void*)DroidSans_ttf, sizeof(DroidSans_ttf), 20.0f, &fontConfig); //io.Fonts->AddFontFromFileTTF("Fonts/DroidSans.ttf", 20);
 		ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
 		static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
 		io.Fonts->AddFontFromFileTTF("Fonts/" FONT_ICON_FILE_NAME_FAS, 16.0f, &icons_config, icons_ranges);
-		sidebarFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSans.ttf", 24);
-		io.Fonts->AddFontFromFileTTF("Fonts/" FONT_ICON_FILE_NAME_FAS, 20.0f, &icons_config, icons_ranges);
-		titleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSans.ttf", 28);
-		io.Fonts->AddFontFromFileTTF("Fonts/" FONT_ICON_FILE_NAME_FAS, 24.0f, &icons_config, icons_ranges);
+		sidebarFont = io.Fonts->AddFontFromMemoryTTF((void*)DroidSans_ttf, sizeof(DroidSans_ttf), 24.0f, &fontConfig);
+		titleFont = io.Fonts->AddFontFromMemoryTTF((void*)DroidSans_ttf, sizeof(DroidSans_ttf), 28.0f, &fontConfig);
 		io.FontDefault = mainFont;
 
 		// Upload Fonts
@@ -804,6 +804,7 @@ namespace Walnut {
 		return command_buffer;
 	}
 
+	std::mutex mutex;
 	void Application::FlushCommandBuffer(VkCommandBuffer commandBuffer)
 	{
 		const uint64_t DEFAULT_FENCE_TIMEOUT = 100000000000;
@@ -834,6 +835,10 @@ namespace Walnut {
 
 	void Application::SubmitResourceFree(std::function<void()>&& func)
 	{
+		// Program crashes on exit without this - bandaid fix since idk what I'm doing lmao
+		if (!s_ResourceFreeQueue.size())
+			return;
+
 		s_ResourceFreeQueue[s_CurrentFrameIndex].emplace_back(func);
 	}
 

@@ -3,7 +3,6 @@
 #include <Shobjidl.h>
 #include <filesystem>
 
-
 #include "Walnut/Application.h"
 #include "Walnut/Image.h"
 #include "Walnut/FileFormats/json.h"
@@ -80,7 +79,7 @@ static bool injectResponseWait = false;
 static bool discordPopup = false;
 static bool showDiscordModal = false;
 
-static int sidebarCurrentItem = 0;
+static int sidebarIndex = 0;
 static int frontendItems = 4;
 static int inGameItems = frontendItems + 8;
 static int resourceItems = inGameItems + 4;
@@ -194,6 +193,7 @@ public:
 
     virtual void OnUIRender() override
     {
+
         viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);
         ImGui::SetNextWindowSize(viewport->Size);
@@ -228,6 +228,8 @@ public:
             ImGui::DockBuilderFinish(dock_main_id);
         }
         ImGui::DockSpace(dockID, { NULL, NULL }, ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_PassthruCentralNode);
+
+        int prevSidebarIndex = sidebarIndex;
 
         ImGui::PopFont();
         ImGui::Begin("##Sidebar", 0, dockFlags);
@@ -287,9 +289,9 @@ public:
                 // Frontend
                 for (int i = 0; i < frontendItems; i++)
                 {
-                    const bool is_selected = sidebarCurrentItem == i;
+                    const bool is_selected = sidebarIndex == i;
                     if (ImGui::Selectable(sidebarItems[i], is_selected))
-                        sidebarCurrentItem = i;
+                        sidebarIndex = i;
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();
                 }
@@ -304,15 +306,15 @@ public:
                 // In Game
                 if (appStatus != "Status: Active" || currentMap == "core_frontend")
                 {
-                    if (sidebarCurrentItem > 3 && sidebarCurrentItem < 11)
-                        sidebarCurrentItem = 0;
+                    if (sidebarIndex > 3 && sidebarIndex < 11)
+                        sidebarIndex = 0;
                     ImGui::BeginDisabled();
                 }
                 for (int i = frontendItems; i < inGameItems; i++)
                 {
-                    const bool is_selected = sidebarCurrentItem == i;
+                    const bool is_selected = sidebarIndex == i;
                     if (ImGui::Selectable(sidebarItems[i], is_selected))
-                        sidebarCurrentItem = i;
+                        sidebarIndex = i;
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();
                 }
@@ -332,9 +334,9 @@ public:
                     float y = ImGui::GetCursorPosY();
                     if (viewport->Size.y - 25.0f <= 0)
                         break;
-                    const bool is_selected = sidebarCurrentItem == i;
+                    const bool is_selected = sidebarIndex == i;
                     if (ImGui::Selectable(sidebarItems[i], is_selected))
-                        sidebarCurrentItem = i;
+                        sidebarIndex = i;
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();
                 }
@@ -346,6 +348,8 @@ public:
 
         ImGui::Begin("##Body", 0, dockFlags);
 
+        if (prevSidebarIndex != sidebarIndex)
+            LoadImages(sidebarIndex);
         if (updateAvailable)
         {
             ImGui::OpenPopup("Update Available");
@@ -471,6 +475,7 @@ public:
                     builder.SaveToFile(selfDirectory + "\\settings.json");
                     VerifyFileStructure();
                     InitVariables();
+                    LoadImages(sidebarIndex);
                 }
             }
 
@@ -490,7 +495,7 @@ public:
             }
         }
         else if (setupDone)
-            funcList[sidebarCurrentItem]();
+            funcList[sidebarIndex]();
 
         ImGui::End();
         ImGui::End();
@@ -596,7 +601,10 @@ void SetupData()
     updateAvailable = UpdateAvailable();
 
     if (steamPathFound)
+    {
         InitVariables();
+        LoadImages(sidebarIndex);
+    }
 
     // Init function list
     {
