@@ -10,9 +10,8 @@
 namespace BO3PT
 {
 	inline bool done = false;
-	inline bool enabled = false;
 	inline std::string appStatus = "Status: Inactive";
-	inline std::string currentMap = "zm_castle";
+	inline std::string currentMap = "";
 	inline std::string bo3Directory;
 	inline std::string selfDirectory;
 	inline std::string downloadURL;

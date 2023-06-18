@@ -6,6 +6,7 @@
 #include "Walnut/FileFormats/json.h"
 #include "Walnut/Logger.h"
 #include "Keybinds.h"
+#include "GUIState.h"
 
 #define CURL_STATICLIB
 #include <curl/curl.h>
@@ -32,12 +33,12 @@ DWORD WaitToKillCompiler(PROCESS_INFORMATION processInfo)
     {
         if (!GetExitCodeProcess(processInfo.hProcess, &exitCode))
         {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "GetExitCodeProcess failed with error code: " + std::to_string(GetLastError()));
+            Walnut::Logger::Log(Walnut::MessageType::Error, "GetExitCodeProcess failed with error code: " + GetLastError());
         }
     }
     else
     {
-        Walnut::Logger::Log(Walnut::MessageType::Error, "WaitForSingleObject failed with error code: " + std::to_string(GetLastError()));
+        Walnut::Logger::Log(Walnut::MessageType::Error, "WaitForSingleObject failed with error code: " + GetLastError());
     }
     return exitCode;
 }
@@ -357,23 +358,14 @@ namespace BO3PT
     {
         if (!active)
         {
-            ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
+            ImGui::PushStyleColor(ImGuiCol_Button, COLOR_RED);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
         }
         else
         {
-            ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 128, 0, 255));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(0, 128, 0, 255));
+            ImGui::PushStyleColor(ImGuiCol_Button, COLOR_GREEN);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_GREEN);
         }
-    }
-
-    void FakeButton(const std::string& name, const ImVec2& size, const ImVec4& color)
-    {
-        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(color.x, color.y, color.z, color.w));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(color.x, color.y, color.z, color.w));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(color.x, color.y, color.z, color.w));
-        ImGui::Button(name.c_str(), size);
-        ImGui::PopStyleColor(3);
     }
 
     void SwapGumSelection(int newGum, int gumSlot)
@@ -479,7 +471,7 @@ namespace BO3PT
         CloseHandle(pipe);
     }
 
-    void InjectTool(bool enable, bool& injectResponse)
+    void InjectTool(bool enable, bool injectResponse)
     {
         std::string gsc = bo3Directory + "/Practice Tool/GSC";
         std::string compiler = "\"" + gsc + "/DebugCompiler.exe\"";
@@ -492,7 +484,7 @@ namespace BO3PT
             std::filesystem::path path(std::filesystem::path(gsc) / fileName);
             if (!std::filesystem::exists(path))
             {
-                enabled = false;
+                GUIState::UnsetState(Active);
                 appStatus = "Status: Inactive";
                 injectResponse = true;
                 return;
@@ -517,8 +509,8 @@ namespace BO3PT
         }
         else
         {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to inject tool with error code: " + std::to_string(GetLastError()));
-            enabled = false;
+            Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to inject tool with error code: " + GetLastError());
+            GUIState::UnsetState(Active);
             appStatus = "Status: Inactive";
         }
     }
@@ -534,34 +526,6 @@ namespace BO3PT
         zombieSpeedRun = false;
         zombieSpeedSprint = false;
         timescaleInt = 1;
-    }
-
-    bool CreateButton(const std::string& name, const ImVec2& size, bool* value, bool toggle, const ImVec4& color, bool inGame)
-    {
-        if (toggle)
-            SetToggleButtonColor(*value);
-        else
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(color.x, color.y, color.z, color.w));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(color.x, color.y, color.z, color.w));
-        }
-        if (ImGui::Button(name.c_str(), size))
-        {
-            if (!inGame || inGame && appStatus == "Status: Active")
-            {
-                if (toggle)
-                    *value = !*value;
-            }
-            ImGui::PopStyleColor(2);
-            return 1;
-        }
-        if (name == ICON_FA_ARROW_LEFT && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
-        {
-            ImGui::PopStyleColor(2);
-            return 1;
-        }
-        ImGui::PopStyleColor(2);
-        return 0;
     }
 
     bool CreateListBox(const std::string& name, const std::vector<std::string>& items, int& currentItem, const ImVec2& size)
@@ -586,7 +550,7 @@ namespace BO3PT
 
     bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress, int& outIndex)
     {
-        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0)); ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(25, 100, 128, 100));
+        ImGui::PushStyleColor(ImGuiCol_Button, COLOR_TRANSPARENT); ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_BLUE_WEAK);
         float leftPos = ImGui::GetCursorPosX();
         if (numOnLine < 1)
             numOnLine = 1;
@@ -2035,7 +1999,7 @@ namespace BO3PT
 
         rapidxml::xml_node<>* segmentsNode = builder.AddNode(builder.GetRootNode(), "Segments");
 
-        for (auto split : splits)
+        for (const std::pair<std::string, int>& split : splits)
         {
             rapidxml::xml_node<>* segmentNode = builder.AddNode(segmentsNode, "Segment");
 

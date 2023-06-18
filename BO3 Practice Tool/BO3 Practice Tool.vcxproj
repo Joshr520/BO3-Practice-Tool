@@ -243,6 +243,8 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClInclude Include="Fonts\Icons.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="headers\GlobalData.h" />
+    <ClInclude Include="headers\GUIState.h" />
+    <ClInclude Include="headers\ImGuiHelper.h" />
     <ClInclude Include="headers\Keybinds.h" />
     <ClInclude Include="headers\Memhelp.h" />
     <ClInclude Include="headers\stb_image.h" />
@@ -282,6 +284,8 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\GlobalData.cpp" />
+    <ClCompile Include="src\GUIState.cpp" />
+    <ClCompile Include="src\ImGuiHelper.cpp" />
     <ClCompile Include="src\Keybinds.cpp" />
     <ClCompile Include="src\Memhelp.cpp" />
     <ClCompile Include="src\ToolData.cpp" />
@@ -301,7 +305,6 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
   </ItemGroup>
   <ItemGroup>
     <None Include="Fonts\DroidSans.embed" />
-    <None Include="Fonts\fa-solid-900.embed" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

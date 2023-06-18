@@ -1,22 +1,32 @@
 #include "memHelp.h"
 
+#include <TlHelp32.h>
+
 #include "Walnut/Logger.h"
 
-namespace MemHelp
+namespace BO3PT
 {
-    uintptr_t* GetModuleBaseAddress(uint32_t ProcessID, const wchar_t* ModuleName)
+    DWORD MemState::s_PID;
+    HANDLE MemState::s_Handle;
+    uintptr_t* MemState::s_BaseAddress;
+    uintptr_t* MemState::s_MapNameAddress;
+    uintptr_t* MemState::s_RoundAddress;
+    int MemState::s_RoundValue;
+    char MemState::s_MapNameValue[13];
+    MemStates MemState::s_State;
+
+    uintptr_t* MemState::GetModuleBaseAddress(uint32_t processID, const wchar_t* moduleName)
     {
         void* hSnap = nullptr;
         MODULEENTRY32W Mod32 = { 0 };
 
-        if ((hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessID)) == INVALID_HANDLE_VALUE)
+        if ((hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, processID)) == INVALID_HANDLE_VALUE) {
             return 0;
+        }
 
         Mod32.dwSize = sizeof(MODULEENTRY32W);
-        while (Module32NextW(hSnap, &Mod32))
-        {
-            if (!_wcsicmp(ModuleName, Mod32.szModule))
-            {
+        while (Module32NextW(hSnap, &Mod32)) {
+            if (!_wcsicmp(moduleName, Mod32.szModule)) {
                 CloseHandle(hSnap);
                 return (uintptr_t*)Mod32.modBaseAddr;
             }
@@ -26,15 +36,15 @@ namespace MemHelp
         return nullptr;
     }
 
-    DWORD GetProcessIdByName(const wchar_t* name)
+    DWORD MemState::GetProcessIdByName(const wchar_t* processName)
     {
-        PROCESSENTRY32W pt;
+        PROCESSENTRY32W pt = { 0 };
         HANDLE hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         pt.dwSize = sizeof(PROCESSENTRY32W);
         Walnut::Logger::Log(Walnut::MessageType::Info, "Starting Enumeration");
         if (Process32FirstW(hsnap, &pt)) {
             do {
-                if (!_wcsicmp(pt.szExeFile, name)) {
+                if (!_wcsicmp(pt.szExeFile, processName)) {
                     Walnut::Logger::Log(Walnut::MessageType::Success, "BlackOps3.exe Found");
                     CloseHandle(hsnap);
                     return pt.th32ProcessID;
@@ -46,32 +56,48 @@ namespace MemHelp
         return 0;
     }
 
-    HANDLE GetProcHandle(const wchar_t* szProcName)
+    bool MemState::SetPID(const wchar_t* moduleName)
     {
-        HANDLE hProc = NULL;
-        HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
-
-        PROCESSENTRY32W pe32 = { 0 };
-        pe32.dwSize = sizeof(PROCESSENTRY32W);
-
-        if (Process32FirstW(hSnap, &pe32))
-        {
-            if (!wcscmp(szProcName, pe32.szExeFile))
-            {
-                hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
-            }
-            else
-            {
-                while (Process32NextW(hSnap, &pe32))
-                {
-                    if (!wcscmp(szProcName, pe32.szExeFile))
-                    {
-                        hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
-                        break;
-                    }
-                }
-            }
+        s_PID = GetProcessIdByName(moduleName);
+        if (s_PID != NULL) {
+            s_State = Loaded;
+            return true;
         }
-        return hProc;
+        return false;
+    }
+
+    bool MemState::SetAddresses(const wchar_t* moduleName)
+    {
+        s_BaseAddress = GetModuleBaseAddress(s_PID, moduleName);
+        if (s_BaseAddress == nullptr) {
+            s_State = Unloaded;
+            return false;
+        }
+        s_MapNameAddress = s_BaseAddress + 0x179DF840 / 8;
+        s_RoundAddress = s_BaseAddress + 0x1140DC30 / 8;
+        return true;
+    }
+
+    bool MemState::SetHandle()
+    {
+        s_Handle = OpenProcess(PROCESS_VM_READ, false, s_PID);
+        if (s_Handle == INVALID_HANDLE_VALUE) {
+            s_State = Unloaded;
+            return false;
+        }
+        return true;
+    }
+
+    bool MemState::ReadData()
+    {
+        if (s_Handle == INVALID_HANDLE_VALUE ||
+            !ReadProcessMemory(s_Handle, s_MapNameAddress, &s_MapNameValue, sizeof(s_MapNameValue), NULL) ||
+            !ReadProcessMemory(s_Handle, s_RoundAddress, &s_RoundValue, sizeof(s_RoundValue), NULL))
+        {
+            s_State = Unloaded;
+            CloseHandle(s_Handle);
+            s_Handle = NULL;
+            return false;
+        }
     }
 }

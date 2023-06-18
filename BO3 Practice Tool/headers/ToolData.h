@@ -11,6 +11,8 @@
 #include "Walnut/Timer.h"
 #include "imgui.h"
 
+#include "ImGuiHelper.h"
+
 namespace BO3PT
 {
 #pragma region Blockers
@@ -120,15 +122,13 @@ namespace BO3PT
 	void HelpMarker(const std::string& text);
 	void DummySpace(float x, float y);
 	void SetToggleButtonColor(bool active);
-	void FakeButton(const std::string& name, const ImVec2& size, const ImVec4& color);
 	void SwapGumSelection(int newGum, int gumSlot);
 	void VerifyFileStructure();
 	void WritePracticePatches(const int patch[9]);
 	void NotifyGame(const std::vector<int>& passList);
-	void InjectTool(bool enable, bool& injectResponse);
+	void InjectTool(bool enable, bool injectResponse);
 	void ResetToggles();
 
-	bool CreateButton(const std::string& name, const ImVec2& size, bool* value = NULL, bool toggle = false, const ImVec4& color = { 25, 100, 128, 255 }, bool inGame = false);
 	bool CreateListBox(const std::string& name, const std::vector<std::string>& items, int& currentItem, const ImVec2& boxSize);
 	bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress, int& outIndex);
 	bool DoesPathExist(const std::string_view& s);
