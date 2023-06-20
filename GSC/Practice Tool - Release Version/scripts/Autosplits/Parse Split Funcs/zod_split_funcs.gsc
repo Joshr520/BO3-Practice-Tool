@@ -85,12 +85,12 @@ SplitJunctionOvum()
 
 SplitCanalsOvum()
 {
-    self WaitForOvum(2);
+    self WaitForOvum(1);
 }
 
 SplitFootlightOvum()
 {
-    self WaitForOvum(1);
+    self WaitForOvum(2);
 }
 
 SplitWaterfrontOvum()

@@ -35,16 +35,11 @@ WaitSword(sword_state)
     }
 }
 
-// 0 = waterfront, 1 = footlight, 2 = canals, 3 = junction
+// 0 = waterfront, 1 = canals, 2 = footlight, 3 = junction
 WaitForOvum(num)
 {
-    for(;;)
-    {
-        level flag::wait_till("magic_circle_in_progress");
-        wait 0.05;
-        foreach(player in GetPlayers()) if(level clientfield::get("keeper_egg_location_" + player.characterindex) == num) return;
-        level flag::wait_till_clear("magic_circle_in_progress");
-    }
+    level flag::wait_till("magic_circle_in_progress");
+    while(self clientfield::get_to_player("magic_circle_state_" + num) < 2) wait 0.05;
 }
 
 WaitBook()

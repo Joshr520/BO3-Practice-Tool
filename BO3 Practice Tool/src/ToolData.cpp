@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <regex>
 
 using namespace BO3PT;
 
@@ -548,35 +549,18 @@ namespace BO3PT
 
     bool CheckVersions(const std::string& newVersion, const std::string& oldVersion)
     {
-        std::vector<int> newVersionParts;
-        std::vector<int> oldVersionParts;
+        std::regex regex("\\d+\\.\\d+\\.\\d+");
 
-        std::istringstream newVersionStream(newVersion);
-        std::istringstream oldVersionStream(oldVersion);
-        std::string part;
+        std::smatch match;
+        if (std::regex_search(newVersion, match, regex)) {
+            std::string numericVersion = match.str(); // Extract the matched numeric portion
 
-        std::getline(newVersionStream, part, 'v');
-        std::getline(oldVersionStream, part, 'v');
-
-        while (std::getline(newVersionStream, part, '.'))
-            newVersionParts.emplace_back(std::stoi(part));
-        while (std::getline(oldVersionStream, part, '.'))
-            oldVersionParts.emplace_back(std::stoi(part));
-
-        if (newVersionParts.size() != 3 || oldVersionParts.size() != 3)
-            return false;
-        if (newVersionParts[0] > oldVersionParts[0])
-            return true;
-        else if (newVersionParts[0] == oldVersionParts[0])
-        {
-            if (newVersionParts[1] > oldVersionParts[1])
+            // Compare the numeric version
+            if (numericVersion < oldVersion) {
                 return true;
-            else if (newVersionParts[1] == oldVersionParts[1])
-            {
-                if (newVersionParts[2] > oldVersionParts[2])
-                    return true;
             }
         }
+
         return false;
     }
 
