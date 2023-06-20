@@ -10,7 +10,6 @@ init()
     level.rankedmatch = 1;
     level.var_dfc343e9 = 0;
 
-    compiler::startserver();
     level.round_sr = false;
     level.pap_sr = false;
     level.basic_timer = true;
@@ -23,14 +22,21 @@ on_player_connect()
     level flag::wait_till("start_zombie_round_logic");
     if(!self IsHost()) return;
 
-    self thread StartInGameSplits();
+    WaitFadeIn();
+
+    message = hud::createfontstring("big", 1.1);
+    hud::setpoint("TOP", "MIDDLE", 20, 0);
+    message SetText("BO3 Practice Tool Loaded: ^6github.com/Joshr520/BO3-Practice-Tool");
+    wait 3;
+    message FadeOverTime(5);
+    message.alpha = 0;
+    wait 5;
+    message Destroy();
 }
 
 on_player_spawned()
 {
     if(self IsTestClient()) return;
-
-    //self thread TombSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
 }
@@ -142,6 +148,11 @@ WriteToScreen(text)
 IsScenePlaying(scene)
 {
     return self scene::is_playing(scene);
+}
+
+WaitFadeIn()
+{
+    while(!IsDefined(level.n_gameplay_start_time)) wait 0.05;
 }
 
 TradeWeaponLimit(player)

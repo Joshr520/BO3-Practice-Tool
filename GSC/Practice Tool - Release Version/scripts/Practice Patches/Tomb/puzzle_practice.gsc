@@ -1,12 +1,14 @@
 PuzzlePractice()
 {
-    level flag::wait_till("initial_blackscreen_passed");
+    WaitFadeIn();
     if(level.script != "zm_tomb")
     {
+        level flag::wait_till("initial_blackscreen_passed");
         thread WriteToScreen("Wrong Map For Loaded Patch - Correct Map: Tomb");
         return;
     }
-
+    
+    level flag::wait_till("initial_blackscreen_passed");
     thread WriteToScreen("Puzzle Practice Starting");
 
     level flag::set("puzzle_practice");

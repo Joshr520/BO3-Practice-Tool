@@ -4,6 +4,7 @@ LoadSettings()
     InitPracticePatches();
     self thread LoadGums();
     self thread LoadPracticePatches();
+    self thread LoadSplits();
 
     self thread WatchInterface();
 }
@@ -18,14 +19,23 @@ InitMenuFuncs()
         4 = Egg Step Options
         5 = Craftable Options
         6 = Blocker Options
+        7 = Map Options
     */
     level.menu_functions = [];
     level.menu_functions[0] = Array(::SetPlayerPoints, ::GivePlayerWeapon, ::TakePlayerWeapon, ::GivePlayerGum, ::TakePlayerGum, ::TakePlayerGumCharge, ::UsePlayerGumCharge, ::GiveAllPerks, ::TakeAllPerks, ::GivePerk, ::TakePerk, ::Godmode, ::InfiniteAmmo, ::Timescale);
     level.menu_functions[1] = Array(::IgnorePlayers, ::KillHorde, ::FreezeZombies, ::ClearSpawns, ::SetZombieSpeed);
     level.menu_functions[2] = Array(::EndRound, ::SkipToRound, ::SetZombieCount);
     level.menu_functions[3] = Array(::GivePowerup);
-    level.egg_funcs["zm_zod"] = Array(::FinishRitual, ::FillAllEggs, ::FillEgg, ::FinishAllMagicCircles, ::FinishMagicCircle, ::FinishAllFlags, ::FinishFlag);
-    level.menu_functions[4] = level.egg_funcs[level.script];
+    egg_funcs = [];
+    egg_funcs["zm_zod"] = Array(::FinishRitual, ::FillAllEggs, ::FillEgg, ::FinishAllMagicCircles, ::FinishMagicCircle, ::FinishAllFlags, ::FinishFlag);
+    egg_funcs["zm_castle"] = Array(::FillDragon, ::FillAllDragons, ::DoStormStep, ::DoFireStep, ::DoVoidStep, ::DoWolfStep, ::TimeTravel, ::DoSimonStep, ::DoAllSimon, ::DoKeeperStep, ::DoAllKeeper);
+    egg_funcs["zm_island"] = Array(::CompleteSkull, ::CompleteSkulls, ::FinishChallenges, ::SkullFadeMap, ::PickupBullet, ::ShootPlane, ::PickupGears, ::ElevatorFadeWall, ::StartTakeoBoss, ::DoAllZNSSteps);
+    egg_funcs["zm_stalingrad"] = Array(::FinishPAPGrophs, ::AcquireEgg, ::AwakenEgg, ::FinishNapalm, ::FinishMultiKills, ::FinishMeleeKills, ::IncubateEgg, ::FinishPostIncubate, ::PickupGauntlet, ::CompleteTubePuzzle, ::CompletePassword,
+        ::PickupKeys, ::CompleteChallenges, ::DeliverPowerCore, ::StartNikolaiFight);
+    egg_funcs["zm_genesis"] = Array(::ShootCharacterStones, ::FinishKeeper, ::FinishArnies, ::FinishBones, ::ActivateAndGuideSophia, ::PickupAndPlaceBook, ::PickupAndFillEggs, ::FinishFirstBoss, ::CollectToys);
+    egg_funcs["zm_tomb"] = Array(::BuildIceStaff, ::CompleteIcePuzzle, ::CompleteIceTombstones, ::IceStaffUpgrade, ::BuildWindStaff, ::CompleteWindRings, ::CompleteWindSmoke, ::WindStaffUpgrade, ::BuildFireStaff, ::CompleteFireSouls, ::CompleteFireTorches,
+        ::FireStaffUpgrade, ::BuildLightningStaff, ::CompleteLightningChords, ::CompleteLightningRelays, ::LightningStaffUpgrade, ::AFD, ::RainFire, ::UnleashHorde, ::SkewerWingedBeast, ::WieldIronFirst, ::RaiseHell);
+    level.menu_functions[4] = egg_funcs[level.script];
     level.menu_functions[5] = Array(::PickupAllPieces, ::ProcessPiecePickup);
     level.menu_functions[6] = Array(::OpenAllDoors, ::OpenSpecificDoor, ::ActivateAllPower, ::ActivateSpecificPower, ::ActivateMapSpecificObject, ::SetZBarrierState);
     level.menu_functions[7] = Array(::LoadMap);
@@ -41,34 +51,35 @@ InitPracticePatches()
     level.practice_patches["zm_stalingrad"] = Array(::StalingradSoftPatch, ::LockdownPractice, ::ChallengesPractice, ::GershQuoteSkipPractice, ::BossQuoteSkipPractice);
     level.practice_patches["zm_genesis"] = Array(::GenesisSoftPatch, ::BonesPractice, ::Boss1Practice, ::Boss2Practice, ::BasketballPractice, ::SquidShardsPractice);
     level.practice_patches["zm_moon"] = Array();
-    level.practice_patches["zm_tomb"] = Array(::WindOrbPracticeShots);
+    level.practice_patches["zm_tomb"] = Array(::TombSoftPatch, ::WindOrbPracticeShots, ::PuzzlePractice, ::TempLineups, ::RainFireLineups, ::AFDGstrikePractice);
+    level.practice_patches["general"] = Array(::SpawnerDebug);
 }
 
 WatchInterface()
 {
     level endon("disconnect");
 
-    file = "Practice Tool/Tool-Game Interface.txt";
-    compiler::resetfile(file);
+    compiler::startserver();
+
     level flag::wait_till("initial_blackscreen_passed");
-    compiler::resetfile(file);
+
     for(;;)
     {
         wait 0.05;
-        array_num = compiler::readsettings(file, 1, 0);
+
+        array_num = compiler::readserver();
         if(array_num < 0 || !IsDefined(level.menu_functions[array_num])) continue;
-        func_num = compiler::readsettings(file, 2, 0);
+        func_num = compiler::readserver();
         if(func_num < 0 || !IsDefined(level.menu_functions[array_num][func_num])) continue;
+
         params = [];
-        param = 0;
-        num = 3;
-        param = compiler::readsettings(file, num, 0);
+        param = compiler::readserver();
         while(param >= 0)
         {
             params[params.size] = param;
-            num++;
-            param = compiler::readsettings(file, num, 0);
+            param = compiler::readserver();
         }
+
         func = level.menu_functions[array_num][func_num];
         switch(params.size)
         {
@@ -84,13 +95,16 @@ WatchInterface()
             case 3:
                 self thread [[func]](params[0], params[1], params[2]);
                 break;
+            default:
+                break;
         }
-        compiler::resetfile(file);
     }
 }
 
 LoadGums()
 {
+    level flag::wait_till("start_zombie_round_logic");
+    
     file = "Practice Tool/Settings/Active Gum Preset.txt";
     gum_nums = [];
     gum_nums[gum_nums.size] = compiler::readsettings(file, 1, 0);
@@ -129,7 +143,14 @@ LoadGums()
 LoadPracticePatches()
 {
     file = "Practice Tool/Settings/Practice Presets.txt";
-    practice_patch = -1;
+    practice_patch = compiler::readsettings(file, 9, 0);
+
+    if(practice_patch >= 0)
+    {
+        self thread [[level.practice_patches["general"][practice_patch]]]();
+        return;
+    }
+
     switch(level.script)
     {
         case "zm_zod":

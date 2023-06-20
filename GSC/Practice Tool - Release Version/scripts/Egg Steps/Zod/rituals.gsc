@@ -1,12 +1,5 @@
 FinishRitual(num)
 {
-    if(!level flag::exists("ritual_" + num + "_force_started"))
-    {
-        level flag::init("ritual_" + num + "_force_started");
-        level.force_rituals = 0;
-    }
-    if(level flag::get("ritual_" + num + "_force_started")) return;
-    level flag::set("ritual_" + num + "_force_started");
     switch(num)
     {
         case 0:
@@ -28,6 +21,7 @@ FinishRitual(num)
             thread WriteToScreen("Incorrect Ritual Input - Must Be 0-4");
             return;
     }
+    if(level flag::get("ritual_" + name + "_complete")) return;
     if(name == "pap")
     {
         level flag::set("pap_door_open");
@@ -35,7 +29,8 @@ FinishRitual(num)
         self thread FinishRitual(1);
         self thread FinishRitual(2);
         self thread FinishRitual(3);
-        while(level.force_rituals < 4) wait 0.05;
+        level flag::wait_till_all(Array("ritual_magician_complete", "ritual_femme_complete", "ritual_detective_complete", "ritual_boxer_complete"));
+        wait 7;
         for(i = 1; i < 5; i++)
         {
             self BuildAndActivateTrigger(level.var_f86952c7["pap_basin_" + i]);

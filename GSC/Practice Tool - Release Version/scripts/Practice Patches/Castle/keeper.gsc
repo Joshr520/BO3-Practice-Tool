@@ -1,6 +1,6 @@
 KeeperPractice()
 {
-    level flag::wait_till("start_zombie_round_logic");
+    WaitFadeIn();
     if(level.script != "zm_castle")
     {
         level flag::wait_till("initial_blackscreen_passed");
@@ -24,6 +24,7 @@ KeeperPractice()
     }
     self thread GiveAllPerks();
     FinishStorm();
+    while(!self HasWeapon(GetWeapon("elemental_bow_storm"))) wait 0.05;
     self zm_weapons::weapon_give(GetWeapon("ar_cqb"));
     self zm_weapons::weapon_give(GetWeapon("pistol_standard"));
     self TimeTravel(2);

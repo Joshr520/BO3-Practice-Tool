@@ -1,6 +1,6 @@
 Wisp2Practice()
 {
-    level flag::wait_till("start_zombie_round_logic");
+    WaitFadeIn();
     if(level.script != "zm_castle")
     {
         level flag::wait_till("initial_blackscreen_passed");
@@ -14,7 +14,6 @@ Wisp2Practice()
     level flag::clear("spawn_zombies");
     level flag::set("story_playing");
     level flag::set("castle_teleporter_used");
-    wait 10;
     Timescale(10);
     self.score = 4500;
     self thread OpenAllDoors();
@@ -27,7 +26,8 @@ Wisp2Practice()
     self thread GiveAllPerks();
     self zm_weapons::weapon_give(GetWeapon("ar_cqb"));
     self zm_weapons::weapon_give(GetWeapon("pistol_standard"));
-    FinishStorm();
+    self FinishStorm();
+    while(!self HasWeapon(GetWeapon("elemental_bow_storm"))) wait 0.05;
     self bgb::give("zm_bgb_extra_credit");
     thread SkipToRound(7, 1);
     wait 2;

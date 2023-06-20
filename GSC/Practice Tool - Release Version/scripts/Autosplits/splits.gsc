@@ -1,393 +1,342 @@
-StartInGameSplits()
+LoadSplits()
 {
-    if(level.basic_timer)
-    {
-        level flag::wait_till("start_zombie_round_logic");
-        wait 2.1;
-        level.in_game_splits = [];
-        level.start_time_custom = GetTime();
-        start_time = GetTime();
-        timer = InitHud(0);
-        timer SetTimerUp(0);
-        timer.label = &"^3Time: ^2";
-        InitSplitHud(timer);
+    if(!compiler::loadsplitjson()) return;
+    maps = ["zm_zod", "zm_factory", "zm_castle", "zm_island", "zm_stalingrad", "zm_genesis", "zm_prototype", "zm_asylum", "zm_sumpf", "zm_theater", "zm_cosmodrome", "zm_temple", "zm_moon", "zm_tomb"];
+    map = compiler::getsplitvalue("Settings", "Map Index");
 
-        round_timer = InitHud(0);
-        round_timer SetTenthsTimerUp(0.05);
-        round_timer.label = &"^3Round Time: ^2";
-        InitSplitHud(round_timer);
-        thread ManageInGameRoundTimer(round_timer);
-        return;
+    split_size = compiler::getsplitvalue("Settings", "Amount of Splits");
+    split_type = compiler::getsplitvalue("Settings", "Split Type");
+    igt = compiler::getsplitvalue("Settings", "In Game Timer");
+    igrt = compiler::getsplitvalue("Settings", "In Game Round Timer");
+
+    if(igt) thread RunIGT();
+    if(igrt) thread RunIGRT();
+
+    if(maps[map] != level.script) return;
+
+    level.num_splits = split_size + 1;
+
+    split_funcs = [];
+    split_labels = [];
+    split_funcs["zm_zod"] = Array(::SplitMagicianRitual, ::SplitFemmeRitual, ::SplitDetectoveRitual, ::SplitBoxerRitual, ::SplitPAPRitual, ::SplitCanalsRift, ::SplitFootlightRift, ::SplitWaterfrontRift, ::SplitRiftCanals, ::SplitRiftFootlight,
+    ::SplitRiftWaterfront, ::SplitCanalsEgg, ::SplitFootlightEgg, ::SplitWaterfrontEgg, ::SplitRiftEgg, ::SplitPickupSword, ::SplitJunctionOvum, ::SplitCanalsOvum, ::SplitFootlightOvum, ::SplitWaterfrontOvum, ::SplitUpgradedSword, ::SplitBook,
+    ::SplitFlag1, ::SplitFlag2, ::SplitFlag3, ::SplitFlag4);
+    split_funcs["zm_castle"] = Array(::SplitChurchDragon, ::SplitCourtyardDragon, ::SplitUndercroftDragon, ::SplitBow, ::SplitStartLightning, ::SplitBonfires, ::SplitWallRide, ::SplitCrackle, ::SplitUpgradeLightning, ::SplitStartFire, ::SplitObelisk,
+    ::SplitCircles, ::SplitGolf, ::SplitFireUpgrade, ::SplitVoidStart, ::SplitActivateUrn, ::SplitSkulls, ::SplitCrawlers, ::SplitRunes, ::SplitVoidUpgrade, ::SplitWolfStart, ::SplitShrine, ::SplitStartEscort, ::SplitEscortFilled, ::SplitWolfForged,
+    ::SplitWolfUpgrade, ::SplitTP, ::SplitTimeTravel1, ::SplitTimeTravel2, ::SplitCodeEntered, ::SplitSimon1, ::SplitSimon2, ::SplitKeeperSpawned, ::SplitKeeper1, ::SplitKeeper2, ::SplitKeeper3, ::SplitKeeper4, ::SplitKeeperTrapped, ::SplitBossEnter, ::SplitBossExit);
+    split_funcs["zm_island"] = Array(::SplitSkull1, ::SplitSkull2, ::SplitSkull3, ::SplitSkull4, ::SplitSkullWeapon, ::SplitBunkerOpen, ::SplitPowerOn, ::SplitKTPickup, ::SplitMasamunePickup, ::SplitPoster, ::SplitBullet, ::SplitPlane, ::SplitElevator, ::SplitIslandBossEnter);
+    split_funcs["zm_stalingrad"] = Array(::SplitGroph1, ::SplitGroph2, ::SplitGroph3, ::SplitPickupEgg, ::SplitEggBathed, ::SplitIncubationStart, ::SplitPickupGauntlet, ::SplitFlySupply, ::SplitFlyTank, ::SplitFlyDC, ::SplitLockdownStart, ::SplitLockdownEnd,
+    ::SplitStartChallenges, ::SplitStartDownload, ::SplitStalingradBossEnter);
+    split_funcs["zm_genesis"] = Array(::SplitGenSpawn, ::SplitGenDE, ::SplitGenVerruckt, ::SplitGenMob, ::SplitKeeperStart, ::SplitEnterBeast, ::SplitLeaveBeastMob, ::SplitLeaveBeastVerruckt, ::SplitLeaveBeastDE, ::SplitLeaveBeastSpawn, ::SplitReelPickup1,
+    ::SplitReelPlace1, ::SplitReelPickup2, ::SplitReelPlace2, ::SplitReelPickup3, ::SplitReelPlace3, ::SplitHouseTP, ::SplitEgg1, ::SplitEgg2, ::SplitEgg3, ::SplitEgg4, ::SplitRune1, ::SplitRune2, ::SplitRune3, ::SplitRune4, ::SplitBoss1, ::SplitSymbols,
+    ::SplitBossRush, ::SplitBoss2);
+    split_funcs["zm_tomb"] = Array(::SplitIceCraft, ::SplitWindCraft, ::SplitFireCraft, ::SplitLightningCraft, ::SplitUpgrade, ::SplitBoxes, ::SplitFists);
+    split_labels["zm_zod"] = Array(&"Magician Ritual: ", &"Femme Ritual: ", &"Detective Ritual: ", &"Boxer Ritual: ", &"PAP Ritual: ", &"Canals Rift: ", &"Footlight Rift: ", &"Waterfront Rift: ", &"Rift Canals: ", &"Rift Footlight: ", &"Rift Waterfront: ",
+    &"Canals Egg: ", &"Footlight Egg: ", &"Waterfront Egg: ", &"Rift Egg: ", &"Sword: ", &"Junction Ovum: ", &"Canals Ovum: ", &"Footlight Ovum: ", &"Waterfront Ovum: ", &"Upgraded Sword: ", &"Book: ", &"Flag 1: ", &"Flag 2: ", &"Flag 3: ", &"Flag 4: ");
+    split_labels["zm_castle"] = Array(&"Church Dragon: ", &"Courtyard Dragon: ", &"Undercroft Dragon: ", &"Pickup Bow: ", &"Start Lightning: ", &"Bonfires Shot: ", &"Wall Ride: ", &"Crackle: ", &"Upgrade Lightning: ", &"Start Fire: ", &"Obelisk Shot: ",
+     &"Circles Filled: ", &"Golf: ", &"Upgrade Fire: ", &"Start Void: ", &"Activate Urn: ", &"Pickup Skulls: ", &"Crawler Kills: ", &"Runes: ", &"Upgrade Void: ", &"Start Wofl: ", &"Shrine Shot: ", &"Start Escort: ", &"Wolf Souls Filled: ", &"Wolf Arrow Forged: ",
+     &"Upgrade Wolf: ", &"Normal TP: ", &"Time Travel 1: ", &"Time Travel 2: ", &"Safe Code Entered: ", &"Simon 1: ", &"Simon 2: ", &"Keeper Spawned: ", &"Keeper 1: ", &"Keeper 2: ", &"Keeper 3: ", &"Keeper 4: ", &"Keeper Trapped: ", &"Boss Enter: ", &"Boss Exit: ");
+    split_labels["zm_island"] = Array(&"Skull 1: ", &"Skull 2: ", &"Skull 3: ", &"Skull 4: ", &"Skull Ritual: ", &"Bunker Open: ", &"Power On: ", &"KT-4: ", &"Masamune: ", &"Poster: ", &"Bullet: ", &"Plane Shot: ", &"Elevator On: ", &"Boss Enter: ");
+    split_labels["zm_stalingrad"] = Array(&"Groph 1: ", &"Groph 2: ", &"Groph 3: ", &"Pickup Egg: ", &"Egg Bathed: ", &"Incubation Start: ", &"Pickup Gauntlet: ", &"Fly Supply: ", &"Fly Tank: ", &"Fly DC: ", &"Lockdown Start: ", &"Lockdown End: ",
+    &"Start Challenges: ", &"Start Download: ", &"Boss Enter: ");
+    split_labels["zm_genesis"] = Array(&"Spawn Gen: ", &"DE Gen: ", &"Verruckt Gen: ", &"Mob Gen: ", &"Keeper Start: ", &"Enter Beast: ", &"Exit Beast Mob: ", &"Exit Beast Verruckt: ", &"Exit Beast DE: ", &"Exit Beast Spawn: ", &"Pickup Reel 1: ",
+    &"Place Reel 1: ", &"Pickup Reel 2: ", &"Place Reel 2: ", &"Pickup Reel 3: ", &"Place Reel 3: ", &"House: ", &"Egg 1: ", &"Egg 2: ", &"Egg 3: ", &"Egg 4: ", &"Rune 1: ", &"Rune 2: ", &"Rune 3: ", &"Rune 4: ",
+    &"Boss 1: ", &"Symbols: ", &"Basketball: ", &"Boss 2: ");
+    split_labels["zm_tomb"] = Array(&"Ice Staff: ", &"Wind Staff: ", &"Fire Staff: ", &"Lightning Staff: ", &"Upgrade: ", &"Boxes: ", &"Fists: ");
+    active_funcs = [];
+    active_labels = [];
+    round_funcs = [];
+    round_params = [];
+
+    for(i = 0; i < split_size; i++)
+    {
+        func_num = compiler::getsplitvalue("Split Data", "Key", i);
+        round = compiler::getsplitvalue("Split Data", "Value", i);
+
+        if(!IsDefined(split_funcs[level.script][func_num])) return;
+        if(!IsDefined(level.tracking_keeper) && IsSubStr(MakeLocalizedString(split_labels[level.script][func_num]), "Keeper")) thread TrackKeeper();
+
+        active_funcs[active_funcs.size] = split_funcs[level.script][func_num];
+        active_labels[active_labels.size] = split_labels[level.script][func_num];
+        if(!round) round_funcs[i] = ::WaitSplitCurrentRound;
+        else if(round > 0)
+        {
+            round_funcs[i] = ::WaitSplitRound;
+            round_params[i] = round;
+        }
     }
-    if(!level.map_specific_timer) return;
-    switch(level.script)
+
+    if(split_type == 2)
     {
-        case "zm_zod":
+        active_funcs[active_funcs.size] = ::WaitPAP;
+        active_labels[active_labels.size] = &"PAP: ";
+    }
+    else if(split_type == 1)
+    {
+        active_funcs[active_funcs.size] = ::WaitSong;
+        active_labels[active_labels.size] = &"Song Started: ";
+    }
+    else
+    {
+        switch(maps[map])
+        {
+            case "zm_zod":
+                active_funcs[active_funcs.size] = ::WaitZodEnd;
+                break;
+            case "zm_castle":
+                active_funcs[active_funcs.size] = ::WaitCastleEnd;
+                break;
+            case "zm_island":
+                active_funcs[active_funcs.size] = ::WaitIslandEnd;
+                break;
+            case "zm_stalingrad":
+                active_funcs[active_funcs.size] = ::WaitStalingradEnd;
+                thread MonitorLockdownTimer();
+                break;
+            case "zm_genesis":
+                active_funcs[active_funcs.size] = ::WaitGenesisEnd;
+                break;
+            case "zm_tomb":
+                active_funcs[active_funcs.size] = ::WaitTombEnd;
+                break;
+            default:
+                break;
+        }
+        active_labels[active_labels.size] = &"Egg End: ";
+    }
 
-            break;
-        case "zm_factory":
+    level.in_game_splits = [];
+    level.rendered_splits = [];
+    level.split_top = 0;
+    level.split_bottom = 8;
+    level.last_split_added = 0;
 
-            break;
-        case "zm_castle":
+    if(igt)
+    {
+        thread MonitorSplitLayoutChange();
+        for(i = 0; i < 8; i++)
+        {
+            level.rendered_splits[i] = InitHud(0);
+            InitSplitHud(level.rendered_splits[i], 1);
+            if(igrt) level.rendered_splits[i].y += 15;
+        }
+    }
 
-            break;
-        case "zm_island":
+    thread Split();
+    WaitFadeIn();
+    thread Split();
+    start_time = GetTime();
 
-            break;
-        case "zm_stalingrad":
-            self GKInGameTimer();
-            break;
-        case "zm_genesis":
-            self RevInGameTimer();
-            break;
+    foreach(index, func in active_funcs)
+    {
+        if(igt) AddIGTSplit(active_labels[index]);
+        [[func]]();
+        thread Split();
+        if(IsDefined(round_funcs[index]))
+        {
+            if(IsDefined(round_params[index])) [[round_funcs[index]]](round_params[index]);
+            else [[round_funcs[index]]]();
+        }
+        level.in_game_splits[level.last_split_added - 1].text = "^2" + CalcTime(GetTime() - start_time);
+        level.in_game_splits[level.last_split_added - 1].time = CalcTime(GetTime() - start_time);
+    }
+
+    RenderSplits();
+}
+
+RunIGT()
+{
+    WaitFadeIn();
+    timer = InitHud(0);
+    timer SetTimerUp(0);
+    timer.label = &"^3Time: ^2";
+    timer.x = 15;
+    timer.y = 15;
+    timer.alpha = 1;
+}
+
+RunIGRT()
+{
+    WaitFadeIn();
+    round_timer = InitHud(0);
+    round_timer SetTenthsTimerUp(0.05);
+    round_timer.label = &"^3Round Time: ^2";
+    round_timer.x = 15;
+    round_timer.y = 30;
+    round_timer.alpha = 1;
+    thread ManageInGameRoundTimer(round_timer);
+}
+
+AddIGTSplit(label)
+{
+    level.in_game_splits[level.last_split_added] = SpawnStruct();
+    level.in_game_splits[level.last_split_added].label = label;
+    level.in_game_splits[level.last_split_added].text = "";
+    level.in_game_splits[level.last_split_added].time = "";
+
+    level.last_split_added++;
+
+    if(level.last_split_added > level.split_bottom)
+    {
+        diff = level.last_split_added - level.split_bottom;
+        level.split_top += diff;
+        level.split_bottom += diff;
+    }
+
+    RenderSplits();
+}
+
+MonitorSplitLayoutChange()
+{
+    thread SplitMoveUp();
+    thread SplitMoveDown();
+    thread SplitHide();
+    thread ExportSplits();
+}
+
+SplitMoveUp()
+{
+    for(;;)
+    {
+        WaitPgUp();
+        if(!level.split_top) continue;
+        level.split_top--;
+        level.split_bottom--;
+        RenderSplits();
     }
 }
 
-InitSplitHud(hud_elem)
+SplitMoveDown()
 {
-    hud_elem.y += level.in_game_splits.size * 15;
+    for(;;)
+    {
+        WaitPgDown();
+        if(level.last_split_added <= level.split_bottom || level.split_bottom == level.num_splits) continue;
+        level.split_top++;
+        level.split_bottom++;
+        RenderSplits();
+    }
+}
+
+SplitHide()
+{
+    for(;;)
+    {
+        WaitEnd();
+        foreach(rendered_split in level.rendered_splits) rendered_split.alpha = 0;
+        WaitEnd();
+        foreach(rendered_split in level.rendered_splits) rendered_split.alpha = 1;
+    }
+}
+
+ExportSplits()
+{
+    for(;;)
+    {
+        WaitHome();
+        data = "";
+        foreach(split in level.in_game_splits)
+        {
+            if(split.text == "") break;
+            data += MakeLocalizedString(split.label) + split.time + "\n";
+        }
+        compiler::setclipboard(data);
+    }
+}
+
+RenderSplits()
+{
+    for(i = level.split_top; i < level.split_bottom; i++)
+    {
+        if(i - level.split_top >= level.last_split_added) return;
+        level.rendered_splits[i - level.split_top].label = level.in_game_splits[i].label;
+        level.rendered_splits[i - level.split_top] SetText(level.in_game_splits[i].text);
+    }
+}
+
+InitSplitHud(hud_elem, alpha = 0)
+{
     hud_elem.x = 15;
-    level.in_game_splits[level.in_game_splits.size] = hud_elem;
-    hud_elem.alpha = 1;
+    hud_elem.y = (level.rendered_splits.size + 1) * 15;
+    hud_elem.alpha = alpha;
+}
+
+Split()
+{
+    if(!IsDefined(level.current_split_num)) level.current_split_num = 0;
+    SetDvar("probation_league_matchHistoryWindow", level.current_split_num);
+    level.current_split_num++;
 }
 
 ManageInGameRoundTimer(round_timer)
 {
     for(;;)
     {
-        level waittill("end_of_round");
+        WaitSplitCurrentRound();
         round_timer SetTenthsTimerUp(0.05);
     }
 }
 
-StartSplits()
+WaitSplitCurrentRound()
 {
-
-    // Check for fade in to split
-    SetDvar("xenon_maxVoicePacketsPerSec", 0);
-    self StartOnFadeIn();
-    // Check if round splits are enabled, else, start egg splits based on the map
-    if(level.round_sr) SplitOnRoundEnd();
-    else if(level.pap_sr) self PAPSplit();
-    else
-    {
-        switch(level.script)
-        {
-            case "zm_zod":
-                self ZodEggSplits();
-                break;
-            case "zm_factory":
-                self FactoryEggSplits();
-                break;
-            case "zm_castle":
-                self CastleEggSplits();
-                break;
-            case "zm_island":
-                self IslandEggSplits();
-                break;
-            case "zm_stalingrad":
-                self StalingradEggSplits();
-                break;
-            case "zm_genesis":
-                self GenesisEggSplits();
-                break;
-        }
-    }
-}
-
-PAPSplit()
-{
-    while(!self HasWeapon("pistol_revolver38_upgraded")) wait 0.05;
-    SetDvar("xenon_maxVoicePacketsPerSec", 2);
-}
-
-StartOnFadeIn()
-{
-    // Wait until rounds have started, then wait accordingly for when fade in starts and split
-    level flag::wait_till("start_zombie_round_logic");
-    wait 2.15;
-    SetDvar("xenon_maxVoicePacketsPerSec", 1);
-    //compiler::livesplit("start");
-    //thread RunTimer();
-    //compiler::livesplit("pausegametime");
-}
-
-RunTimer()
-{
-    level.ticks = 0;
-    for(;;)
-    {
-        wait 0.05;
-        level.ticks++;
-        compiler::livesplit("setgametime", level.ticks * 50);
-    }
-}
-
-SplitOnRoundEnd()
-{
-    num = 2;
-    // Wait for each round end to split
-    for(;;)
-    {
-        level waittill("end_of_round");
-        SetDvar("xenon_maxVoicePacketsPerSec", num);
-        num++;
-    }
-}
-
-ZodEggSplits()
-{
-    level endon("end_game");
-
-    level.ovums_done = 0;
-
-    // Check if the player has the sword, then notify detour to check for player passing through a portal
-    level.look_for_sword = false;
-    while(!self HasWeapon(level.var_15954023.weapons[self.characterindex][1])) wait 0.05;
-    level.look_for_sword = true;
-
-	/*vending_weapon_upgrade_trigger = zm_pap_util::get_triggers();
-    array::thread_all(vending_weapon_upgrade_trigger, ::WaitPAP);*/
-
-    // Check for each ovum to be activated and then finished. On the final ovum, don't wait to clear because we split when it's activated
-    max = level.activePlayers.size * 4;
-    for(i = 0; i < max; i++)
-    {
-        level flag::wait_till("magic_circle_in_progress");
-        level.ovums_done++;
-        if(i < max - level.activePlayers.size) level flag::wait_till_clear("magic_circle_in_progress");
-        else 
-        {
-            SetDvar("xenon_maxVoicePacketsPerSec", 4);
-            break;
-        }
-    }
-
-    // Check if the totem is in state 2, which means it's been picked up. Then wait for round flip and start again - split 2nd and 4th flag
-    while(level clientfield::get("ee_totem_state") != 2) wait 0.05;
-    //SetDvar("xenon_maxVoicePacketsPerSec", 5);
     level waittill("end_of_round");
-    while(level clientfield::get("ee_totem_state") != 2) wait 0.05;
-    SetDvar("xenon_maxVoicePacketsPerSec", 6);
-    level waittill("end_of_round");
-    level waittill("end_of_round");
-    while(level clientfield::get("ee_totem_state") != 2) wait 0.05;
-    SetDvar("xenon_maxVoicePacketsPerSec", 7);
+}
 
-    // Wait for the shadowman to be defeated
-    level flag::wait_till("ee_boss_defeated");
-    SetDvar("xenon_maxVoicePacketsPerSec", 8);
-
-    // If 4 players are in the game, wait for the egg to be complete
-    if(level.activePlayers.size == 4)
-    {
-        level flag::wait_till("ee_complete");
-        compiler::livesplit("split");
-    }
+WaitSplitRound(round)
+{
+    while(level.round_number < round) level waittill("end_of_round");
 }
 
 WaitPAP()
 {
-    self util::waittill_any("pap_timeout", "pap_taken", "pap_player_disconnected");
-    SetDvar("xenon_maxVoicePacketsPerSec", 3);
+    self waittill("pap_taken");
 }
 
-FactoryEggSplits()
+WaitSong()
 {
-    level endon("end_game");
-
-    // Wait until egg is completed then split
-    player = trigger::wait_till("flytrap_prize");
-    compiler::livesplit("split");
-}
-
-CastleEggSplits()
-{
-    level endon("end_game");
-
-    // Wait until the dragons are filled and then check to see if anyone has picked up the bow. Split if anyone has the bow.
-    level flag::wait_till("soul_catchers_charged");
-    break_loop = false;
+    level endon("plant_lullaby");
+    if(level.script == "zm_island") thread WatchLullaby();
+    songs = Array("snakeskinboots", "snakeskinboots_instr", "coldhardcash", "musicEasterEgg", "dead_again", "dead_flowers", "dead_ended", "ace_of_spades", "the_gift", "lullaby_for_a_dead_man", "the_one", "115", "abracadavre", "pareidolia",
+    "cominghome", "archangel", "aether", "shepherd_of_fire");
     for(;;)
     {
-        foreach(player in level.players)
-        {
-            if(player HasWeapon(GetWeapon("elemental_bow")))
+        while(!IsTrue(level.musicsystem.currentstate)) wait 0.05;
+        if(IsInArray(songs, level.musicsystem.currentstate)) return;
+        state = level.musicsystem.currentstate;
+        while(level.musicsystem.currentstate == state) wait 0.05;
+    }
+}
+
+WatchLullaby()
+{
+    play = struct::get("plantMusicPlay", "targetname");
+    pods = GetEntArray("plantMusicPods", "targetname");
+    solution = array(1, 3, 5, 6, 7, 5);
+    for(;;)
+    {
+        play waittill("trigger_activated");
+        water_levels = [[ @zm_island_side_ee_song<scripts\zm\zm_island_side_ee_song.gsc>::function_c5359566 ]]();
+        match = 1;
+		for(i = 0; i < water_levels.size; i++)
+		{
+			if(water_levels[i] != solution[i])
+			{
+				match = 0;
+				break;
+			}
+            if(IsTrue(match))
             {
-                SetDvar("xenon_maxVoicePacketsPerSec", 2);
-                break_loop = true;
-                break;
+                level notify("plant_lullaby");
+                return;
             }
-        }
-        if(break_loop) break;
-        wait 0.05;
-    }
-
-    // Wait until round 6 round end to split
-    level flag::wait_till_all(Array("elemental_storm_batteries", "elemental_storm_beacons_charged"));
-    if(level.round_number < 7) level waittill("end_of_round");
-    SetDvar("xenon_maxVoicePacketsPerSec", 3);
-
-    // Monitor both teleporters to see if they are activated, and when they are, check if wisps are finished. Split if teleporter is activated and wisps are finished
-    teleporters = GetEntArray("trigger_teleport_pad", "targetname");
-    foreach(teleporter in teleporters) teleporter thread MonitorTeleportSplit();
-
-    GetEnt("ee_clocktower_activation_switch", "targetname") waittill("trigger_activated");
-    SetDvar("xenon_maxVoicePacketsPerSec", 5);
-
-    GetEnt("ee_clocktower_activation_switch", "targetname") waittill("trigger_activated");
-    SetDvar("xenon_maxVoicePacketsPerSec", 6);
-
-    level flag::wait_till("start_channeling_stone_step");
-    SetDvar("xenon_maxVoicePacketsPerSec", 4);
-
-    // Wait for boss fight to begin then split
-    level flag::wait_till("boss_fight_begin");
-    wait 1;
-    SetDvar("xenon_maxVoicePacketsPerSec", 7);
-
-    // Wait for outro to start playing then split
-    level flag::wait_till("ee_outro");
-    SetDvar("xenon_maxVoicePacketsPerSec", 8);
-}
-
-MonitorTeleportSplit()
-{
-    level endon("first_teleport");
-    for(;;)
-    {
-        // Wait for teleporter to be triggered, then check the according flags to see if wisps are finished
-        self waittill("trigger", e_player);
-        if(zm_utility::is_player_valid(e_player) && !level.is_cooldown && !level flag::get("rocket_firing") && level flag::get("time_travel_teleporter_ready"))
-        {
-            SetDvar("xenon_maxVoicePacketsPerSec", 4);
-            level notify("first_teleport");
-            break;
-        }
-    }
-}
-
-IslandEggSplits()
-{
-    level endon("end_game");
-
-    // Wait for power to turn on then split
-    level flag::wait_till("power_on");
-    compiler::livesplit("split");
-
-    // Wait for any player to obtain the skull then split
-    break_loop = false;
-    for(;;)
-    {
-        foreach(player in level.players)
-        {
-            if(player HasWeapon(level.var_c003f5b))
+            else
             {
-                compiler::livesplit("split");
-                break_loop = true;
-                break;
+                for(i = 0; i < pods.size; i++)
+                {
+                    pods[i] playsound("mus_podegg_note_" + pods[i].var_b3a7fe6c);
+                    wait(0.6);
+                }
             }
-        }
-        if(break_loop) break;
-        wait 0.05;
+		}
     }
-
-    // Wait for any player to obtain the kt4 then split
-    break_loop = false;
-    for(;;)
-    {
-        foreach(player in level.players)
-        {
-            if(player HasWeapon(level.var_5e75629a))
-            {
-                compiler::livesplit("split");
-                break_loop = true;
-                break;
-            }
-        }
-        if(break_loop) break;
-        wait 0.05;
-    }
-
-    // Wait for ending cutscene to play then split
-    level flag::wait_till("flag_play_outro_cutscene");
-    compiler::livesplit("split");
-
-
-}
-
-StalingradEggSplits()
-{
-    level endon("end_game");
-
-    // Wait for dragon to timeout or be full, then wait 2 seconds because there's a slight delay for the dragon to fly
-    level flag::wait_till_any(Array("dragon_rider_timeout", "dragon_full"));
-    wait 2;
-    compiler::livesplit("split");
-
-    // Wait for dragon to be finished then look for the next fly
-    level flag::wait_till_clear_all(Array("dragon_platform_arrive", "dragon_platform_one_rider"));
-	level flag::wait_till_clear("dragon_console_global_disable");
-
-    // Wait for dragon to timeout or be full, then wait 2 seconds because there's a slight delay for the dragon to fly - again
-    level flag::wait_till_any(Array("dragon_rider_timeout", "dragon_full"));
-    wait 2;
-    compiler::livesplit("split");
-
-    // Wait for dragon egg incubation
-    level flag::wait_till("egg_placed_incubator");
-    compiler::livesplit("split");
-
-    // Wait for challenges to start
-    level flag::wait_till("scenario_active");
-    compiler::livesplit("split");
-
-    // Wait for final download to start
-    level flag::wait_till("lockdown_active");
-    compiler::livesplit("split");
-
-    // Wait for player to start boss
-    sewer = GetEnt("ee_sewer_to_arena_trig", "targetname");
-    sewer waittill("trigger", e_who);
-    compiler::livesplit("split");
-}
-
-GenesisEggSplits()
-{
-    level endon("end_game");
-
-    // Wait for second reel to be placed
-    level flag::wait_till("placed_audio2");
-    compiler::livesplit("split");
-
-    // Wait for player to be teleported into sam's room
-    level flag::wait_till("sophia_at_teleporter");
-    wait 3.25;
-    compiler::livesplit("split");
-
-    // Wait for player to be teleported into 1st boss arena
-    level flag::wait_till("arena_occupied_by_player");
-    compiler::livesplit("split");
-
-    // Wait for play to pickup key after 1st boss
-    break_loop = false;
-    level flag::wait_till("grand_tour");
-    for(;;)
-    {
-        foreach(player in level.players)
-        {
-            if(player HasWeapon(level.ballWeapon))
-            {
-                compiler::livesplit("split");
-                break_loop = true;
-                break;
-            }
-        }
-        if(break_loop) break;
-        wait 0.05;
-    }
-
-    // Wait for play to be teleported into 2nd boss arena
-    level flag::wait_till("boss_fight");
-    compiler::livesplit("split");
 }

@@ -1,13 +1,18 @@
-ActivateDempsey()
+DoKeeperStep(num)
 {
-    while(!IsDefined(level.simon_complete)) wait 0.05;
-    wait 0.5;
-    button = struct::get("death_ray_button");
-    button notify("trigger_activated");
+    if(!num) self thread ActivateKeeper();
+    else self thread FillKeeperSouls();
+}
+
+DoAllKeeper()
+{
+    self thread ActivateKeeper();
+    self thread FillKeeperSouls();
 }
 
 ActivateKeeper()
 {
+    while(!level flag::get("start_channeling_stone_step")) wait 0.05;
     level waittill(#"hash_b5927dd");
     wait 2;
     vril = struct::get("vril_generator");
@@ -26,6 +31,7 @@ ActivateKeeper()
 
 FillKeeperSouls()
 {
+    if(level flag::get("see_keeper")) return;
     level flag::wait_till("start_channeling_stone_step");
     stone_replace = GetEnt("cs_stone_2", "targetname");
     stone_replace notify("trigger_activated");

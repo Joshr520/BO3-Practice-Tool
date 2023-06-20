@@ -26,6 +26,7 @@
 #include scripts\shared\ai\systems\gib;
 
 #include scripts\zm\_zm;
+#include scripts\zm\_zm_stats;
 #include scripts\zm\_zm_audio;
 #include scripts\zm\_zm_score;
 #include scripts\zm\_zm_bgb;

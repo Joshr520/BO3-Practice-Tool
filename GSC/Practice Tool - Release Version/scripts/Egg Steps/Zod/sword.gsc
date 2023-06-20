@@ -24,11 +24,10 @@ FillEgg(id)
     if(self.sword_quest.all_kills_completed) return;
 
     self.sword_quest.kills[id] = 12;
+    level.sword_quest.statues[id].trigger notify("trigger", self); // for autosplit purposes
 
-    foreach(statue in level.sword_quest.statues)
-    {
-        if(id != 2 && self.sword_quest.kills[statue.statue_id] < 12) return;
-    }
+    foreach(index, statue in level.sword_quest.statues) if(index != 2 && self.sword_quest.kills[statue.statue_id] < 12) return;
+
     level.sword_quest.statues[2].trigger notify("trigger", self);
     self.sword_quest.all_kills_completed = 1;
     self.sword_quest.upgrade_stage = 1;
@@ -65,7 +64,6 @@ FinishAllMagicCircles()
 {
     if(level clientfield::get("keeper_quest_state_" + self.characterindex) < 2) self thread PickupOvum();
     while(level clientfield::get("keeper_quest_state_" + self.characterindex) < 2) wait 0.05;
-    wait 15;
     s_loc = struct::get_array("sword_quest_magic_circle_place", "targetname")[1];
     self BuildAndActivateTrigger(s_loc.unitrigger_stub);
     for(i = 0; i < 4; i++)

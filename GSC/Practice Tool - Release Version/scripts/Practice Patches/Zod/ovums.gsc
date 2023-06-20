@@ -1,6 +1,6 @@
 OvumsPractice()
 {
-    level flag::wait_till("start_zombie_round_logic");
+    WaitFadeIn();
     if(level.script != "zm_zod")
     {
         thread WriteToScreen("Wrong Map For Loaded Patch - Correct Map: SOE");

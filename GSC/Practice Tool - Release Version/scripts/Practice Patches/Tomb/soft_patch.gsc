@@ -1,6 +1,6 @@
 TombSoftPatch()
 {
-    level flag::wait_till("start_zombie_round_logic");
+    WaitFadeIn();
     level flag::set("tomb_soft_patch");
     if(level.script != "zm_tomb")
     {
@@ -13,6 +13,7 @@ TombSoftPatch()
     self.bgb_pack_randomized = array::randomize(self.bgb_pack);
     while(self.bgb_pack_randomized[0] != "zm_bgb_reign_drops" && self.bgb_pack_randomized[0] != "zm_bgb_extra_credit") self.bgb_pack_randomized = array::randomize(self.bgb_pack);
     level.player_out_of_playable_area_monitor = 1;
+    foreach(player in GetPlayers()) self thread zm::player_out_of_playable_area_monitor();
 
     level flag::wait_till("initial_blackscreen_passed");
     thread WriteToScreen("Origins Soft Patch Loaded");
@@ -25,11 +26,18 @@ TombSoftPatch()
 
 GuranteeIce()
 {
-    foreach(s_staff in level.ice_staff_pieces)
+    level.ice_staff_pieces[2].num_misses = 4;
+    while(level.ice_staff_pieces.size)
     {
-        s_staff.num_misses = 4;
+        level waittill("sam_clue_dig", e_player);
+        zone = zm_zonemgr::get_zone_from_position(e_player.origin + VectorScale((0, 0, 1), 32), 0);
+        foreach(s_staff in level.ice_staff_pieces)
+	    {
+            if(IsSubStr(zone, s_staff.zone_substr))
+            {
+                s_staff.num_misses = 4;
+                break;
+            }
+        }
     }
-    level.ice_staff_pieces[1].num_misses = 0;
-    while(!level.ice_staff_pieces[1].num_misses) wait 0.05;
-    level.ice_staff_pieces[1].num_misses = 4;
 }
