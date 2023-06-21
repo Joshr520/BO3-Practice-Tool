@@ -89,7 +89,7 @@ const char* sidebarItems[] = { "Gobblegum Loadout", "Autosplits", "Practice Patc
                     "Craftable Options", "Blocker Options", "Map Options", "Gum Tracker", "Zombie Calculator", "Code Guides", "GK Valve Solver" };
 
 static ImVec4 fakeColor = { 0, 0, 0, 0 };
-static std::string internalVersion = "0.4.0";
+static std::string internalVersion = "0.4.1";
 static Walnut::Image* discordIcon;
 
 // Gum data

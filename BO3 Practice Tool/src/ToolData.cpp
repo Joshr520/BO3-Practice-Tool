@@ -553,10 +553,9 @@ namespace BO3PT
 
         std::smatch match;
         if (std::regex_search(newVersion, match, regex)) {
-            std::string numericVersion = match.str(); // Extract the matched numeric portion
+            std::string numericVersion = match.str();
 
-            // Compare the numeric version
-            if (numericVersion < oldVersion) {
+            if (oldVersion < newVersion) {
                 return true;
             }
         }
