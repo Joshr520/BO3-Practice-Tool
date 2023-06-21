@@ -1,5 +1,6 @@
 init()
 {
+    if(!self IsHost()) return;
     SetDvar("sv_cheats", 1);
     SetDvar("scr_firstGumFree", 1);
 	SetDvar("zm_private_rankedmatch", 1);
@@ -18,13 +19,13 @@ init()
 
 on_player_connect()
 {
+    if(!self IsHost()) return;
     self InitVars();
     level flag::wait_till("start_zombie_round_logic");
-    if(!self IsHost()) return;
 
     WaitFadeIn();
 
-    message = hud::createfontstring("big", 1.1);
+    message = hud::createserverfontstring("big", 1.1);
     hud::setpoint("TOP", "MIDDLE", 20, 0);
     message SetText("BO3 Practice Tool Loaded: ^6github.com/Joshr520/BO3-Practice-Tool");
     wait 3;
