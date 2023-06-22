@@ -131,7 +131,7 @@ namespace BO3PT
 	bool CreateListBox(const std::string& name, const std::vector<std::string>& items, int& currentItem, const ImVec2& boxSize);
 	bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress, int& outIndex);
 	bool DoesPathExist(const std::string_view& s);
-	bool CheckVersions(const std::string& newVersion, const std::string& oldVersion);
+	bool CheckVersions(const std::string& newVersion, const std::string& currentVersion);
 	bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles);
 
 	std::vector<int> GumSearch(const std::vector<int>& inGumArr, const std::string& searchText);

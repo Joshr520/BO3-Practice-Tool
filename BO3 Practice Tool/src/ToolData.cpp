@@ -547,20 +547,39 @@ namespace BO3PT
         return std::filesystem::exists(s);
     }
 
-    bool CheckVersions(const std::string& newVersion, const std::string& oldVersion)
+    bool CheckVersions(const std::string& newVersion, const std::string& currentVersion)
     {
         std::regex regex("\\d+\\.\\d+\\.\\d+");
+        std::vector<int> currentNumbers;
+        std::vector<int> newNumbers;
 
         std::smatch match;
         if (std::regex_search(newVersion, match, regex)) {
             std::string numericVersion = match.str();
 
-            if (oldVersion < newVersion) {
-                return true;
+            std::stringstream currentStream(currentVersion);
+            std::stringstream newStream(numericVersion);
+
+            std::string segment;
+            while (std::getline(currentStream, segment, '.')) {
+                currentNumbers.emplace_back(std::stoi(segment));
+            }
+
+            while (std::getline(newStream, segment, '.')) {
+                newNumbers.emplace_back(std::stoi(segment));
+            }
+
+            for (int i = 0; i < static_cast<int>(currentNumbers.size()) && i < static_cast<int>(newNumbers.size()); ++i) {
+                if (newNumbers[i] > currentNumbers[i]) {
+                    return true;
+                }
+                else if (newNumbers[i] < currentNumbers[i]) {
+                    return false;
+                }
             }
         }
 
-        return false;
+        return newNumbers.size() > currentNumbers.size();
     }
 
     bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles)
