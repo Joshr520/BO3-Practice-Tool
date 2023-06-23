@@ -1,10 +1,9 @@
 init()
 {
-    if(!self IsHost()) return;
     SetDvar("sv_cheats", 1);
     SetDvar("scr_firstGumFree", 1);
 	SetDvar("zm_private_rankedmatch", 1);
-    level.player_out_of_playable_area_monitor = 0; //ADD THIS AS AN OPTION
+    level.player_out_of_playable_area_monitor = 0; //ADD THIS AS AN OPTION 
     level.givecustomloadout = ::GiveLoadout;
     level.onlinegame = true;
     level.zm_disable_recording_stats = true;
