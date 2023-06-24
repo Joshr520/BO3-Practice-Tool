@@ -11,20 +11,20 @@ ImGuiWindowFlags logFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoRes
 
 namespace Walnut
 {
-	std::vector<Message> Logger::logMessages;
-	std::ofstream Logger::logFile;
-	std::string Logger::logFilename;
-	bool Logger::collapsed;
-	ImVec2 Logger::logWindowSize;
-	ImVec2 Logger::logWindowFull;
+	std::vector<Message> Logger::s_LogMessages;
+	std::ofstream Logger::s_LogFile;
+	std::string Logger::s_LogFilename;
+	bool Logger::s_Collapsed;
+	ImVec2 Logger::s_LogWindowSize;
+	ImVec2 Logger::s_LogWindowFull;
 
 	void Logger::InitLogger(std::string_view filename)
 	{
-		logFilename = filename.data();
-		logFile.open(logFilename);
-		logFile.close();
-		logWindowSize = LOG_WINDOW_COLLAPSED_SIZE;
-		collapsed = true;
+		s_LogFilename = filename.data();
+		s_LogFile.open(s_LogFilename);
+		s_LogFile.close();
+		s_LogWindowSize = LOG_WINDOW_COLLAPSED_SIZE;
+		s_Collapsed = true;
 		logFlags |= ImGuiWindowFlags_NoTitleBar;
 
 		Log(MessageType::Success, "Logger Init Completed");
@@ -46,71 +46,73 @@ namespace Walnut
 
 		logText << "|" << std::put_time(&nowLocalTime, "%Y-%m-%d %H:%M:%S") << "." << std::setw(3) << std::setfill('0') << current_milliseconds << "| ";
 
-		switch (type)
-		{
+		switch (type) {
 		case MessageType::Error:
 			logText << "[Error] ";
-			logEntry.color = COLOR_ERROR;
+			logEntry.m_Color = COLOR_ERROR;
 			break;
 		case MessageType::Warning:
 			logText << "[Warning] ";
-			logEntry.color = COLOR_WARNING;
+			logEntry.m_Color = COLOR_WARNING;
 			break;
 		case MessageType::Info:
 			logText << "[Info] ";
-			logEntry.color = COLOR_INFO;
+			logEntry.m_Color = COLOR_INFO;
 			break;
 		case MessageType::Success:
 			logText << "[Success] ";
-			logEntry.color = COLOR_SUCCESS;
+			logEntry.m_Color = COLOR_SUCCESS;
 			break;
 		case MessageType::Debug:
 			logText << "[Debug] ";
-			logEntry.color = COLOR_DEBUG;
+			logEntry.m_Color = COLOR_DEBUG;
 			break;
 		default:
 			logText << "[Unknown] ";
-			logEntry.color = COLOR_UNKNOWN;
+			logEntry.m_Color = COLOR_UNKNOWN;
 			break;
 		}
 
 		logText << message << "\n";
 
-		logEntry.message = logText.str();
-		logMessages.emplace_back(logEntry);
+		logEntry.m_Message = logText.str();
+		s_LogMessages.emplace_back(logEntry);
 
-		logFile.open(logFilename, std::ios::app);
-		logFile.write(logEntry.message.c_str(), logEntry.message.size());
-		logFile.close();
+		s_LogFile.open(s_LogFilename, std::ios::app);
+		s_LogFile.write(logEntry.m_Message.c_str(), logEntry.m_Message.size());
+		s_LogFile.close();
 	}
 
 	void Logger::DrawLogWindow()
 	{
+		if (!s_Collapsed) {
+			s_LogWindowSize = ImVec2(ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y / 2);
+		}
+
 		ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImVec2 pos = ImVec2(viewport->Pos.x + viewport->Size.x - logWindowSize.x, viewport->Pos.y + viewport->Size.y - logWindowSize.y);
+		ImVec2 pos = ImVec2(viewport->Pos.x + viewport->Size.x - s_LogWindowSize.x, viewport->Pos.y + viewport->Size.y - s_LogWindowSize.y);
 		ImGui::SetNextWindowPos(pos);
-		ImGui::SetNextWindowSize(logWindowSize);
+		ImGui::SetNextWindowSize(s_LogWindowSize);
 		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.2f, 0.2f, 0.2f, 1.f));
-		if (!collapsed)
+		if (!s_Collapsed) {
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.05f, 0.05f, 0.05f, 0.9f));
+		}
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		ImGui::Begin("Logs", NULL, logFlags);
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor();
-		if (!collapsed)
+		if (!s_Collapsed) {
 			ImGui::PopStyleColor();
+		}
 
-		if (!collapsed)
-		{
-			for (const Message& message : logMessages)
-			{
-				ImGui::TextColored(message.color, message.message.c_str());
+		if (!s_Collapsed) {
+			for (const Message& message : s_LogMessages) {
+				ImGui::TextColored(message.m_Color, message.m_Message.c_str());
 			}
 		}
 
 		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionMax().x - 25.0f, ImGui::GetWindowContentRegionMax().y + ImGui::GetScrollY() * 2 - 25.0f));
-		if (ImGui::Button(ICON_FA_FILE, ImVec2(25.0f, 25.0f)) || ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false))
-		{
+		if (ImGui::Button(ICON_FA_FILE, ImVec2(25.0f, 25.0f)) || ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false)) {
 			ToggleCollapsed();
 		}
 
@@ -119,15 +121,12 @@ namespace Walnut
 
 	void Logger::ToggleCollapsed()
 	{
-		collapsed = !collapsed;
-		if (collapsed)
-		{
-			logWindowSize = LOG_WINDOW_COLLAPSED_SIZE;
+		s_Collapsed = !s_Collapsed;
+		if (s_Collapsed) {
+			s_LogWindowSize = LOG_WINDOW_COLLAPSED_SIZE;
 			logFlags |= ImGuiWindowFlags_NoTitleBar;
 		}
-		else
-		{
-			logWindowSize = ImVec2(ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y / 2);
+		else {
 			logFlags &= ~ImGuiWindowFlags_NoTitleBar;
 		}
 	}

@@ -11,14 +11,10 @@ namespace BO3PT {
 	typedef int GUIStates;
 
 	enum GUIStates_ {
-		Update = 1,
-		UpdateFailed,
-		InjectFailed,
-		JoinDiscord,
-		SteamFound,
-		SetupDone,
-		Docked,
-		Active
+		SteamFound = 1 << 0,
+		SetupDone = 1 << 1,
+		Docked = 1 << 2,
+		Active = 1 << 3
 	};
 
 	struct GUIMember {

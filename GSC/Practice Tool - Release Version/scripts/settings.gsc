@@ -2,11 +2,10 @@ LoadSettings()
 {
     InitMenuFuncs();
     InitPracticePatches();
+    self thread WatchInterface();
     self thread LoadGums();
     self thread LoadPracticePatches();
     self thread LoadSplits();
-
-    self thread WatchInterface();
 }
 
 InitMenuFuncs()
@@ -58,7 +57,9 @@ InitPracticePatches()
 WatchInterface()
 {
     level endon("disconnect");
+    level endon("end_server");
 
+    compiler::resetqueue();
     compiler::startserver();
 
     level flag::wait_till("initial_blackscreen_passed");
@@ -76,6 +77,7 @@ WatchInterface()
         param = compiler::readserver();
         while(param >= 0)
         {
+            compiler::nprintln(param);
             params[params.size] = param;
             param = compiler::readserver();
         }

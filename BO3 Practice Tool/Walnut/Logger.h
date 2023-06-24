@@ -28,8 +28,8 @@ namespace Walnut
 
 	struct Message
 	{
-		std::string message;
-		ImVec4 color;
+		std::string m_Message;
+		ImVec4 m_Color;
 	};
 
 	class Logger
@@ -40,11 +40,11 @@ namespace Walnut
 		static void DrawLogWindow();
 		static void ToggleCollapsed();
 	private:
-		static std::vector<Message> logMessages;
-		static std::ofstream logFile;
-		static std::string logFilename;
-		static bool collapsed;
-		static ImVec2 logWindowSize;
-		static ImVec2 logWindowFull;
+		static std::vector<Message> s_LogMessages;
+		static std::ofstream s_LogFile;
+		static std::string s_LogFilename;
+		static bool s_Collapsed;
+		static ImVec2 s_LogWindowSize;
+		static ImVec2 s_LogWindowFull;
 	};
 }

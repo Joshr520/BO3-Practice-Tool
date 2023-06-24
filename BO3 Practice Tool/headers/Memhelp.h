@@ -7,8 +7,8 @@ namespace BO3PT {
     typedef int MemStates;
 
     enum MemStates_ {
-        Loaded,
-        Unloaded
+        Unloaded,
+        Loaded
     };
 
     class MemState {

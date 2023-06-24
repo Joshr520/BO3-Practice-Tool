@@ -2,8 +2,11 @@
 
 #include <string>
 #include <vector>
+#include <queue>
 
 #include "imgui.h"
+
+#include "ListDefs.h"
 
 #define COLOR_RED IM_COL32(170, 0, 0, 255)
 #define COLOR_GREEN IM_COL32(0, 128, 0, 255)
@@ -21,19 +24,29 @@ namespace ImGuiHelper {
 
 	class MultiSpanSelection {
 	public:
+		MultiSpanSelection() : m_Selections({ 0 }), m_Changed(false), m_Index(0) { }
 		MultiSpanSelection(SelectionData selection) : m_Changed(false), m_Index(0) { m_Selections.emplace_back(selection); }
 		MultiSpanSelection(std::vector<SelectionData> selections) : m_Selections(selections), m_Changed(false), m_Index(0) {}
 
 		void Render(int comboIndex);
 		void SetIndex(int index) { m_Index = index; }
+		void AddSelection(std::vector<std::string> selection) { m_Selections.emplace_back(selection); }
+		void Reset() { m_Selections.clear(); };
 
 		bool GetChanged() { return std::exchange(m_Changed, false); }
 		int GetIndex() const { return m_Index; }
+		std::pair<int, int> GetMultiIndex() const;
+		std::string GetItemAtIndex() const;
 	private:
 		std::vector<SelectionData> m_Selections;
 		bool m_Changed;
 		int m_Index;
+	};
 
+	struct Selection {
+		static bool Render(const std::vector<std::string>& items, int& index);
+		static bool RenderBGB(const std::vector<BGB>& items, int& index);
+		static bool RenderBGBPreset(const std::vector<BGBPreset>& items, int& index);
 	};
 
 	struct TextFont {
@@ -44,21 +57,32 @@ namespace ImGuiHelper {
 	typedef int PopupStates;
 
 	enum PopupStates_ {
-		ShowUpdate = 1,
-		ShowUpdateFailed,
-		ShowInjectFailed,
-		ShowJoinDiscord
+		None,
+		Open,
+		Update,
+		UpdateFailed,
+		InjectFailed,
+		JoinDiscord,
+		DirectoryError,
+		GumPresetCreation,
+		GumPresetError,
+		AutosplitPresetCreation,
+		AutosplitPresetError,
+		AutosplitMapError
 	};
 
 	struct PopupWrapper {
 	public:
-		static PopupStates GetState() { return s_State; }
-		static bool IsStateSet(PopupStates state) { return (s_State & state) == state; }
+		static PopupStates GetPrepState() { return s_PrepState; }
+		static PopupStates GetOpenState() { return s_OpenState; }
 
-		static void SetState(PopupStates state) { s_State |= state; }
-		static void UnsetState(PopupStates state) { s_State &= ~state; }
+		static void PrepPopup(PopupStates state);
+		static void OpenPopup(PopupStates state);
+		static void ClosePopup();
 	private:
-		static PopupStates s_State;
+		static PopupStates s_PrepState;
+		static PopupStates s_OpenState;
+		static std::queue<PopupStates> s_StateQueue;
 	};
 
 	struct ButtonWrapper {
@@ -66,6 +90,10 @@ namespace ImGuiHelper {
 		static bool RenderToggleOut(std::string_view name, const ImVec2& size, bool* active, bool displayOnly = false, const ImU32& colorOn = COLOR_GREEN, const ImU32& colorOff = COLOR_RED);
 		static bool RenderSingle(std::string_view name, const ImVec2& size, bool displayOnly = false, const ImU32& color = COLOR_BLUE);
 		static void RenderFake(std::string_view name, const ImVec2& size, const ImU32& color = COLOR_TRANSPARENT);
+	};
+
+	struct ListBoxWrapper {
+		static bool Render(std::string_view name, const std::vector<std::string>& items, int& index, const ImVec2& size);
 	};
 
 }

@@ -95,9 +95,9 @@ namespace BO3PT
             !ReadProcessMemory(s_Handle, s_RoundAddress, &s_RoundValue, sizeof(s_RoundValue), NULL))
         {
             s_State = Unloaded;
-            CloseHandle(s_Handle);
             s_Handle = NULL;
             return false;
         }
+        return true;
     }
 }

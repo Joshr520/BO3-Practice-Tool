@@ -14,6 +14,8 @@ LoadSplits()
 
     if(maps[map] != level.script) return;
 
+    level notify("end_server");
+
     level.num_splits = split_size + 1;
 
     split_funcs = [];
@@ -125,6 +127,7 @@ LoadSplits()
     thread Split();
     WaitFadeIn();
     thread Split();
+    thread PrintSplitMessage();
     start_time = GetTime();
 
     foreach(index, func in active_funcs)
@@ -142,6 +145,18 @@ LoadSplits()
     }
 
     RenderSplits();
+}
+
+PrintSplitMessage()
+{
+    message = hud::createserverfontstring("big", 1.1);
+    message hud::setpoint("TOP", "TOP", 0, 10);
+    message SetText("Autosplits Detected: In Game Commands Disabled For This Game");
+    wait 3;
+    message FadeOverTime(5);
+    message.alpha = 0;
+    wait 5;
+    message Destroy();
 }
 
 RunIGT()

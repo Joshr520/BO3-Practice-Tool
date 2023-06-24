@@ -108,6 +108,9 @@
     <ClInclude Include="headers\ImGuiHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="headers\ListDefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BO3 Practice Tool.cpp">

@@ -8,7 +8,7 @@ namespace Walnut
     class JSONBuilder
     {
     public:
-        JSONBuilder();
+        JSONBuilder() { m_Document.SetObject(); }
         JSONBuilder(std::string_view filename);
         JSONBuilder(const std::string& buffer);
 

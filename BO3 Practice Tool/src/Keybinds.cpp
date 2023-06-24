@@ -1,6 +1,7 @@
 #include "Keybinds.h"
 #include "ToolData.h"
 #include "GlobalData.h"
+#include "GUIState.h"
 #include "Walnut/Application.h"
 #include "Walnut/Input/Input.h"
 #include <Walnut/FileFormats/json.h>
@@ -238,21 +239,21 @@ namespace BO3PT
 
 	void GodmodeOn()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		godActive = !godActive;
 		NotifyGame({ 0, 11, godActive });
 	}
 	void InfiniteAmmo()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		infAmmoActive = !infAmmoActive;
 		NotifyGame({ 0, 12, infAmmoActive });
 	}
 	void TimescaleIncrease()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		if (timescaleInt < 10)
 			timescaleInt++;
@@ -260,7 +261,7 @@ namespace BO3PT
 	}
 	void TimescaleDecrease()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		if (timescaleInt > 1)
 			timescaleInt--;
@@ -268,73 +269,73 @@ namespace BO3PT
 	}
 	void MaxPoints()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 0, 4194303 });
 	}
 	void ResetPoints()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 0, 500 });
 	}
 	void GiveAllPerks()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 7 });
 	}
 	void TakeAllPerks()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 8 });
 	}
 	void TakeGum()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 4 });
 	}
 	void TakeGumCharge()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 5 });
 	}
 	void ActivateGum()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 6 });
 	}
 	void ZombiesIgnorePlayer()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 1, 0, zombiesIgnore });
 	}
 	void KillHorde()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 1, 1 });
 	}
 	void FreezeZombies()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 1, 2, zombiesFreeze });
 	}
 	void ToggleSpawning()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 1, 3, zombiesSpawn });
 	}
 	void ZombiesWalk()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		zombieSpeedRun = false;
 		zombieSpeedSprint = false;
@@ -345,7 +346,7 @@ namespace BO3PT
 	}
 	void ZombiesRun()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		zombieSpeedWalk = false;
 		zombieSpeedSprint = false;
@@ -356,7 +357,7 @@ namespace BO3PT
 	}
 	void ZombiesSprint()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		zombieSpeedWalk = false;
 		zombieSpeedRun = false;
@@ -367,43 +368,43 @@ namespace BO3PT
 	}
 	void EndRound()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 2, 0 });
 	}
 	void RestartRound()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 2, 1 });
 	}
 	void PickupEveryPart()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 5, 0 });
 	}
 	void OpenAllDoors()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 6, 0 });
 	}
 	void GlobalPowerOn()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 6, 2 });
 	}
 	void OpenAllBarriers()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 6, 5, 0 });
 	}
 	void CloseAllBarriers()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 6, 5, 1 });
 	}
@@ -416,7 +417,7 @@ namespace BO3PT
 			gumTrackCurrentIndex = 0;
 		else
 			gumTrackCurrentIndex++;
-		gumTrackContextIndex = gumTrackIndexes[gumTrackCurrentIndex];
+		bgbContext = gumTrackBGBs[gumTrackCurrentIndex];
 	}
 	void DecrementGumTracker()
 	{
@@ -426,7 +427,7 @@ namespace BO3PT
 			gumTrackCurrentIndex = 4;
 		else
 			gumTrackCurrentIndex--;
-		gumTrackContextIndex = gumTrackIndexes[gumTrackCurrentIndex];
+		bgbContext = gumTrackBGBs[gumTrackCurrentIndex];
 	}
 	void ToggleGumTracker()
 	{

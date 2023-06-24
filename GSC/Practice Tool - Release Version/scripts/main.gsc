@@ -3,7 +3,7 @@ init()
     SetDvar("sv_cheats", 1);
     SetDvar("scr_firstGumFree", 1);
 	SetDvar("zm_private_rankedmatch", 1);
-    level.player_out_of_playable_area_monitor = 0; //ADD THIS AS AN OPTION
+    level.player_out_of_playable_area_monitor = 0; //ADD THIS AS AN OPTION 
     level.givecustomloadout = ::GiveLoadout;
     level.onlinegame = true;
     level.zm_disable_recording_stats = true;
@@ -18,14 +18,14 @@ init()
 
 on_player_connect()
 {
+    if(!self IsHost()) return;
     self InitVars();
     level flag::wait_till("start_zombie_round_logic");
-    if(!self IsHost()) return;
 
     WaitFadeIn();
 
-    message = hud::createfontstring("big", 1.1);
-    hud::setpoint("TOP", "MIDDLE", 20, 0);
+    message = hud::createserverfontstring("big", 1.1);
+    message hud::setpoint("TOP", "TOP", 0, 0);
     message SetText("BO3 Practice Tool Loaded: ^6github.com/Joshr520/BO3-Practice-Tool");
     wait 3;
     message FadeOverTime(5);
