@@ -15,6 +15,7 @@ LoadSplits()
     if(maps[map] != level.script) return;
 
     level notify("end_server");
+    SetDvar("sv_cheats", 0);
 
     level.num_splits = split_size + 1;
 

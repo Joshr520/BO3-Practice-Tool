@@ -12,8 +12,10 @@
 #define COLOR_GREEN IM_COL32(0, 128, 0, 255)
 #define COLOR_BLUE IM_COL32(25, 100, 128, 255)
 #define COLOR_BLUE_WEAK IM_COL32(25, 100, 128, 100)
+#define COLOR_LIGHT_BLUE IM_COL32(0, 200, 200, 200)
 #define COLOR_PINK IM_COL32(255, 105, 180, 255)
 #define COLOR_GREY IM_COL32(128, 128, 128, 128)
+#define COLOR_WHITE IM_COL32(255, 255, 255, 255)
 #define COLOR_TRANSPARENT IM_COL32(0, 0, 0, 0)
 
 namespace ImGuiHelper {
@@ -35,6 +37,7 @@ namespace ImGuiHelper {
 
 		bool GetChanged() { return std::exchange(m_Changed, false); }
 		int GetIndex() const { return m_Index; }
+		int GetArrIndex() const;
 		std::pair<int, int> GetMultiIndex() const;
 		std::string GetItemAtIndex() const;
 	private:
@@ -47,6 +50,7 @@ namespace ImGuiHelper {
 		static bool Render(const std::vector<std::string>& items, int& index);
 		static bool RenderBGB(const std::vector<BGB>& items, int& index);
 		static bool RenderBGBPreset(const std::vector<BGBPreset>& items, int& index);
+		static bool RenderWeaponLoadout(const std::vector<MenuWeaponPreset>& items, int& index);
 	};
 
 	struct TextFont {
@@ -66,6 +70,8 @@ namespace ImGuiHelper {
 		DirectoryError,
 		GumPresetCreation,
 		GumPresetError,
+		WeaponLoadoutCreation,
+		WeaponLoadoutError,
 		AutosplitPresetCreation,
 		AutosplitPresetError,
 		AutosplitMapError
@@ -94,6 +100,10 @@ namespace ImGuiHelper {
 
 	struct ListBoxWrapper {
 		static bool Render(std::string_view name, const std::vector<std::string>& items, int& index, const ImVec2& size);
+	};
+
+	struct VecAdd {
+		static ImVec2 AddVec2(const ImVec2& vec1, const ImVec2& vec2) { return ImVec2(vec1.x + vec2.x, vec1.y + vec2.y); };
 	};
 
 }

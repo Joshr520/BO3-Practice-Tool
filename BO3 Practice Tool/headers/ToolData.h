@@ -16,6 +16,28 @@
 
 namespace BO3PT
 {
+	typedef int RenderWindow;
+
+	enum RenderWindow_ {
+		BGBLoadout,
+		WeaponLoadout,
+		Autosplits,
+		PracticePatches,
+		Settings,
+		PlayerOptions,
+		ZombieOptions,
+		RoundOptions,
+		PowerupOptions,
+		EggStepOptions,
+		CraftableOptions,
+		BlockerOptions,
+		MapOptions,
+		GumTracker,
+		ZombieCalculator,
+		CodeGuides,
+		GKValveSolver
+	};
+
 #pragma region Craftables
 	inline int craftListIndex = 0;
 	inline int craftStaff = 0;
@@ -64,7 +86,7 @@ namespace BO3PT
 
 #pragma region GUIFunctions
 	void InitVariables();
-	void LoadImages(int sidebarIndex);
+	void LoadImages(RenderWindow sidebarIndex);
 	void HelpMarker(const std::string& text);
 	void VerifyFileStructure();
 	void WritePracticePatches(bool active);
@@ -99,6 +121,7 @@ namespace BO3PT
 	inline BGB bgbContext = { "0", "Alchemical Antithesis", "Activated (2x Activations, 60 seconds each)\nEvery 10 points is instead awarded 1 ammo in the stock of the current weapon." };
 	inline BGB bgbToSwap;
 	inline std::vector<BGBPreset> gumPresets;
+	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> bgbImgList;
 
 	void LoadGumProfiles();
 	void DeleteGumPreset(std::string_view preset);
@@ -109,6 +132,31 @@ namespace BO3PT
 	void SwapBGBTrack(BGB bgbOld, BGB bgbNew);
 
 	bool CheckPresetExists(std::string_view inPreset);
+#pragma endregion
+
+#pragma region WeaponLadouts
+	struct WeaponCamoGroup {
+		std::string m_Name;
+		std::vector<std::unique_ptr<Walnut::Image>> m_Camos;
+	};
+
+	inline bool writeWeaponPresets = false;
+	inline bool weaponTypesLoaded[6] = { false };
+	inline int currentWeaponPreset = 0;
+	inline int currentWeaponPresetMenu = -1;
+	inline int currentWeaponEdit = 0;
+	inline std::vector<MenuWeaponPreset> weaponPresets;
+	inline std::vector<std::unique_ptr<Walnut::Image>> buildKitImgList;
+	inline std::vector<WeaponCamoGroup> camosImgList;
+	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> weaponIconsImgList;
+	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> opticsImgList;
+	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> attachmentsImgList;
+
+	void LoadWeaponProfiles();
+	void CreateNewWeaponPreset(std::string_view presetName);
+	void DeleteWeaponPreset(std::string_view preset);
+
+	MenuWeaponPreset ParseWeaponLoadout(std::string_view filename);
 #pragma endregion
 
 #pragma region PlayerOptions
@@ -249,6 +297,7 @@ namespace BO3PT
 	inline int codeIndex_1 = 0;
 	inline int codeIndex_2 = 1;
 	inline std::vector<std::string> soeCodeCombo;
+	inline std::vector<std::shared_ptr<Walnut::Image>> soeCodeImgList;
 #pragma endregion
 
 #pragma region GKValveSolver
@@ -277,8 +326,8 @@ namespace BO3PT
 	inline std::unordered_map<std::string, std::vector<std::string>> possibleValves_1 = { };
 	inline std::unordered_map<std::string, std::vector<std::string>> possibleValves_2 = { };
 	inline std::unordered_map<std::string, std::string> valveLocationsAbbr = { { "Department", "Dept"}, { "Dragon Command", "DC"}, { "Armory", "Arm"}, { "Supply", "Supply"}, { "Infirmary", "Inf"}, { "Tank", "Tank"} };
+	inline std::vector<std::unique_ptr<Walnut::Image>> valveSolverImgList;
 
-	void InitValveSolutions();
 	void CalcValveProbabilities();
 	void CalcRemainingGreen();
 	void CalcExcludedValves();
@@ -303,6 +352,7 @@ namespace BO3PT
 	inline std::vector<IceCodePair> iceCodePairs;
 	inline std::vector<IceCodePair> randomIceCodePairs;
 	inline Walnut::Timer gameTimer;
+	inline std::unordered_map<std::string, std::shared_ptr<Walnut::Image>> iceCodeImgList;
 
 	void LoadIceCodePairs();
 	void RandomizeCodes();
@@ -317,7 +367,7 @@ namespace BO3PT
 	void LoadAutosplitPresets();
 	void WriteAutosplitPreset(const AutosplitPreset& preset);
 	void CreateNewAutosplitPreset(std::string_view presetName);
-	void DeleteAutosplitPreset(const std::string& preset);
+	void DeleteAutosplitPreset(std::string_view preset);
 	void WriteSplitXML(std::string_view preset, const std::vector<std::pair<std::string, int>>& splits);
 	void WriteLayoutXML(std::string_view preset, int numSplits);
 	AutosplitPreset ParseSplitJson(std::string_view filename);

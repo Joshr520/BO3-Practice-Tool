@@ -52,6 +52,7 @@ static size_t WriteToFile(char* ptr, size_t size, size_t nmemb, void* f)
 
 static bool bgbLoaded = false;
 static bool codesLoaded = false;
+static bool buildKitsLoaded = false;
 
 namespace BO3PT
 {
@@ -61,7 +62,7 @@ namespace BO3PT
         InitHotKeyBinds();
         LoadGumProfiles();
         LoadAutosplitPresets();
-        LoadAutosplitPresets();
+        LoadWeaponProfiles();
         zombiesForRound = GetZombieCountForRound(1, 1);
         specialZombiesForRound = GetZombieCountForRound(1, 1);
         hordesForRound = zombiesForRound / 24.0f;
@@ -94,42 +95,46 @@ namespace BO3PT
         }
     }
 
-    void LoadImages(int sidebarIndex)
+    void LoadImages(RenderWindow window)
     {
-        switch (sidebarIndex) {
-        case 0:
-        case 12: {
+        switch (window) {
+        case BGBLoadout:
+        case GumTracker: {
             if (codesLoaded) {
-                codeImgList.clear();
+                soeCodeImgList.clear();
                 soeCodeCombo.clear();
                 iceCodeImgList.clear();
                 iceCodePairs.clear();
                 randomIceCodePairs.clear();
                 codesLoaded = false;
             }
+            if (buildKitsLoaded) {
+                buildKitImgList.clear();
+                camosImgList.clear();
+                weaponIconsImgList.clear();
+                opticsImgList.clear();
+                attachmentsImgList.clear();
+                buildKitsLoaded = false;
+            }
             if (bgbLoaded) {
                 break;
             }
 
             std::thread classicsThread([&]() {
-                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Gum Images/Classics")) {
-                    const std::string& name = entry.path().stem().string();
-                    const std::string& ext = entry.path().extension().string();
-                    if (ext != ".png") {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Gum Images\\Classics")) {
+                    if (entry.path().extension().string() != ".png") {
                         continue;
                     }
-                    bgbImgList.insert({ name.data(), std::make_unique<Walnut::Image>(entry.path().string())});
+                    bgbImgList.insert({ entry.path().stem().string(), std::make_unique<Walnut::Image>(entry.path().string())});
                 }
                 });
 
             std::thread megasThread([&]() {
-                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Gum Images/Megas")) {
-                    const std::string& name = entry.path().stem().string();
-                    const std::string& ext = entry.path().extension().string();
-                    if (ext != ".png") {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Gum Images\\Megas")) {
+                    if (entry.path().extension().string() != ".png") {
                         continue;
                     }
-                    bgbImgList.insert({ name.data(), std::make_unique<Walnut::Image>(entry.path().string())});
+                    bgbImgList.insert({ entry.path().stem().string(), std::make_unique<Walnut::Image>(entry.path().string())});
                 }
                 });
 
@@ -138,31 +143,122 @@ namespace BO3PT
             bgbLoaded = true;
             break;
         }
-        case 14: {
+        case WeaponLoadout: {
             if (bgbLoaded) {
                 bgbImgList.clear();
                 bgbLoaded = false;
+            }
+            if (codesLoaded) {
+                soeCodeImgList.clear();
+                soeCodeCombo.clear();
+                iceCodeImgList.clear();
+                iceCodePairs.clear();
+                randomIceCodePairs.clear();
+                codesLoaded = false;
+            }
+            if (buildKitsLoaded) {
+                break;
+            }
+
+            std::thread buildKitThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Build Kits")) {
+                    if (entry.path().extension().string() != ".png") {
+                        continue;
+                    }
+                    buildKitImgList.emplace_back(std::make_unique<Walnut::Image>(entry.path().string()));
+                }
+                });
+
+            std::thread camosThread([&]() {
+                for (const auto& directory : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Camos")) {
+                    if (std::filesystem::is_directory(directory.path())) {
+                        WeaponCamoGroup camoGroup;
+                        camoGroup.m_Name = directory.path().filename().string();
+                        for (const auto& file : std::filesystem::directory_iterator(directory.path())) {
+                            if (file.path().extension().string() != ".png") {
+                                continue;
+                            }
+                            camoGroup.m_Camos.emplace_back(std::make_unique<Walnut::Image>(file.path().string()));
+                        }
+                        camosImgList.emplace_back(std::move(camoGroup));
+                    }
+                }
+                });
+
+            std::thread weaponIconsThread([&]() {
+                for (const auto& directory : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Icons")) {
+                    if (std::filesystem::is_directory(directory.path())) {
+                        for (const auto& file : std::filesystem::directory_iterator(directory.path())) {
+                            if (file.path().extension().string() != ".png") {
+                                continue;
+                            }
+                            weaponIconsImgList.insert({ file.path().stem().string(), std::make_unique<Walnut::Image>(file.path().string()) });
+                        }
+                    }
+                }
+                });
+
+            std::thread opticsThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Attachments\\Optics")) {
+                    if (entry.path().extension().string() != ".png") {
+                        continue;
+                    }
+                    opticsImgList.insert({ entry.path().stem().string(), std::make_unique<Walnut::Image>(entry.path().string()) });
+                }
+                });
+
+            std::thread attachmentsThread([&]() {
+                for (const auto& directory : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Attachments")) {
+                    if (std::filesystem::is_directory(directory.path())) {
+                        for (const auto& file : std::filesystem::directory_iterator(directory.path())) {
+                            if (file.path().extension().string() != ".png") {
+                                continue;
+                            }
+                            attachmentsImgList.insert({ file.path().stem().string(), std::make_unique<Walnut::Image>(file.path().string()) });
+                        }
+                    }
+                }
+                });
+
+            buildKitThread.join();
+            camosThread.join();
+            weaponIconsThread.join();
+            opticsThread.join();
+            attachmentsThread.join();
+            buildKitsLoaded = true;
+            break;
+        }
+        case CodeGuides: {
+            if (bgbLoaded) {
+                bgbImgList.clear();
+                bgbLoaded = false;
+            }
+            if (buildKitsLoaded) {
+                buildKitImgList.clear();
+                camosImgList.clear();
+                weaponIconsImgList.clear();
+                opticsImgList.clear();
+                attachmentsImgList.clear();
+                buildKitsLoaded = false;
             }
             if (codesLoaded) {
                 break;
             }
 
             std::thread soeCodeThread([&]() {
-                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Soe Code")) {
-                    const std::string& name = entry.path().filename().string();
-                    if (name.find(".png") == name.npos) {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Soe Code")) {
+                    if (entry.path().extension().string() != ".png") {
                         continue;
                     }
                     std::shared_ptr<Walnut::Image> img = std::make_shared<Walnut::Image>(entry.path().string());
-                    codeImgList.emplace_back(img);
+                    soeCodeImgList.emplace_back(img);
                     soeCodeCombo.emplace_back(img->GetFilename());
                 }
                 });
 
             std::thread iceCodeThread([&]() {
-                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Ice Code")) {
-                    const std::string& name = entry.path().filename().string();
-                    if (name.find(".png") == name.npos) {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Ice Code")) {
+                    if (entry.path().extension().string() != ".png") {
                         continue;
                     }
                     std::shared_ptr<Walnut::Image> img = std::make_shared<Walnut::Image>(entry.path().string());
@@ -182,12 +278,20 @@ namespace BO3PT
                 bgbLoaded = false;
             }
             if (codesLoaded) {
-                codeImgList.clear();
+                soeCodeImgList.clear();
                 soeCodeCombo.clear();
                 iceCodeImgList.clear();
                 iceCodePairs.clear();
                 randomIceCodePairs.clear();
                 codesLoaded = false;
+            }
+            if (buildKitsLoaded) {
+                buildKitImgList.clear();
+                camosImgList.clear();
+                weaponIconsImgList.clear();
+                opticsImgList.clear();
+                attachmentsImgList.clear();
+                buildKitsLoaded = false;
             }
             break;
         }
@@ -210,28 +314,40 @@ namespace BO3PT
         std::string practiceToolDirectory = bo3Directory + "\\Practice Tool";
         std::string gscDirectory = practiceToolDirectory + "\\GSC";
         std::string settingsFolder = practiceToolDirectory + "\\Settings";
-        if (!DoesPathExist(practiceToolDirectory))
+        if (!DoesPathExist(practiceToolDirectory)) {
             std::filesystem::create_directory(practiceToolDirectory);
-        if (!DoesPathExist(gscDirectory))
+        }
+        if (!DoesPathExist(gscDirectory)) {
             std::filesystem::create_directory(gscDirectory);
-        if (!DoesPathExist(settingsFolder))
+        }
+        if (!DoesPathExist(settingsFolder)) {
             std::filesystem::create_directory(settingsFolder);
-        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt"))
+        }
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
-        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json"))
+        }
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json");
-        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt"))
+        }
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
-        if (!DoesPathExist(selfDirectory + "\\bindings.json"))
+        }
+        if (!DoesPathExist(selfDirectory + "\\bindings.json")) {
             Walnut::JSONBuilder::WriteEmpty(selfDirectory + "\\bindings.json");
-        if (!DoesPathExist(selfDirectory + "\\Settings"))
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings")) {
             std::filesystem::create_directory(selfDirectory + "\\Settings");
-        if (!DoesPathExist(selfDirectory + "\\Settings\\Autosplits"))
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Autosplits")) {
             std::filesystem::create_directory(selfDirectory + "\\Settings\\Autosplits");
-        if (!DoesPathExist(selfDirectory + "\\Settings\\Gum Profiles"))
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Gum Profiles")) {
             std::filesystem::create_directory(selfDirectory + "\\Settings\\Gum Profiles");
-        if (DoesPathExist(selfDirectory + "\\GSC"))
-        {
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Weapon Loadouts")) {
+            std::filesystem::create_directory(selfDirectory + "\\Settings\\Weapon Loadouts");
+        }
+        if (DoesPathExist(selfDirectory + "\\GSC")) {
             std::string startDirectory = selfDirectory + "\\GSC";
             for (const auto& entry : std::filesystem::directory_iterator(startDirectory))
             {
@@ -240,20 +356,20 @@ namespace BO3PT
                 std::string name = entry.path().filename().string();
                 std::string oldFile = entry.path().string();
                 std::string newFile = gscDirectory + "\\" + name;
-                if (!DoesPathExist(oldFile))
+                if (!DoesPathExist(oldFile)) {
                     continue;
-                try
-                {
+                }
+                try {
                     std::filesystem::rename(oldFile, newFile);
                 }
-                catch (const std::filesystem::filesystem_error& e)
-                {
+                catch (const std::filesystem::filesystem_error& e) {
                     Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to move file " + oldFile + " to " + newFile + " with error message: " + std::string(e.what()));
                     std::filesystem::remove(oldFile);
                 }
             }
-            if (!std::filesystem::remove(startDirectory))
+            if (!std::filesystem::remove(startDirectory)) {
                 Walnut::Logger::Log(Walnut::MessageType::Error, "Couldn't remove GSC directory with error code: " + std::error_code(errno, std::system_category()).message());
+            }
         }
     }
 
@@ -684,6 +800,104 @@ namespace BO3PT
         return false;
     }
 #pragma endregion
+
+#pragma region WeaponLoadouts
+
+    void LoadWeaponProfiles()
+    {
+        weaponPresets.clear();
+        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Weapon Loadouts"))
+        {
+            if (std::filesystem::is_regular_file(file) && file.path().extension().string() == ".json")
+            {
+                MenuWeaponPreset preset = ParseWeaponLoadout(file.path().string());
+                preset.m_Name = file.path().stem().string();
+                weaponPresets.emplace_back(preset);
+            }
+        }
+    }
+
+    void CreateNewWeaponPreset(std::string_view presetName)
+    {
+        std::string filename = selfDirectory + "\\Settings\\Weapon Loadouts\\" + presetName.data() + ".json";
+
+        Walnut::JSONBuilder builder;
+
+        for (int i = 0; i < static_cast<int>(menuWeaponLists.m_WeaponTypes.size()); i++) {
+            rapidjson::Value& weaponGroup = builder.AddObject(builder.GetDocument(), menuWeaponLists.m_WeaponTypes[i]);
+            for (const MenuWeapon& weapon : menuWeaponLists.m_Weapons[i]) {
+                rapidjson::Value& weaponObject = builder.AddObject(weaponGroup, weapon.m_Name);
+                weaponObject.AddMember("Optic", -1, builder.GetAllocator());
+                builder.AddArray(weaponObject, "Attachments");
+                builder.AddArray(weaponObject, "Camo");
+            }
+        }
+
+        builder.SaveToFile(filename);
+        LoadWeaponProfiles();
+    }
+
+    void DeleteWeaponPreset(std::string_view preset)
+    {
+        if (std::filesystem::exists(selfDirectory + "\\Settings\\Weapon Loadouts\\" + preset.data() + ".json")) {
+            std::filesystem::remove(selfDirectory + "\\Settings\\Weapon Loadouts\\" + preset.data() + ".json");
+        }
+        if (currentWeaponPreset > 0) {
+            currentWeaponPreset--;
+        }
+        LoadWeaponProfiles();
+    }
+
+    MenuWeaponPreset ParseWeaponLoadout(std::string_view filename)
+    {
+        MenuWeaponPreset returnPreset;
+        Walnut::JSONBuilder builder(filename);
+
+        for (const std::string& weaponType : menuWeaponLists.m_WeaponTypes) {
+            std::vector<MenuWeaponPresetItem> presetEntry;
+            if (builder.GetDocument().HasMember(weaponType.c_str()) && builder.GetDocument()[weaponType.c_str()].IsObject()) {
+                const rapidjson::Value& typeObject = builder.GetDocument()[weaponType.c_str()];
+
+                for (rapidjson::Value::ConstMemberIterator it = typeObject.MemberBegin(); it != typeObject.MemberEnd(); it++) {
+                    const std::string& name = it->name.GetString();
+                    const rapidjson::Value& value = it->value;
+                    MenuWeaponPresetItem weaponEntry;
+
+                    if (value.HasMember("Optic") && value["Optic"].IsInt()) {
+                        weaponEntry.m_EquippedOptic = value["Optic"].GetInt();
+                    }
+
+                    if (value.HasMember("Attachments") && value["Attachments"].IsArray()) {
+                        const rapidjson::Value& attachments = value["Attachments"];
+
+                        for (rapidjson::SizeType i = 0; i < attachments.Size(); i++) {
+                            if (attachments[i].IsInt()) {
+                                weaponEntry.m_EquippedAttachments.emplace_back(attachments[i].GetInt());
+                            }
+                        }
+                    }
+
+                    if (value.HasMember("Camo") && value["Camo"].IsArray()) {
+                        const rapidjson::Value& attachments = value["Camo"];
+
+                        for (int i = 0; i < min(static_cast<int>(attachments.Size()), 2); i++) {
+                            if (attachments[i].IsInt()) {
+                                weaponEntry.m_Camo[i] = (attachments[i].GetInt());
+                            }
+                        }
+                    }
+
+                    presetEntry.emplace_back(weaponEntry);
+                }
+                returnPreset.m_PresetItems.insert({ weaponType.c_str(), presetEntry });
+            }
+        }
+
+        return returnPreset;
+    }
+
+#pragma endregion
+
 
 #pragma region ZombieCalc
     int GetZombieCountForRound(int round, int playerCount)
@@ -1185,7 +1399,6 @@ namespace BO3PT
 #pragma endregion
 
 #pragma region Autosplits
-#define PRESET_DIRECTORY "/Settings/Autosplits"
     void LoadAutosplitPresets()
     {
         autosplitPresets.clear();
@@ -1202,7 +1415,7 @@ namespace BO3PT
 
     void WriteAutosplitPreset(const AutosplitPreset& preset)
     {
-        std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + preset.m_Name + ".json";
+        std::string filename = selfDirectory + "\\Settings\\Autosplits\\" + preset.m_Name + ".json";
 
         Walnut::JSONBuilder builder;
 
@@ -1235,7 +1448,7 @@ namespace BO3PT
 
     void CreateNewAutosplitPreset(std::string_view presetName)
     {
-        std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + presetName.data() + ".json";
+        std::string filename = selfDirectory + "\\Settings\\Autosplits\\" + presetName.data() + ".json";
        
         Walnut::JSONBuilder builder;
 
@@ -1252,13 +1465,14 @@ namespace BO3PT
         LoadAutosplitPresets();
     }
 
-    void DeleteAutosplitPreset(const std::string& preset)
+    void DeleteAutosplitPreset(std::string_view preset)
     {
-        std::string file = PRESET_DIRECTORY;
-        file += "/" + preset + ".json";
-        if (std::filesystem::exists(selfDirectory + file))
-            std::filesystem::remove(selfDirectory + file);
-        if (currentAutosplitPreset > 0) currentAutosplitPreset--;
+        if (std::filesystem::exists(selfDirectory + "\\Settings\\Autosplits\\" + preset.data() + ".json")) {
+            std::filesystem::remove(selfDirectory + "\\Settings\\Autosplits\\" + preset.data() + ".json");
+        }
+        if (currentAutosplitPreset > 0) {
+            currentAutosplitPreset--;
+        }
         LoadAutosplitPresets();
     }
 
@@ -1559,17 +1773,14 @@ namespace BO3PT
         AutosplitPreset returnPreset;
         Walnut::JSONBuilder builder(filename);
 
-        if (builder.GetDocument().HasMember("Settings") && builder.GetDocument()["Settings"].IsObject())
-        {
+        if (builder.GetDocument().HasMember("Settings") && builder.GetDocument()["Settings"].IsObject()) {
             const rapidjson::Value& settings = builder.GetDocument()["Settings"];
 
-            for (rapidjson::Value::ConstMemberIterator it = settings.MemberBegin(); it != settings.MemberEnd(); it++)
-            {
+            for (rapidjson::Value::ConstMemberIterator it = settings.MemberBegin(); it != settings.MemberEnd(); it++) {
                 const std::string& key = it->name.GetString();
                 const rapidjson::Value& value = it->value;
 
-                switch (hashstr(key.c_str()))
-                {
+                switch (hashstr(key.c_str())) {
                 case hashstr("In Game Timer"):
                     if (value.IsBool())
                         returnPreset.m_IGT = value.GetBool();
@@ -1595,16 +1806,16 @@ namespace BO3PT
                 }
             }
         }
-        if (builder.GetDocument().HasMember("Split Data") && builder.GetDocument()["Split Data"].IsObject())
-        {
+        if (builder.GetDocument().HasMember("Split Data") && builder.GetDocument()["Split Data"].IsObject()) {
             const rapidjson::Value& splitData = builder.GetDocument()["Split Data"];
 
-            for (rapidjson::Value::ConstMemberIterator it = splitData.MemberBegin(); it != splitData.MemberEnd(); it++)
-            {
-                if (it->name.IsString() && it->value.IsInt())
+            for (rapidjson::Value::ConstMemberIterator it = splitData.MemberBegin(); it != splitData.MemberEnd(); it++) {
+                if (it->name.IsString() && it->value.IsInt()) {
                     returnPreset.m_Splits.push_back({ it->name.GetString(), it->value.GetInt() });
-                else
+                }
+                else {
                     Walnut::Logger::Log(Walnut::MessageType::Error, "Autosplits json error: Incorrect typings found at key " + std::string(it->name.GetString()));
+                }
             }
         }
 

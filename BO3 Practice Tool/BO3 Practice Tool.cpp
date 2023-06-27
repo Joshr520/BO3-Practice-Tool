@@ -28,6 +28,7 @@ using PopupStates = ImGuiHelper::PopupStates_;
 using Button = ImGuiHelper::ButtonWrapper;
 using Selection = ImGuiHelper::Selection;
 using ListBox = ImGuiHelper::ListBoxWrapper;
+using VecAdd = ImGuiHelper::VecAdd;
 
 void SetupData();
 void SearchForGame();
@@ -36,22 +37,23 @@ bool PerformUpdate();
 std::string SelectFolder();
 
 void Sidebar();
-void GobblegumLoadout();
-void Autosplits();
-void PracticePatches();
-void Settings();
-void PlayerOptions();
-void ZombieOptions();
-void RoundOptions();
-void PowerupOptions();
-void EggStepOptions();
-void CraftableOptions();
-void BlockerOptions();
-void MapOptions();
-void GumTracker();
-void ZombieCalculator();
-void CodeGuides();
-void GKValveSolver();
+void BGBLoadoutFunc();
+void WeaponLoadoutFunc();
+void AutosplitsFunc();
+void PracticePatchesFunc();
+void SettingsFunc();
+void PlayerOptionsFunc();
+void ZombieOptionsFunc();
+void RoundOptionsFunc();
+void PowerupOptionsFunc();
+void EggStepOptionsFunc();
+void CraftableOptionsFunc();
+void BlockerOptionsFunc();
+void MapOptionsFunc();
+void GumTrackerFunc();
+void ZombieCalculatorFunc();
+void CodeGuidesFunc();
+void GKValveSolverFunc();
 
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
 {
@@ -65,13 +67,15 @@ static ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_N
 static ImGuiWindowFlags dockFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoScrollbar;
 static ImGuiViewport* viewport;
 
-static ImGuiHelper::MultiSpanSelection sidebarSelections({ {{"Gobblegum Loadout", "Autosplits", "Practice Patches", "Settings"}}, {{"Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options", "Craftable Options", "Blocker Options", "Map Options"}},
+static ImGuiHelper::MultiSpanSelection sidebarSelections({ {{"Gobblegum Loadouts", "Weapon Loadouts", "Autosplits", "Practice Patches", "Settings"}}, {{"Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options", "Craftable Options", "Blocker Options", "Map Options"}},
         {{"Gum Tracker", "Zombie Calculator", "Code Guides", "GK Valve Solver"}} });
 static ImGuiHelper::MultiSpanSelection weaponSelections;
 static std::vector<ImGuiHelper::MultiSpanSelection> autosplitSelections;
 
-static std::string internalVersion = "0.4.2";
+static std::string internalVersion = "0.5.0";
 static Walnut::Image* discordIcon;
+static Walnut::Image* weaponFrame;
+static Walnut::Image* weaponWarning;
 
 // Gum data
 static int chooseGumPreset = 0;
@@ -135,7 +139,9 @@ public:
 
         SetupData();
 
-        discordIcon = new Walnut::Image("Resource Images/Discord.png");
+        discordIcon = new Walnut::Image("Resource Images\\Discord.png");
+        weaponFrame = new Walnut::Image("Resource Images\\Weapons\\Frame.png");
+        weaponWarning = new Walnut::Image("Resource Images\\Weapons\\Warning.png");
 	}
 
     virtual void OnUIRender() override
@@ -216,6 +222,16 @@ public:
         case PopupStates::GumPresetError: {
             ImGui::OpenPopup("Gum Preset Already Exists");
             Popup::OpenPopup(PopupStates::GumPresetError);
+            break;
+        }
+        case PopupStates::WeaponLoadoutCreation: {
+            ImGui::OpenPopup("New Weapon Loadout");
+            Popup::OpenPopup(PopupStates::WeaponLoadoutCreation);
+            break;
+        }
+        case PopupStates::WeaponLoadoutError: {
+            ImGui::OpenPopup("Weapon Loadout Already Exists");
+            Popup::OpenPopup(PopupStates::WeaponLoadoutError);
             break;
         }
         case PopupStates::AutosplitPresetCreation: {
@@ -363,6 +379,43 @@ public:
             ImGui::SetNextWindowSize(modalSize);
             ImGui::SetNextWindowPos(modalPos, ImGuiCond_Always);
             if (ImGui::BeginPopupModal("Gum Preset Already Exists", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::TextWrapped("Choose a name that doesn't already exist.");
+                ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 30.0f);
+                float width = ImGui::GetContentRegionAvail().x;
+                if (ImGui::Button("Close", ImVec2(width, 25.0f))) {
+                    ImGui::CloseCurrentPopup();
+                    Popup::ClosePopup();
+                }
+                ImGui::EndPopup();
+            }
+            break;
+        }
+        case PopupStates::WeaponLoadoutCreation: {
+            if (ImGui::BeginPopup("New Weapon Loadout")) {
+                ImGui::SetKeyboardFocusHere();
+                char presetInput[32] = "";
+                ImGui::SetNextItemWidth(200);
+                if (ImGui::InputText("New Preset Name", presetInput, IM_ARRAYSIZE(presetInput), ImGuiInputTextFlags_EnterReturnsTrue)) {
+                    if (std::string(presetInput).empty() || CheckPresetExists(presetInput)) {
+                        Popup::PrepPopup(PopupStates::WeaponLoadoutError);
+                    }
+                    else {
+                        CreateNewWeaponPreset(presetInput);
+                        if (writeWeaponPresets && GUIState::IsStateSet(Active)) {
+                            //WritePresetToGame(gumPresets[currentGumPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
+                        }
+                    }
+                    ImGui::CloseCurrentPopup();
+                    Popup::ClosePopup();
+                }
+                ImGui::EndPopup();
+            }
+            break;
+        }
+        case PopupStates::WeaponLoadoutError: {
+            ImGui::SetNextWindowSize(modalSize);
+            ImGui::SetNextWindowPos(modalPos, ImGuiCond_Always);
+            if (ImGui::BeginPopupModal("Weapon Loadout Already Exists", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
                 ImGui::TextWrapped("Choose a name that doesn't already exist.");
                 ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 30.0f);
                 float width = ImGui::GetContentRegionAvail().x;
@@ -566,22 +619,23 @@ void SetupData()
         WriteAutosplitPreset({});
     }
 
-    GUIState::AddMember({ std::function<void()>(GobblegumLoadout) });
-    GUIState::AddMember({ std::function<void()>(Autosplits) });
-    GUIState::AddMember({ std::function<void()>(PracticePatches) });
-    GUIState::AddMember({ std::function<void()>(Settings) });
-    GUIState::AddMember({ std::function<void()>(PlayerOptions) });
-    GUIState::AddMember({ std::function<void()>(ZombieOptions) });
-    GUIState::AddMember({ std::function<void()>(RoundOptions) });
-    GUIState::AddMember({ std::function<void()>(PowerupOptions) });
-    GUIState::AddMember({ std::function<void()>(EggStepOptions) });
-    GUIState::AddMember({ std::function<void()>(CraftableOptions) });
-    GUIState::AddMember({ std::function<void()>(BlockerOptions) });
-    GUIState::AddMember({ std::function<void()>(MapOptions) });
-    GUIState::AddMember({ std::function<void()>(GumTracker) });
-    GUIState::AddMember({ std::function<void()>(ZombieCalculator) });
-    GUIState::AddMember({ std::function<void()>(CodeGuides) });
-    GUIState::AddMember({ std::function<void()>(GKValveSolver) });
+    GUIState::AddMember({ std::function<void()>(BGBLoadoutFunc) });
+    GUIState::AddMember({ std::function<void()>(WeaponLoadoutFunc) });
+    GUIState::AddMember({ std::function<void()>(AutosplitsFunc) });
+    GUIState::AddMember({ std::function<void()>(PracticePatchesFunc) });
+    GUIState::AddMember({ std::function<void()>(SettingsFunc) });
+    GUIState::AddMember({ std::function<void()>(PlayerOptionsFunc) });
+    GUIState::AddMember({ std::function<void()>(ZombieOptionsFunc) });
+    GUIState::AddMember({ std::function<void()>(RoundOptionsFunc) });
+    GUIState::AddMember({ std::function<void()>(PowerupOptionsFunc) });
+    GUIState::AddMember({ std::function<void()>(EggStepOptionsFunc) });
+    GUIState::AddMember({ std::function<void()>(CraftableOptionsFunc) });
+    GUIState::AddMember({ std::function<void()>(BlockerOptionsFunc) });
+    GUIState::AddMember({ std::function<void()>(MapOptionsFunc) });
+    GUIState::AddMember({ std::function<void()>(GumTrackerFunc) });
+    GUIState::AddMember({ std::function<void()>(ZombieCalculatorFunc) });
+    GUIState::AddMember({ std::function<void()>(CodeGuidesFunc) });
+    GUIState::AddMember({ std::function<void()>(GKValveSolverFunc) });
 
 
     for (int i = 0; i < static_cast<int>(t7Maps.size()); i++) {
@@ -746,7 +800,7 @@ std::string SelectFolder()
 void Sidebar()
 {
     ImGui::PushStyleColor(ImGuiCol_Button, COLOR_TRANSPARENT);
-    if (ImGui::ImageButton(discordIcon->GetDescriptorSet(), ImVec2(45.0f, 45.0f))) {
+    if (ImGui::ImageButton("Discord Icon", discordIcon->GetDescriptorSet(), ImVec2(45.0f, 45.0f))) {
         Popup::PrepPopup(PopupStates::JoinDiscord);
     }
     ImGui::PopStyleColor();
@@ -802,7 +856,7 @@ void Sidebar()
     ImGui::Separator(2.5f);
     // In Game
     if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm") {
-        if (sidebarSelections.GetIndex() > 3 && sidebarSelections.GetIndex() < 11) {
+        if (sidebarSelections.GetArrIndex() == 1) {
             sidebarSelections.SetIndex(0);
         }
         ImGui::BeginDisabled();
@@ -830,10 +884,10 @@ void Sidebar()
     GUIState::SetIndex(sidebarSelections.GetIndex());
 }
 
-void GobblegumLoadout()
+void BGBLoadoutFunc()
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     if (!showGumSelection) {
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
         ImGui::BeginGroup();
         if (Button::RenderSingle(ICON_FA_FILE_CIRCLE_PLUS " New Preset", ImVec2(150.0f, 25.0f))) {
             Popup::PrepPopup(PopupStates::GumPresetCreation);
@@ -846,10 +900,10 @@ void GobblegumLoadout()
                 }
             }
         }
+        ImGui::PopStyleVar();
         if (gumPresets.size()) {
             ImGui::EndGroup();
             ImGui::SameLine();
-            ImGui::PopStyleVar();
             ImGui::BeginGroup();
             // presets dropdown
             ImGui::SetNextItemWidth(250);
@@ -879,7 +933,7 @@ void GobblegumLoadout()
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_BLUE_WEAK);
             ImGui::BeginGroup();
             for (const BGB& bgb : gumPresets[currentGumPreset].m_BGBs) {
-                if (ImGui::ImageButton(bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(128.0f, 128.0f))) {
+                if (ImGui::ImageButton(bgb.m_Name.c_str(), bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(128.0f, 128.0f))) {
                     bgbContext = bgb;
                     showGumSelection = true;
                     break;
@@ -892,13 +946,9 @@ void GobblegumLoadout()
             ImGui::EndGroup();
             ImGui::PopStyleColor(2);
         }
-        else {
-            ImGui::PopStyleVar();
-        }
         ImGui::EndGroup();
     }
     else {
-        ImGui::PopStyleVar();
         // swap gum selection menu
         if (Button::RenderSingle(ICON_FA_ARROW_LEFT, ImVec2(50.0f, 25.0f))) {
             showGumSelection = false;
@@ -922,7 +972,7 @@ void GobblegumLoadout()
                 ImGui::BeginGroup();
                 int numBGB = 0;
                 for (const BGB& bgb : bgbDisplayList) {
-                    if (ImGui::ImageButton(bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
+                    if (ImGui::ImageButton(bgb.m_Name.c_str(), bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
                         bgbContext = bgb;
                         strcpy_s(searchText, "");
                         showGumSelection = false;
@@ -966,7 +1016,7 @@ void GobblegumLoadout()
                 ImGui::BeginGroup();
                 int numBGB = 0;
                 for (const BGB& bgb : bgbDisplayList) {
-                    if (ImGui::ImageButton(bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
+                    if (ImGui::ImageButton(bgb.m_Name.c_str(), bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
                         bgbContext = bgb;
                         strcpy_s(searchText, "");
                         showGumSelection = false;
@@ -1009,7 +1059,160 @@ void GobblegumLoadout()
     }
 }
 
-void Autosplits()
+void WeaponLoadoutFunc()
+{
+    if (currentWeaponPresetMenu < 0) {
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+        ImGui::BeginGroup();
+        if (Button::RenderSingle(ICON_FA_FILE_CIRCLE_PLUS " New Preset", ImVec2(150.0f, 25.0f))) {
+            Popup::PrepPopup(PopupStates::WeaponLoadoutCreation);
+        }
+        if (weaponPresets.size()) {
+            if (Button::RenderSingle(ICON_FA_FILE_CIRCLE_MINUS " Delete Preset", ImVec2(150.0f, 25.0f))) {
+                DeleteWeaponPreset(weaponPresets[currentWeaponPreset].m_Name);
+                if (writeWeaponPresets && GUIState::IsStateSet(Active)) {
+
+                }
+            }
+        }
+        ImGui::PopStyleVar();
+        if (weaponPresets.size()) {
+            ImGui::EndGroup();
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(250);
+            if (ImGui::BeginCombo("Weapon Loadouts", weaponPresets[currentWeaponPreset].m_Name.c_str(), ImGuiComboFlags_HeightRegular)) {
+                if (Selection::RenderWeaponLoadout(weaponPresets, currentWeaponPreset) && writeWeaponPresets && GUIState::IsStateSet(Active)) {
+                    //WritePresetToGame(gumPresets[currentGumPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::SameLine();
+            if (!GUIState::IsStateSet(Active)) {
+                ImGui::BeginDisabled();
+            }
+            if (ImGui::Checkbox("Active", &writeWeaponPresets)) {
+                if (writeWeaponPresets && GUIState::IsStateSet(Active)) {
+                    //WritePresetToGame(gumPresets[currentGumPreset], bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
+                }
+                else {
+                    //WritePresetToGame({}, bo3Directory + "\\Practice Tool\\Settings\\Active Gum Preset.txt");
+                }
+            }
+            if (!GUIState::IsStateSet(Active)) {
+                ImGui::EndDisabled();
+            }
+            ImGui::PushStyleColor(ImGuiCol_Button, COLOR_GREY);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_BLUE_WEAK);
+            ImGui::Dummy(ImVec2(0.0f, 25.0f));
+            ImGui::Dummy(ImVec2(25.0f, 0.0f));
+            ImGui::SameLine();
+            ImGui::BeginGroup();
+            for (int i = 0; i < static_cast<int>(buildKitImgList.size()); i++) {
+                if (ImGui::ImageButton(buildKitImgList[i]->GetFilename().c_str(), buildKitImgList[i]->GetDescriptorSet(), ImVec2(256.0f, 256.0f))) {
+                    currentWeaponPresetMenu = i;
+                    currentWeaponEdit = 0;
+                }
+
+                if (i == 2) {
+                    ImGui::EndGroup();
+                    ImGui::Dummy(ImVec2(25.0f, 0.0f));
+                    ImGui::SameLine();
+                    ImGui::BeginGroup();
+                }
+                else {
+                    ImGui::SameLine();
+                }
+            }
+            ImGui::PopStyleColor(2);
+        }
+        ImGui::EndGroup();
+    }
+    else {
+        if (Button::RenderSingle(ICON_FA_ARROW_LEFT, ImVec2(50.0f, 25.0f))) {
+            currentWeaponPresetMenu = -1;
+        }
+
+        if (currentWeaponPresetMenu >= 0)
+        {
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            // Optics selections
+            for (int i = 0; i < static_cast<int>(menuWeaponLists.m_Weapons[currentWeaponPresetMenu][currentWeaponEdit].m_Optics.size()); i++) {
+                const MenuWeapon& weapon = menuWeaponLists.m_Weapons[currentWeaponPresetMenu][currentWeaponEdit];
+                const std::string& weaponType = menuWeaponLists.m_WeaponTypes[currentWeaponPresetMenu];
+                const std::string& optic = weapon.m_Optics[i];
+                ImVec2 pos = VecAdd::AddVec2(ImGui::GetWindowPos(), ImVec2(50.0f + i * (120.0f + ImGui::GetStyle().ItemSpacing.x), 50.0f));
+                ImRect imageRect(pos, ImVec2(pos.x + 120.0f, pos.y + 120.0f));
+
+                if (i == weaponPresets[currentWeaponPreset].m_PresetItems[weaponType][currentWeaponEdit].m_EquippedOptic) {
+                    drawList->AddRectFilled(pos, VecAdd::AddVec2(pos, ImVec2(120.0f, 120.0f)), COLOR_LIGHT_BLUE);
+                    if (imageRect.Contains(ImGui::GetMousePos()) && ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
+                        weaponPresets[currentWeaponPreset].m_PresetItems[weaponType][currentWeaponEdit].m_EquippedOptic = -1;
+                    }
+                }
+                else if (imageRect.Contains(ImGui::GetMousePos())) {
+                    drawList->AddRectFilled(pos, VecAdd::AddVec2(pos, ImVec2(120.0f, 120.0f)), COLOR_BLUE);
+                    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
+                        weaponPresets[currentWeaponPreset].m_PresetItems[weaponType][currentWeaponEdit].m_EquippedOptic = i;
+                    }
+                }
+                drawList->AddImage(opticsImgList[optic]->GetDescriptorSet(), pos, VecAdd::AddVec2(pos, ImVec2(120.0f, 120.0f)));
+                drawList->AddImage(weaponFrame->GetDescriptorSet(), pos, VecAdd::AddVec2(pos, ImVec2(120.0f, 120.0f)));
+                drawList->AddText(ImVec2(pos.x + 5.0f, pos.y + 100.0f), COLOR_WHITE, optic.c_str());
+            }
+            // Attachments selections
+            for (int i = 0; i < static_cast<int>(menuWeaponLists.m_Weapons[currentWeaponPresetMenu][currentWeaponEdit].m_Attachments.size()); i++) {
+                const MenuWeapon& weapon = menuWeaponLists.m_Weapons[currentWeaponPresetMenu][currentWeaponEdit];
+                const std::string& weaponType = menuWeaponLists.m_WeaponTypes[currentWeaponPresetMenu];
+                std::vector<int>& equippedAttachments = weaponPresets[currentWeaponPreset].m_PresetItems[weaponType][currentWeaponEdit].m_EquippedAttachments;
+                const std::string& attachment = menuWeaponLists.m_Weapons[currentWeaponPresetMenu][currentWeaponEdit].m_Attachments[i];
+                const std::string& attachmentIndex = menuWeaponLists.m_Weapons[currentWeaponPresetMenu][currentWeaponEdit].m_Name + "_" + attachment;
+                ImVec2 pos = VecAdd::AddVec2(ImGui::GetWindowPos(), ImVec2(50.0f + i * (120.0f + ImGui::GetStyle().ItemSpacing.x), 50.0f + 120.0f + ImGui::GetStyle().ItemSpacing.y * 3));
+                ImRect imageRect(pos, ImVec2(pos.x + 120.0f, pos.y + 120.0f));
+
+                if (std::find(equippedAttachments.begin(), equippedAttachments.end(), i) != equippedAttachments.end()) {
+                    drawList->AddRectFilled(pos, VecAdd::AddVec2(pos, ImVec2(120.0f, 120.0f)), COLOR_LIGHT_BLUE);
+                    if (imageRect.Contains(ImGui::GetMousePos()) && ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
+                        equippedAttachments.erase(std::find(equippedAttachments.begin(), equippedAttachments.end(), i));
+                    }
+                }
+                else if (imageRect.Contains(ImGui::GetMousePos())) {
+                    drawList->AddRectFilled(pos, VecAdd::AddVec2(pos, ImVec2(120.0f, 120.0f)), COLOR_BLUE);
+                    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
+                        equippedAttachments.emplace_back(i);
+                        if (equippedAttachments.size() > weapon.m_NumAttachments) {
+                            equippedAttachments.erase(equippedAttachments.begin());
+                        }
+                    }
+                }
+                drawList->AddImage(attachmentsImgList[attachmentIndex]->GetDescriptorSet(), pos, VecAdd::AddVec2(pos, ImVec2(120.0f, 120.0f)));
+                drawList->AddImage(weaponFrame->GetDescriptorSet(), pos, VecAdd::AddVec2(pos, ImVec2(120.0f, 120.0f)));
+                drawList->AddText(ImVec2(pos.x + 5.0f, pos.y + 100.0f), COLOR_WHITE, attachment.c_str());
+            }
+            // Gun selections
+            for (int i = 0; i < static_cast<int>(menuWeaponLists.m_Weapons[currentWeaponPresetMenu].size()); i++) {
+                const MenuWeapon& weapon = menuWeaponLists.m_Weapons[currentWeaponPresetMenu][i];
+                const std::string& weaponType = menuWeaponLists.m_WeaponTypes[currentWeaponPresetMenu];
+                ImVec2 pos = ImVec2(ImGui::GetWindowPos().x + 50.0f + i * (128.0f + ImGui::GetStyle().ItemSpacing.x), ImGui::GetContentRegionMaxAbs().y - 138.0f);
+                ImRect imageRect(pos, ImVec2(pos.x + 128.0f, pos.y + 128.0f));
+
+                if (i == currentWeaponEdit) {
+                    drawList->AddRectFilled(pos, VecAdd::AddVec2(pos, ImVec2(128.0f, 128.0f)), COLOR_LIGHT_BLUE);
+                }
+                else if (imageRect.Contains(ImGui::GetMousePos())) {
+                    drawList->AddRectFilled(pos, VecAdd::AddVec2(pos, ImVec2(128.0f, 128.0f)), COLOR_BLUE);
+                    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
+                        currentWeaponEdit = i;
+                    }
+                }
+                drawList->AddImage(weaponIconsImgList[weapon.m_Name]->GetDescriptorSet(), pos, VecAdd::AddVec2(pos, ImVec2(128.0f, 128.0f)));
+                drawList->AddImage(weaponFrame->GetDescriptorSet(), pos, VecAdd::AddVec2(pos, ImVec2(128.0f, 128.0f)));
+                drawList->AddText(ImVec2(pos.x + 5.0f, pos.y + 108.0f), COLOR_WHITE, weapon.m_Name.c_str());
+            }
+        }
+    }
+}
+
+void AutosplitsFunc()
 {
     if (addSplitView) {
         if (Button::RenderSingle(ICON_FA_ARROW_LEFT, ImVec2(50.0f, 25.0f))) {
@@ -1262,7 +1465,7 @@ void Autosplits()
     }
 }
 
-void PracticePatches()
+void PracticePatchesFunc()
 {
     for (MapPracticePatch& list : practicePatches.m_PracticePatches) {
         float spaceLeft = ImGui::GetContentRegionAvail().x;
@@ -1280,7 +1483,7 @@ void PracticePatches()
     }
 }
 
-void Settings()
+void SettingsFunc()
 {
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 25.0f);
     ImGuiHelper::TextFont::Render("In Game Keybinds", titleFont);
@@ -1355,7 +1558,7 @@ void Settings()
     ImGui::EndGroup();
 }
 
-void PlayerOptions()
+void PlayerOptionsFunc()
 {
     static bool displayOnly = !GUIState::IsStateSet(Active);
     if (ImGui::BeginTabBar("Player Options Tabs")) {
@@ -1574,7 +1777,7 @@ void PlayerOptions()
     }
 }
 
-void ZombieOptions()
+void ZombieOptionsFunc()
 {
     static bool displayOnly = !GUIState::IsStateSet(Active);
     if (Button::RenderToggleOut("Ignore Players", ImVec2(140.0F, 25.0f), &zombiesIgnore, displayOnly)) {
@@ -1633,7 +1836,7 @@ void ZombieOptions()
 
 }
 
-void RoundOptions()
+void RoundOptionsFunc()
 {
     if (Button::RenderSingle("End Round", ImVec2(120.0f, 25.0f))) {
         NotifyGame({ 2, 0 });
@@ -1672,7 +1875,7 @@ void RoundOptions()
     }
 }
 
-void PowerupOptions()
+void PowerupOptionsFunc()
 {
     ListBox::Render("##Powerup List", powerups.m_Powerups[currentMap], powerupListIndex, ImVec2(300, (powerups.m_Powerups[currentMap].size() * 25.0f + 1.0f)));
     ImGui::SameLine();
@@ -1685,7 +1888,7 @@ void PowerupOptions()
 }
 
 // TODO: Refactor this
-void EggStepOptions()
+void EggStepOptionsFunc()
 {
     HelpMarker("This can be buggy and may not work correctly for every situation. The game may crash in certain events, use at your own risk. For best results, don't do multiple steps from different boxes at once.");
     switch (hashstr(currentMap.c_str())) {
@@ -1960,7 +2163,7 @@ void EggStepOptions()
     }
 }
 
-void CraftableOptions()
+void CraftableOptionsFunc()
 {
     int craftSize = (int)craftables.m_Craftables[currentMap].size();
     if (craftSize > 0) {
@@ -1987,7 +2190,7 @@ void CraftableOptions()
     }
 }
 
-void BlockerOptions()
+void BlockerOptionsFunc()
 {
     if (Button::RenderSingle("Open All Doors", ImVec2(150.0f, 25.0f))) {
         NotifyGame({ 6, 0 });
@@ -2029,7 +2232,7 @@ void BlockerOptions()
     }
 }
 
-void MapOptions()
+void MapOptionsFunc()
 {
     ImGui::BeginGroup();
     ListBox::Render("##Load Map List", t7MapsVerbose, mapListIndex, ImVec2(200.0f, 175.0f));
@@ -2040,7 +2243,7 @@ void MapOptions()
     ImGui::EndGroup();
 }
 
-void GumTracker()
+void GumTrackerFunc()
 {
     if (!showGumSelection) {
         if (gumPresets.size()) {
@@ -2084,7 +2287,7 @@ void GumTracker()
             if (!gumTrackChosen[i]) {
                 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
             }
-            if (ImGui::ImageButton(bgbImgList[gumTrackBGBs[i].m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
+            if (ImGui::ImageButton(gumTrackBGBs[i].m_Name.c_str(), bgbImgList[gumTrackBGBs[i].m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
                 gumTrackChosen[i] = !gumTrackChosen[i];
                 bgbToSwap = bgbContext;
                 if (std::all_of(std::begin(gumTrackChosen), std::end(gumTrackChosen), [](bool value) { return value; })) {
@@ -2128,7 +2331,7 @@ void GumTracker()
                 ImGui::BeginGroup();
                 int numBGB = 0;
                 for (const BGB& bgb : bgbDisplayList) {
-                    if (ImGui::ImageButton(bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
+                    if (ImGui::ImageButton(bgb.m_Name.c_str(), bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
                         bgbContext = bgb;
                         strcpy_s(searchText, "");
                         showGumSelection = false;
@@ -2169,7 +2372,7 @@ void GumTracker()
                 ImGui::BeginGroup();
                 int numBGB = 0;
                 for (const BGB& bgb : bgbDisplayList) {
-                    if (ImGui::ImageButton(bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
+                    if (ImGui::ImageButton(bgb.m_Name.c_str(), bgbImgList[bgb.m_Name]->GetDescriptorSet(), ImVec2(145.0f, 145.0f))) {
                         bgbContext = bgb;
                         strcpy_s(searchText, "");
                         showGumSelection = false;
@@ -2207,7 +2410,7 @@ void GumTracker()
     ImGui::End();
 }
 
-void ZombieCalculator()
+void ZombieCalculatorFunc()
 {
     if (ImGui::BeginTabBar("Zombie Calc Tabs")) {
         if (ImGui::BeginTabItem("Basic")) {
@@ -2893,7 +3096,7 @@ void ZombieCalculator()
     }
 }
 
-void CodeGuides()
+void CodeGuidesFunc()
 {
     if (ImGui::BeginTabBar("Code Guide Tabs")) {
         if (ImGui::BeginTabItem("SOE Code")) {
@@ -2923,9 +3126,9 @@ void CodeGuides()
                 }
                 ImGui::EndCombo();
             }
-            ImGui::Image(codeImgList[codeIndex_1]->GetDescriptorSet(), ImVec2(490.0f, 490.0f));
+            ImGui::Image(soeCodeImgList[codeIndex_1]->GetDescriptorSet(), ImVec2(490.0f, 490.0f));
             ImGui::SameLine();
-            ImGui::Image(codeImgList[codeIndex_2]->GetDescriptorSet(), ImVec2(490.0f, 490.0f));
+            ImGui::Image(soeCodeImgList[codeIndex_2]->GetDescriptorSet(), ImVec2(490.0f, 490.0f));
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Ice Code")) {
@@ -2946,7 +3149,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[0].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[0].symbolImage->GetFilename().c_str(), randomIceCodePairs[0].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[0]) {
                             skip = true;
                         }
@@ -2967,7 +3170,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[1].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[1].symbolImage->GetFilename().c_str(), randomIceCodePairs[1].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[1]) {
                             skip = true;
                         }
@@ -2988,7 +3191,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[2].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[2].symbolImage->GetFilename().c_str(), randomIceCodePairs[2].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[2]) {
                             skip = true;
                         }
@@ -3009,7 +3212,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[3].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[3].symbolImage->GetFilename().c_str(), randomIceCodePairs[3].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[3]) {
                             skip = true;
                         }
@@ -3042,7 +3245,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[4].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[4].symbolImage->GetFilename().c_str(), randomIceCodePairs[4].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[4]) {
                             skip = true;
                         }
@@ -3063,7 +3266,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[5].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[5].symbolImage->GetFilename().c_str(), randomIceCodePairs[5].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[5]) {
                             skip = true;
                         }
@@ -3084,7 +3287,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[6].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[6].symbolImage->GetFilename().c_str(), randomIceCodePairs[6].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[6]) {
                             skip = true;
                         }
@@ -3105,7 +3308,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[7].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[7].symbolImage->GetFilename().c_str(), randomIceCodePairs[7].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[7]) {
                             skip = true;
                         }
@@ -3134,7 +3337,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[8].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[7].symbolImage->GetFilename().c_str(), randomIceCodePairs[8].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[8]) {
                             skip = true;
                         }
@@ -3155,7 +3358,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[9].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[9].symbolImage->GetFilename().c_str(), randomIceCodePairs[9].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[9]) {
                             skip = true;
                         }
@@ -3176,7 +3379,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[10].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[10].symbolImage->GetFilename().c_str(), randomIceCodePairs[10].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[10]) {
                             skip = true;
                         }
@@ -3197,7 +3400,7 @@ void CodeGuides()
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, COLOR_RED);
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, COLOR_RED);
                     }
-                    if (ImGui::ImageButton(randomIceCodePairs[11].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
+                    if (ImGui::ImageButton(randomIceCodePairs[11].symbolImage->GetFilename().c_str(), randomIceCodePairs[11].symbolImage->GetDescriptorSet(), ImVec2(170.0f, 152.0f))) {
                         if (!gameChecked[11]) {
                             skip = true;
                         }
@@ -3226,7 +3429,7 @@ void CodeGuides()
     }
 }
 
-void GKValveSolver()
+void GKValveSolverFunc()
 {
     if (showEvaluation) {
         if (Button::RenderSingle(ICON_FA_ARROW_LEFT, ImVec2(50.0f, 25.0f))) {

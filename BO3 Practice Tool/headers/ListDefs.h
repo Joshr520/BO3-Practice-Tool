@@ -124,6 +124,74 @@ struct PracticePatchLists {
 	std::vector<MapPracticePatch> m_PracticePatches;
 };
 
+struct MenuWeapon {
+	std::string m_Name;
+	int m_NumAttachments;
+	std::vector<std::string> m_Optics;
+	std::vector<std::string> m_Attachments;
+};
+
+struct MenuWeaponLists {
+	std::vector<std::string> m_WeaponTypes;
+	std::vector<std::vector<MenuWeapon>> m_Weapons;
+};
+
+struct MenuWeaponPresetItem {
+	int m_EquippedOptic;
+	std::vector<int> m_EquippedAttachments;
+	int m_Camo[2] = { -1, -1 };
+};
+struct MenuWeaponPreset {
+	std::string m_Name;
+	std::unordered_map<std::string, std::vector<MenuWeaponPresetItem>> m_PresetItems;
+};
+
+inline MenuWeaponLists menuWeaponLists = {
+	{
+		{ "Submachine Guns", "Assault Rifles", "Shotguns", "Light Machine Guns", "Sniper Rifles", "Secondaries", }
+	},
+	{
+		{
+			{ "Vesper", 5, { "Reflex", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } },
+			{ "VMP", 5, { "Reflex", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } },
+			{ "Kuda", 5, { "Reflex", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } },
+			{ "Pharo", 5, { "Reflex", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } },
+			{ "Weevil", 5, { "Reflex", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } }
+		},
+		{
+			{ "ICR-1", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } },
+			{ "KN-44", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } },
+			{ "M8A7", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } },
+			{ "Sheiva", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } },
+			{ "HVK-30", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } },
+			{ "Man-O-War", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Long Barrel", "Fast Mags" } }
+		},
+		{
+			{ "KRM-262", 5, { "Reflex", "ELO", "BOA 3" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Long Barrel", "Fast Mags" } },
+			{ "Argus", 5, { "Reflex", "ELO", "BOA 3" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Long Barrel", "Fast Mags" } },
+			{ "205 Brecci", 5, { "Reflex", "ELO", "BOA 3" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Long Barrel", "Fast Mags" } },
+			{ "Haymaker 12", 5, { "Reflex", "ELO", "BOA 3" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Long Barrel", "Fast Mags" } }
+		},
+		{
+			{ "BRM", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Fast Mags" } },
+			{ "Dingo", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Fast Mags" } },
+			{ "48 Dredge", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Fast Mags" } },
+			{ "Gorgon", 5, { "Reflex", "Thermal", "Varix 3", "ELO", "BOA 3", "Recon" }, { "Quickdraw", "Stock", "Laser Sight", "Rapid Fire", "Grip", "Fast Mags" } }
+		},
+		{
+			{ "Locus", 4, { "ELO", "Thermal", "Varix 3", "Recon" }, { "Ballistics CPU", "Stock", "Rapid Fire", "Fast Mags" } },
+			{ "Drakon", 4, { "ELO", "Thermal", "Varix 3", "Recon" }, { "Ballistics CPU", "Stock", "Rapid Fire", "Fast Mags" } },
+			{ "SVG-100", 4, { "ELO", "Thermal", "Varix 3", "Recon" }, { "Ballistics CPU", "Stock", "Rapid Fire", "Fast Mags" } }
+		},
+		{
+			{ "Bowie Knife", 0 },
+			{ "RK5", 2, { "Reflex", "ELO" }, { "Quickdraw", "Laser Sight", "Long Barrel", "Fast Mags" } },
+			{ "L-CAR 9", 2, { "Reflex", "ELO" }, { "Quickdraw", "Laser Sight", "Long Barrel", "Fast Mags" } },
+			{ "XM-53", 0 }
+		}
+	}
+};
+
 inline CraftablesLists craftables = {
 	{
 		{ "zm_zod", {
@@ -163,7 +231,7 @@ inline CraftablesLists craftables = {
 inline WeaponsLists weapons = {
 	{ 
 		{ "zm_zod", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Shieva", "KN-44" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Sheiva", "KN-44" },
 			{ "Pharo", "Weevil", "Vesper", "Kuda", "VMP", "Bootlegger" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -176,7 +244,7 @@ inline WeaponsLists weapons = {
 			{ "Keeper Sword" }
 		}},
 		{ "zm_factory", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Shieva", "KN-44" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Sheiva", "KN-44" },
 			{ "Pharo", "Weevil", "Vesper", "Kuda", "VMP" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -188,7 +256,7 @@ inline WeaponsLists weapons = {
 			{ "Annihilator" }
 		}},
 		{ "zm_castle", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Shieva", "KN-44" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Sheiva", "KN-44" },
 			{ "Pharo", "Weevil", "Vesper", "Kuda", "VMP" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -201,7 +269,7 @@ inline WeaponsLists weapons = {
 			{ "Ragnarok DG-4" }
 		}},
 		{ "zm_island", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "MX Garand", "M8A7", "Shieva", "KN-44" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "MX Garand", "M8A7", "Sheiva", "KN-44" },
 			{ "Pharo", "Weevil", "Vesper", "Razorback", "HG 40", "Kuda", "VMP" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -214,7 +282,7 @@ inline WeaponsLists weapons = {
 			{ "Skull of Nan Sapwe" }
 		}},
 		{ "zm_stalingrad", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "MX Garand", "M8A7", "Shieva", "KN-44" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "MX Garand", "M8A7", "Sheiva", "KN-44" },
 			{ "Pharo", "Weevil", "Vesper", "HG 40", "PPSH-41", "Kuda", "VMP" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -227,7 +295,7 @@ inline WeaponsLists weapons = {
 			{ "Gauntlet of Siegfried" }
 		}},
 		{ "zm_genesis", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Shieva", "KN-44", "Peacekeeper MK2" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Sheiva", "KN-44", "Peacekeeper MK2" },
 			{ "Pharo", "Weevil", "Vesper", "Kuda", "M1927", "VMP" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon" },
 			{ "Banshii", "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -240,7 +308,7 @@ inline WeaponsLists weapons = {
 			{ "Ragnarok DG-4" }
 		}},
 		{ "zm_prototype", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Shieva", "KN-44", "MX Garand", "STG-44" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Sheiva", "KN-44", "MX Garand", "STG-44" },
 			{ "Pharo", "Weevil", "Vesper", "Kuda", "VMP", "MP40", "Bootlegger", "AK-74U" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -253,7 +321,7 @@ inline WeaponsLists weapons = {
 			{ "Annihilator" }
 		}},
 		{ "zm_asylum", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Shieva", "KN-44", "MX Garand", "STG-44" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Sheiva", "KN-44", "MX Garand", "STG-44" },
 			{ "Pharo", "Weevil", "Vesper", "PPSH-41", "Kuda", "Bootlegger", "VMP", "MP40", "AK-74U" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -266,7 +334,7 @@ inline WeaponsLists weapons = {
 			{ "Annihilator" }
 		}},
 		{ "zm_sumpf", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Shieva", "KN-44", "MX Garand", "STG-44" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Sheiva", "KN-44", "MX Garand", "STG-44" },
 			{ "Pharo", "Weevil", "Vesper", "PPSH-41", "Kuda", "Bootlegger", "VMP", "MP40", "AK-74U" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -279,7 +347,7 @@ inline WeaponsLists weapons = {
 			{ "Annihilator" }
 		}},
 		{ "zm_theater", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "Galil", "M8A7", "M16", "Shieva", "KN-44", "M14" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "Galil", "M8A7", "M16", "Sheiva", "KN-44", "M14" },
 			{ "Pharo", "Weevil", "Vesper", "Kuda", "VMP", "MP40", "AK-74U" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -292,7 +360,7 @@ inline WeaponsLists weapons = {
 			{ "Annihilator" }
 		}},
 		{ "zm_cosmodrome", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "Galil", "M8A7", "M16", "Shieva", "KN-44", "M14" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "Galil", "M8A7", "M16", "Sheiva", "KN-44", "M14" },
 			{ "Pharo", "Weevil", "Vesper", "Kuda", "AK-74U" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -305,7 +373,7 @@ inline WeaponsLists weapons = {
 			{ "Annihilator" }
 		}},
 		{ "zm_temple", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "Galil", "M8A7", "M16", "Shieva", "KN-44", "M14" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "Galil", "M8A7", "M16", "Sheiva", "KN-44", "M14" },
 			{ "Pharo", "Weevil", "Vesper", "Kuda", "VMP", "AK-74U" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -318,7 +386,7 @@ inline WeaponsLists weapons = {
 			{ "Annihilator" }
 		}},
 		{ "zm_moon", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "Galil", "M8A7", "M16", "Shieva", "KN-44", "M14" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "FFAR", "Galil", "M8A7", "M16", "Sheiva", "KN-44", "M14" },
 			{ "Pharo", "Weevil", "Vesper", "Kuda", "VMP", "AK-74U" },
 			{ "Dingo", "48 Dredge", "BRM", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },
@@ -331,7 +399,7 @@ inline WeaponsLists weapons = {
 			{ "Annihilator" }
 		}},
 		{ "zm_tomb", {
-			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Shieva", "KN-44", "STG-44", "M14" },
+			{ "ICR-1", "HVK-30", "Man-O-War", "M8A7", "Sheiva", "KN-44", "STG-44", "M14" },
 			{ "Pharo", "Weevil", "Vesper", "MP40", "Kuda", "M1927", "VMP", "AK-74U" },
 			{ "Dingo", "48 Dredge", "BRM", "MG-08/15", "Gorgon", "RPK" },
 			{ "Haymaker 12", "Argus", "Krm-262", "205 Brecci" },

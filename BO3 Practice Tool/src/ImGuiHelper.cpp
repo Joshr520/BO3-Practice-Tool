@@ -36,6 +36,23 @@ namespace ImGuiHelper {
 		}
 	}
 
+	int MultiSpanSelection::GetArrIndex() const
+	{
+		int indexArr = 0;
+		int indexItem = 0;
+		for (const SelectionData& data : m_Selections) {
+			if (indexItem + static_cast<int>(data.m_Items.size()) < m_Index + 1) {
+				indexItem += static_cast<int>(data.m_Items.size());
+				indexArr++;
+			}
+			else {
+				return indexArr;
+			}
+		}
+
+		return -1;
+	}
+
 	std::pair<int, int> MultiSpanSelection::GetMultiIndex() const
 	{
 		int indexArr = 0;
@@ -103,6 +120,23 @@ namespace ImGuiHelper {
 	}
 
 	bool Selection::RenderBGBPreset(const std::vector<BGBPreset>& items, int& index)
+	{
+		int prevItem = index;
+
+		for (int i = 0; i < static_cast<int>(items.size()); i++) {
+			const bool selected = index == i;
+			if (ImGui::Selectable(items[i].m_Name.c_str(), selected)) {
+				index = i;
+			}
+			if (selected) {
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+
+		return prevItem != index;
+	}
+
+	bool Selection::RenderWeaponLoadout(const std::vector<MenuWeaponPreset>& items, int& index)
 	{
 		int prevItem = index;
 
