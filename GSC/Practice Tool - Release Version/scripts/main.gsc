@@ -41,24 +41,12 @@ on_player_spawned()
     level flag::wait_till("initial_blackscreen_passed");
 
     self thread DebugTesting();
-
-    WaitF5();
-    IPrintLnBold("Spark");
-    self SetOrigin(struct::get("hope_spark", "targetname").origin);
-    WaitF5();
-    IPrintLnBold("Box");
-    self SetOrigin(struct::get("special_box", "targetname").origin);
-
-    WaitF5();
     self thread Boss2Practice();
 
-    old = level.var_3ba63921;
-    for(;;)
-    {
-        while(level.var_3ba63921 == old) wait 0.05;
-        old = level.var_3ba63921;
-        IPrintLnBold(level.var_3ba63921);
-    }
+    while(!level IsScenePlaying("genesis_ee_sams_room")) wait 0.05;
+    IPrintLnBold("Scene Playing");
+    wait 0.3;
+    IPrintLnBold("Split");
 }
 
 DebugTesting()

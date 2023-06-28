@@ -1,5 +1,5 @@
 #include "Image.h"
-
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 
@@ -72,7 +72,9 @@ namespace Walnut {
 		m_Height = height;
 		
 		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
+		std::unique_lock<std::mutex> lock(imgMutex);
 		SetData(data);
+		lock.unlock();
 		stbi_image_free(data);
 	}
 
@@ -272,8 +274,6 @@ namespace Walnut {
 			use_barrier.subresourceRange.levelCount = 1;
 			use_barrier.subresourceRange.layerCount = 1;
 			vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, &use_barrier);
-
-			std::unique_lock<std::mutex> lock(imgMutex);
 
 			Application::FlushCommandBuffer(command_buffer);
 		}

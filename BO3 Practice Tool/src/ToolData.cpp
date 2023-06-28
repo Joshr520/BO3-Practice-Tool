@@ -173,14 +173,13 @@ namespace BO3PT
                 for (const auto& directory : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Camos")) {
                     if (std::filesystem::is_directory(directory.path())) {
                         WeaponCamoGroup camoGroup;
-                        camoGroup.m_Name = directory.path().filename().string();
                         for (const auto& file : std::filesystem::directory_iterator(directory.path())) {
                             if (file.path().extension().string() != ".png") {
                                 continue;
                             }
-                            camoGroup.m_Camos.emplace_back(std::make_unique<Walnut::Image>(file.path().string()));
+                            camoGroup.m_Camos.insert({ file.path().filename().stem().string(), std::make_unique<Walnut::Image>(file.path().string()) });
                         }
-                        camosImgList.emplace_back(std::move(camoGroup));
+                        camosImgList.insert({ directory.path().filename().stem().string(), std::move(camoGroup) });
                     }
                 }
                 });
@@ -829,7 +828,7 @@ namespace BO3PT
                 rapidjson::Value& weaponObject = builder.AddObject(weaponGroup, weapon.m_Name);
                 weaponObject.AddMember("Optic", -1, builder.GetAllocator());
                 builder.AddArray(weaponObject, "Attachments");
-                builder.AddArray(weaponObject, "Camo");
+                weaponObject.AddMember("Camo", -1, builder.GetAllocator());
             }
         }
 
@@ -877,12 +876,13 @@ namespace BO3PT
                         }
                     }
 
-                    if (value.HasMember("Camo") && value["Camo"].IsArray()) {
-                        const rapidjson::Value& attachments = value["Camo"];
+                    if (value.HasMember("Camo") && value["Camo"].IsInt()) {
+                        const rapidjson::Value& camo = value["Camo"];
 
-                        for (int i = 0; i < min(static_cast<int>(attachments.Size()), 2); i++) {
-                            if (attachments[i].IsInt()) {
-                                weaponEntry.m_Camo[i] = (attachments[i].GetInt());
+                        weaponEntry.m_Camo.first = camoIndexToName[camo.GetInt()];
+                        for (int i = 0; i < static_cast<int>(camosOrder.m_Camos.size()); i++) {
+                            if (std::find(camosOrder.m_Camos[i].begin(), camosOrder.m_Camos[i].end(), weaponEntry.m_Camo.first) != camosOrder.m_Camos[i].end()) {
+                                weaponEntry.m_Camo.second = camosOrder.m_Types[i];
                             }
                         }
                     }

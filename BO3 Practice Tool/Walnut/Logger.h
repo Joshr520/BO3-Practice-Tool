@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
-
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 
 #define COLOR_ERROR ImVec4(1.0f, 0.0f, 0.0f, 1.0f)

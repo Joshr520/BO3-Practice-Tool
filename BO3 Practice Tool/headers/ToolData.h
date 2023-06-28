@@ -9,6 +9,7 @@
 
 #include "Walnut/Image.h"
 #include "Walnut/Timer.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 
 #include "ImGuiHelper.h"
@@ -136,21 +137,21 @@ namespace BO3PT
 
 #pragma region WeaponLadouts
 	struct WeaponCamoGroup {
-		std::string m_Name;
-		std::vector<std::unique_ptr<Walnut::Image>> m_Camos;
+		std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> m_Camos;
 	};
 
 	inline bool writeWeaponPresets = false;
+	inline bool camoSelection = false;
 	inline bool weaponTypesLoaded[6] = { false };
 	inline int currentWeaponPreset = 0;
 	inline int currentWeaponPresetMenu = -1;
 	inline int currentWeaponEdit = 0;
 	inline std::vector<MenuWeaponPreset> weaponPresets;
 	inline std::vector<std::unique_ptr<Walnut::Image>> buildKitImgList;
-	inline std::vector<WeaponCamoGroup> camosImgList;
 	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> weaponIconsImgList;
 	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> opticsImgList;
 	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> attachmentsImgList;
+	inline std::unordered_map<std::string, WeaponCamoGroup> camosImgList;
 
 	void LoadWeaponProfiles();
 	void CreateNewWeaponPreset(std::string_view presetName);

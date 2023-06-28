@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <queue>
-
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 
 #include "ListDefs.h"
@@ -100,10 +100,6 @@ namespace ImGuiHelper {
 
 	struct ListBoxWrapper {
 		static bool Render(std::string_view name, const std::vector<std::string>& items, int& index, const ImVec2& size);
-	};
-
-	struct VecAdd {
-		static ImVec2 AddVec2(const ImVec2& vec1, const ImVec2& vec2) { return ImVec2(vec1.x + vec2.x, vec1.y + vec2.y); };
 	};
 
 }
