@@ -39,14 +39,6 @@ on_player_spawned()
     if(self IsTestClient()) return;
 
     level flag::wait_till("initial_blackscreen_passed");
-
-    self thread DebugTesting();
-    self thread Boss2Practice();
-
-    while(!level IsScenePlaying("genesis_ee_sams_room")) wait 0.05;
-    IPrintLnBold("Scene Playing");
-    wait 0.3;
-    IPrintLnBold("Split");
 }
 
 DebugTesting()

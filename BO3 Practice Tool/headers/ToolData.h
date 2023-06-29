@@ -146,6 +146,11 @@ namespace BO3PT
 	inline int currentWeaponPreset = 0;
 	inline int currentWeaponPresetMenu = -1;
 	inline int currentWeaponEdit = 0;
+	inline const ImVec2 camoSelectSize = ImVec2(145, 145);
+	inline const ImVec2 camoPreviewSize = ImVec2(168, 168);
+	inline const ImVec2 buttonPromptSize = ImVec2(40, 40);
+	inline const ImVec2 attachmentSize = ImVec2(120, 120);
+	inline const ImVec2 gunSize = ImVec2(128, 128);
 	inline std::vector<MenuWeaponPreset> weaponPresets;
 	inline std::vector<std::unique_ptr<Walnut::Image>> buildKitImgList;
 	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> weaponIconsImgList;
@@ -156,6 +161,7 @@ namespace BO3PT
 	void LoadWeaponProfiles();
 	void CreateNewWeaponPreset(std::string_view presetName);
 	void DeleteWeaponPreset(std::string_view preset);
+	void WriteWeaponLoadout(MenuWeaponPreset& preset);
 
 	MenuWeaponPreset ParseWeaponLoadout(std::string_view filename);
 #pragma endregion

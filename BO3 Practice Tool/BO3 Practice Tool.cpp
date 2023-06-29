@@ -1144,7 +1144,7 @@ void WeaponLoadoutFunc()
                         ImGui::SameLine();
 
                         const float scroll = ImGui::GetScrollY();
-                        const int numOnLine = static_cast<int>(ImGui::GetContentRegionAvail().x / (145.0f + ImGui::GetStyle().ItemSpacing.x));
+                        const int numOnLine = static_cast<int>(ImGui::GetContentRegionAvail().x / (camoSelectSize.x + ImGui::GetStyle().ItemSpacing.x));
                         const ImVec2 startPos = ImGui::GetCursorScreenPos();
                         const ImVec2 startSize = ImGui::GetContentRegionAvail();
                         const ImVec2 clipStart = ImVec2(startPos.x, startPos.y + scroll);
@@ -1152,21 +1152,22 @@ void WeaponLoadoutFunc()
                         drawList->PushClipRect(clipStart, clipEnd + startSize, true);
                         for (int j = 0; j < static_cast<int>(camosOrder.m_Camos[i].size()); j++) {
                             ImVec2 pos = ImGui::GetCursorScreenPos();
-                            ImVec2 posEnd = pos + ImVec2(145.0f, 145.0f);
-                            ImVec2 textPos = pos + ImVec2(5.0f, 125.0f);
+                            ImVec2 posEnd = pos + camoSelectSize;
+                            ImVec2 textPos = pos + ImVec2(5, camoSelectSize.y - 20);
                             ImRect imageRect(pos, posEnd);
                             const std::string& camo = camosOrder.m_Camos[i][j];
 
                             drawList->AddImage(camosImgList[type].m_Camos[camo]->GetDescriptorSet(), pos, posEnd);
                             drawList->AddRectFilled(textPos, textPos + ImGui::CalcTextSize(camo.c_str()), IM_COL32(0, 0, 0, 170));
                             drawList->AddText(textPos, COLOR_WHITE, camo.c_str());
-                            drawList->AddRect(pos, posEnd, COLOR_WHITE, 5.0f);
+                            drawList->AddRect(pos, posEnd, COLOR_WHITE);
 
                             if (imageRect.Contains(ImGui::GetMousePos())) {
-                                drawList->AddRectFilled(pos, posEnd, COLOR_BLUE_WEAK);
+                                drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                                 if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
                                     presetWeapon.m_Camo = { type, camo };
                                     camoSelection = false;
+                                    WriteWeaponLoadout(weaponPresets[currentWeaponPreset]);
                                 }
                             }
 
@@ -1207,66 +1208,85 @@ void WeaponLoadoutFunc()
                 presetWeapon.m_EquippedOptic = -1;
                 presetWeapon.m_EquippedAttachments.clear();
                 presetWeapon.m_Camo = { "", "" };
+                WriteWeaponLoadout(weaponPresets[currentWeaponPreset]);
             }
+            // Button prompts
+            ImVec2 buttonPos = ImGui::GetWindowPos() + ImVec2(25, ImGui::GetContentRegionAvail().y - gunSize.y / 2);
+            ImVec2 buttonPosEnd = buttonPos + buttonPromptSize;
+            ImVec2 buttonTextPos = buttonPos + buttonPromptSize / 2 - ImGui::CalcTextSize("R") / 2;
+            const ImVec2 actionTextPos = ImVec2(buttonPosEnd.x - buttonPromptSize.x / 2 - ImGui::CalcTextSize("Remove").x / 2, buttonPosEnd.y + ImGui::GetStyle().ItemSpacing.y);
 
+            drawList->AddRectFilled(buttonPos, buttonPosEnd, COLOR_GREY);
+            drawList->AddRect(buttonPos, buttonPosEnd, COLOR_WHITE);
+            drawList->AddText(buttonTextPos, COLOR_WHITE, "R");
+            drawList->AddRectFilled(actionTextPos, actionTextPos + ImGui::CalcTextSize("Remove"), IM_COL32(0, 0, 0, 170));
+            drawList->AddText(actionTextPos, COLOR_WHITE, "Remove");
             // Optics selections
             for (int i = 0; i < static_cast<int>(selectedWeapon.m_Optics.size()); i++) {
                 const std::string& optic = selectedWeapon.m_Optics[i];
-                ImVec2 pos = ImGui::GetWindowPos() + ImVec2(50.0f + i * (120.0f + ImGui::GetStyle().ItemSpacing.x), 50.0f);
-                ImVec2 posEnd = pos + ImVec2(120.0f, 120.0f);
-                ImVec2 textPos = pos + ImVec2(5.0f, 100.0f);
+                ImVec2 pos = ImGui::GetWindowPos() + ImVec2(50.0f + i * (attachmentSize.x + ImGui::GetStyle().ItemSpacing.x), 50.0f);
+                ImVec2 posEnd = pos + attachmentSize;
+                ImVec2 textPos = pos + ImVec2(5.0f, attachmentSize.y - 20);
                 ImRect imageRect(pos, posEnd);
 
                 if (i == presetWeapon.m_EquippedOptic) {
-                    drawList->AddRectFilled(pos, posEnd, COLOR_LIGHT_BLUE);
-                    if (imageRect.Contains(ImGui::GetMousePos()) && ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
-                        presetWeapon.m_EquippedOptic = -1;
-                    }
-                }
-                else if (imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRectFilled(pos, posEnd, COLOR_BLUE);
-                    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
-                        presetWeapon.m_EquippedOptic = i;
-                    }
                 }
                 drawList->AddImage(opticsImgList[optic]->GetDescriptorSet(), pos, posEnd);
                 drawList->AddRectFilled(textPos, textPos + ImGui::CalcTextSize(optic.c_str()), IM_COL32(0, 0, 0, 170));
                 drawList->AddText(textPos, COLOR_WHITE, optic.c_str());
-                drawList->AddRect(pos, posEnd, COLOR_WHITE, 5.0f);
+                drawList->AddRect(pos, posEnd, COLOR_WHITE);
+                if (imageRect.Contains(ImGui::GetMousePos())) {
+                    drawList->AddRect(pos, posEnd, COLOR_ORANGE);
+                    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false) || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_R, false)) {
+                        if (i == presetWeapon.m_EquippedOptic) {
+                            presetWeapon.m_EquippedOptic = -1;
+                            WriteWeaponLoadout(weaponPresets[currentWeaponPreset]);
+                        }
+                        else {
+                            presetWeapon.m_EquippedOptic = i;
+                            WriteWeaponLoadout(weaponPresets[currentWeaponPreset]);
+                        }
+                    }
+                }
             }
             // Attachments selections
             for (int i = 0; i < static_cast<int>(selectedWeapon.m_Attachments.size()); i++) {
                 const std::string& attachment = selectedWeapon.m_Attachments[i];
                 const std::string& attachmentIndex = selectedWeapon.m_Name + "_" + attachment;
-                ImVec2 pos = ImGui::GetWindowPos() + ImVec2(50.0f + i * (120.0f + ImGui::GetStyle().ItemSpacing.x), 50.0f + 120.0f + ImGui::GetStyle().ItemSpacing.y * 3);
-                ImVec2 posEnd = pos + ImVec2(120.0f, 120.0f);
-                ImVec2 textPos = pos + ImVec2(5.0f, 100.0f);
+                ImVec2 pos = ImGui::GetWindowPos() + ImVec2(50.0f + i * (attachmentSize.x + ImGui::GetStyle().ItemSpacing.x), 50.0f + attachmentSize.y + ImGui::GetStyle().ItemSpacing.y * 3);
+                ImVec2 posEnd = pos + attachmentSize;
+                ImVec2 textPos = pos + ImVec2(5.0f, attachmentSize.y - 20);
                 ImRect imageRect(pos, posEnd);
                 bool drawNum = false;
 
                 if (std::find(equippedAttachments.begin(), equippedAttachments.end(), i) != equippedAttachments.end()) {
-                    drawList->AddRectFilled(pos, posEnd, COLOR_LIGHT_BLUE);
-                    drawNum = true;
-                    if (imageRect.Contains(ImGui::GetMousePos()) && ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
-                        equippedAttachments.erase(std::find(equippedAttachments.begin(), equippedAttachments.end(), i));
-                    }
-                }
-                else if (imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRectFilled(pos, posEnd, COLOR_BLUE);
-                    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
-                        equippedAttachments.emplace_back(i);
-                        if (equippedAttachments.size() > selectedWeapon.m_NumAttachments) {
-                            equippedAttachments.erase(equippedAttachments.begin());
-                        }
-                    }
+                    drawNum = true;
                 }
                 drawList->AddImage(attachmentsImgList[attachmentIndex]->GetDescriptorSet(), pos, posEnd);
                 drawList->AddRectFilled(textPos, textPos + ImGui::CalcTextSize(attachment.c_str()), IM_COL32(0, 0, 0, 170));
                 drawList->AddText(textPos, COLOR_WHITE, attachment.c_str());
-                drawList->AddRect(pos, posEnd, COLOR_WHITE, 5.0f);
+                drawList->AddRect(pos, posEnd, COLOR_WHITE);
                 if (drawNum) {
                     auto it = std::find(equippedAttachments.begin(), equippedAttachments.end(), i);
                     drawList->AddText(pos + ImVec2(5.0f, 5.0f), COLOR_WHITE, std::to_string(std::distance(equippedAttachments.begin(), it) + 1).c_str());
+                }
+                if (imageRect.Contains(ImGui::GetMousePos())) {
+                    drawList->AddRect(pos, posEnd, COLOR_ORANGE);
+                    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false) || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_R, false)) {
+                        if (std::find(equippedAttachments.begin(), equippedAttachments.end(), i) != equippedAttachments.end()) {
+                            equippedAttachments.erase(std::find(equippedAttachments.begin(), equippedAttachments.end(), i));
+                            WriteWeaponLoadout(weaponPresets[currentWeaponPreset]);
+                        }
+                        else {
+                            equippedAttachments.emplace_back(i);
+                            if (equippedAttachments.size() > selectedWeapon.m_NumAttachments) {
+                                equippedAttachments.erase(equippedAttachments.begin());
+                            }
+                            WriteWeaponLoadout(weaponPresets[currentWeaponPreset]);
+                        }
+                    }
                 }
             }
             // Num attachments selected
@@ -1281,8 +1301,8 @@ void WeaponLoadoutFunc()
             // Camo Selection
             {
                 ImVec2 pos = ImGui::GetWindowPos() + ImVec2(50.0f, 50.0f + 260.0f + ImGui::GetStyle().ItemSpacing.y * 8);
-                ImVec2 posEnd = pos + ImVec2(168.0f, 168.0f);
-                ImVec2 textPos = pos + ImVec2(5.0f, 148.0f);
+                ImVec2 posEnd = pos + camoPreviewSize;
+                ImVec2 textPos = pos + ImVec2(5.0f, camoPreviewSize.y - 20);
                 ImRect imageRect(pos, posEnd);
                 if (!presetWeapon.m_Camo.first.empty() && !presetWeapon.m_Camo.second.empty()) {
                     drawList->AddImage(camosImgList[presetWeapon.m_Camo.first].m_Camos[presetWeapon.m_Camo.second]->GetDescriptorSet(), pos, posEnd);
@@ -1293,36 +1313,40 @@ void WeaponLoadoutFunc()
                     drawList->AddRectFilled(textPos, textPos + ImGui::CalcTextSize("Choose Camo"), IM_COL32(0, 0, 0, 170));
                     drawList->AddText(textPos, COLOR_WHITE, "Choose Camo");
                 }
+                drawList->AddRect(pos, posEnd, COLOR_WHITE);
                 if (imageRect.Contains(ImGui::GetMousePos())) {
-                    drawList->AddRectFilled(pos, posEnd, COLOR_BLUE);
+                    drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                     if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
                         camoSelection = true;
                     }
+                    else if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_R, false)) {
+                        presetWeapon.m_Camo = { "", "" };
+                        WriteWeaponLoadout(weaponPresets[currentWeaponPreset]);
+                    }
                 }
-                drawList->AddRect(pos, posEnd, COLOR_WHITE, 5.0f);
             }
             // Gun selections
             for (int i = 0; i < static_cast<int>(menuWeaponLists.m_Weapons[currentWeaponPresetMenu].size()); i++) {
                 const MenuWeapon& weapon = menuWeaponLists.m_Weapons[currentWeaponPresetMenu][i];
                 const std::string& weaponType = menuWeaponLists.m_WeaponTypes[currentWeaponPresetMenu];
-                ImVec2 pos = ImVec2(ImGui::GetWindowPos().x + 50.0f + i * (128.0f + ImGui::GetStyle().ItemSpacing.x), ImGui::GetContentRegionMaxAbs().y - 138.0f);
-                ImVec2 posEnd = pos + ImVec2(128.0f, 128.0f);
-                ImVec2 textPos = pos + ImVec2(5.0f, 108.0f);
+                ImVec2 pos = ImVec2(ImGui::GetWindowPos().x + (buttonPosEnd.x - buttonPos.x) + 50.0f + i * (128.0f + ImGui::GetStyle().ItemSpacing.x), ImGui::GetContentRegionMaxAbs().y - 138.0f);
+                ImVec2 posEnd = pos + gunSize;
+                ImVec2 textPos = pos + ImVec2(5.0f, gunSize.y - 20);
                 ImRect imageRect(pos, posEnd);
 
                 if (i == currentWeaponEdit) {
-                    drawList->AddRectFilled(pos, posEnd, COLOR_LIGHT_BLUE);
-                }
-                else if (imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRectFilled(pos, posEnd, COLOR_BLUE);
-                    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
-                        currentWeaponEdit = i;
-                    }
                 }
                 drawList->AddImage(weaponIconsImgList[weapon.m_Name]->GetDescriptorSet(), pos, posEnd);
                 drawList->AddRectFilled(textPos, textPos + ImGui::CalcTextSize(weapon.m_Name.c_str()), IM_COL32(0, 0, 0, 170));
                 drawList->AddText(textPos, COLOR_WHITE, weapon.m_Name.c_str());
-                drawList->AddRect(pos, posEnd, COLOR_WHITE, 5.0f);
+                drawList->AddRect(pos, posEnd, COLOR_WHITE);
+                if (imageRect.Contains(ImGui::GetMousePos())) {
+                    drawList->AddRect(pos, posEnd, COLOR_ORANGE);
+                    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
+                        currentWeaponEdit = i;
+                    }
+                }
             }
         }
     }

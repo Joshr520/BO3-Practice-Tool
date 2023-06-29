@@ -9,6 +9,7 @@
 #include "ListDefs.h"
 
 #define COLOR_RED IM_COL32(170, 0, 0, 255)
+#define COLOR_ORANGE IM_COL32(255, 128, 0, 255)
 #define COLOR_GREEN IM_COL32(0, 128, 0, 255)
 #define COLOR_BLUE IM_COL32(25, 100, 128, 255)
 #define COLOR_BLUE_WEAK IM_COL32(25, 100, 128, 100)

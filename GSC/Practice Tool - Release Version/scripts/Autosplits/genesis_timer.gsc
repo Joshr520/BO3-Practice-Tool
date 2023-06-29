@@ -135,9 +135,8 @@ WaitSophiaTP(ee_state = 0)
     if(ee_state) level flag::wait_till("toys_collected");
     for(;;)
     {
-        level.var_7d7ca0ea waittill("trigger", player);
-        if(!zm_utility::is_player_valid(player) || level.var_18879020) continue;
-        if([[ @zm_genesis_teleporter<scripts\zm\zm_genesis_teleporter.gsc>::function_7ae798cc ]](player)) return;
+        level waittill("exploderee_teleporter_fx");
+        return;
     }
 }
 

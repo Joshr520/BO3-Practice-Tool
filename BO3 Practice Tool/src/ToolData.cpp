@@ -847,6 +847,37 @@ namespace BO3PT
         LoadWeaponProfiles();
     }
 
+    void WriteWeaponLoadout(MenuWeaponPreset& preset)
+    {
+        const std::string filename = selfDirectory + "\\Settings\\Weapon Loadouts\\" + preset.m_Name + ".json";
+        Walnut::JSONBuilder builder(filename);
+
+        for (int i = 0; i < static_cast<int>(menuWeaponLists.m_WeaponTypes.size()); i++) {
+            const std::string& weaponType = menuWeaponLists.m_WeaponTypes[i];
+            rapidjson::Value& weaponGroup = builder.AddObject(builder.GetDocument(), weaponType);
+            for (int j = 0; j < static_cast<int>(menuWeaponLists.m_Weapons[i].size()); j++) {
+                const MenuWeapon& weapon = menuWeaponLists.m_Weapons[i][j];
+                rapidjson::Value& weaponObject = builder.AddObject(weaponGroup, weapon.m_Name);
+                weaponObject.AddMember("Optic", preset.m_PresetItems[weaponType][j].m_EquippedOptic, builder.GetAllocator());
+                rapidjson::Value& attachmentsArray = builder.AddArray(weaponObject, "Attachments");
+                for (const int& attachment : preset.m_PresetItems[weaponType][j].m_EquippedAttachments) {
+                    attachmentsArray.PushBack(attachment, builder.GetAllocator());
+                }
+                weaponObject.AddMember("Camo", camoNameToIndex[preset.m_PresetItems[weaponType][j].m_Camo.second], builder.GetAllocator());
+            }
+        }
+
+        if (!preset.m_Name.empty()) {
+            builder.SaveToFile(filename);
+        }
+        if (!writeWeaponPresets) {
+            Walnut::JSONBuilder::WriteEmpty(std::string_view(bo3Directory + "\\Practice Tool\\Settings\\Active Weapon Loadout.json"));
+        }
+        else {
+            builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Weapon Loadout.json");
+        }
+    }
+
     MenuWeaponPreset ParseWeaponLoadout(std::string_view filename)
     {
         MenuWeaponPreset returnPreset;
@@ -879,10 +910,10 @@ namespace BO3PT
                     if (value.HasMember("Camo") && value["Camo"].IsInt()) {
                         const rapidjson::Value& camo = value["Camo"];
 
-                        weaponEntry.m_Camo.first = camoIndexToName[camo.GetInt()];
+                        weaponEntry.m_Camo.second = camoIndexToName[camo.GetInt()];
                         for (int i = 0; i < static_cast<int>(camosOrder.m_Camos.size()); i++) {
-                            if (std::find(camosOrder.m_Camos[i].begin(), camosOrder.m_Camos[i].end(), weaponEntry.m_Camo.first) != camosOrder.m_Camos[i].end()) {
-                                weaponEntry.m_Camo.second = camosOrder.m_Types[i];
+                            if (std::find(camosOrder.m_Camos[i].begin(), camosOrder.m_Camos[i].end(), weaponEntry.m_Camo.second) != camosOrder.m_Camos[i].end()) {
+                                weaponEntry.m_Camo.first = camosOrder.m_Types[i];
                             }
                         }
                     }
