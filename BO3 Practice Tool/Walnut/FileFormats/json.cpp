@@ -8,25 +8,29 @@
 
 namespace Walnut
 {
-    JSONBuilder::JSONBuilder(std::string_view filename)
+    JSONBuilder JSONBuilder::FromFile(std::string_view filename)
     {
         std::ifstream inFile(filename.data());
         std::stringstream buffer;
         buffer << inFile.rdbuf();
         inFile.close();
-        m_Document.Parse(buffer.str().c_str());
-        if (m_Document.HasParseError()) {
-            m_Document.SetObject();
-            WriteEmpty(filename);
+        JSONBuilder builder;
+        builder.GetDocument().Parse(buffer.str().c_str());
+        if (builder.GetDocument().HasParseError()) {
+            builder.GetDocument().SetObject();
+            builder.WriteEmpty(filename);
         }
+        return builder;
     }
 
-    JSONBuilder::JSONBuilder(const std::string& buffer)
+    JSONBuilder JSONBuilder::FromString(const std::string& buffer)
     {
-        m_Document.Parse(buffer.c_str());
-        if (m_Document.HasParseError()) {
-            m_Document.SetObject();
+        JSONBuilder builder;
+        builder.GetDocument().Parse(buffer.c_str());
+        if (builder.GetDocument().HasParseError()) {
+            builder.GetDocument().SetObject();
         }
+        return builder;
     }
 
     rapidjson::Value& JSONBuilder::AddObject(rapidjson::Value& parent, std::string_view keyName)

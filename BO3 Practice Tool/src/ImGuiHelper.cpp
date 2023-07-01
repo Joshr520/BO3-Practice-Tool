@@ -1,6 +1,7 @@
 #include "ImGuiHelper.h"
 
 #define ICON_FA_ARROW_LEFT "\xef\x81\xa0"
+#define ICON_FA_CIRCLE_QUESTION "\xef\x81\x99"
 
 namespace ImGuiHelper {
 
@@ -74,7 +75,7 @@ namespace ImGuiHelper {
 	{
 		int index = 0;
 		for (const SelectionData& data : m_Selections) {
-			if (index + static_cast<int>(data.m_Items.size()) < m_Index) {
+			if (index + static_cast<int>(data.m_Items.size()) < m_Index + 1) {
 				index += static_cast<int>(data.m_Items.size());
 			}
 			else {
@@ -280,6 +281,18 @@ namespace ImGuiHelper {
 			ImGui::EndListBox();
 		}
 		return changed;
+	}
+
+	void HelpMarker::Render(std::string_view text)
+	{
+		ImGui::TextDisabled(ICON_FA_CIRCLE_QUESTION);
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextWrapped(text.data());
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
 	}
 
 }

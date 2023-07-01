@@ -20,6 +20,7 @@ on_player_connect()
 {
     if(!self IsHost()) return;
     self InitVars();
+    self thread RevInGameTimer();
     level flag::wait_till("start_zombie_round_logic");
 
     WaitFadeIn();

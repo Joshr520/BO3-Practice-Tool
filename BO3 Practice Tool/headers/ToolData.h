@@ -6,9 +6,9 @@
 #include <unordered_set>
 #include <functional>
 
-
 #include "Walnut/Image.h"
 #include "Walnut/Timer.h"
+#include "Walnut/FileFormats/json.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 
@@ -88,9 +88,9 @@ namespace BO3PT
 #pragma region GUIFunctions
 	void InitVariables();
 	void LoadImages(RenderWindow sidebarIndex);
-	void HelpMarker(const std::string& text);
-	void VerifyFileStructure();
-	void WritePracticePatches(bool active);
+	void VerifyInternalFiles();
+	void VerifyExternalFiles();
+	void WritePracticePatches();
 	void NotifyGame(const std::vector<int>& passList);
 	void InjectTool(bool enable);
 	void ResetToggles();
@@ -98,8 +98,6 @@ namespace BO3PT
 	bool DoesPathExist(std::string_view s);
 	bool CheckVersions(const std::string& newVersion, std::string_view currentVersion);
 	bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles);
-
-	std::vector<BGB> GumSearch(int type, std::string_view searchText);
 #pragma endregion
 
 #pragma region MapOptions
@@ -115,27 +113,29 @@ namespace BO3PT
 #pragma endregion
 
 #pragma region BGB
-	inline int currentGumPreset = 0;
-	inline bool showGumSelection = false;
-	inline bool writeGums = false;
+	inline int currentBGBPreset = 0;
+	inline bool showBGBSelection = false;
+	inline bool writeBGBs = false;
 	inline BGB bgbSelect;
 	inline BGB bgbContext = { "0", "Alchemical Antithesis", "Activated (2x Activations, 60 seconds each)\nEvery 10 points is instead awarded 1 ammo in the stock of the current weapon." };
 	inline BGB bgbToSwap;
-	inline std::vector<BGBPreset> gumPresets;
+	inline std::vector<BGBPreset> bgbPresets;
 	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> bgbImgList;
 
-	void LoadGumProfiles();
-	void DeleteGumPreset(std::string_view preset);
-	void CreateNewGumPreset(std::string_view presetName);
-	void WriteGumPreset(const BGBPreset& gumPreset);
-	void WritePresetToGame(const BGBPreset& gumPreset, std::string_view);
+	void LoadBGBProfiles();
+	void CreateBGBPreset(std::string_view presetName);
+	void DeleteBGBPreset(const BGBPreset& preset);
+	void SaveBGBPresets();
+	void WriteBGBPresetToGame(const BGBPreset& preset);
 	void SwapBGBPreset(BGB bgbOld, BGB bgbNew);
 	void SwapBGBTrack(BGB bgbOld, BGB bgbNew);
 
-	bool CheckPresetExists(std::string_view inPreset);
+	bool BGBPresetExists(std::string_view presetName);
+
+	std::vector<BGB> BGBSearch(int type, std::string_view searchText);
 #pragma endregion
 
-#pragma region WeaponLadouts
+#pragma region WeaponLoadouts
 	struct WeaponCamoGroup {
 		std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> m_Camos;
 	};
@@ -146,6 +146,7 @@ namespace BO3PT
 	inline int currentWeaponPreset = 0;
 	inline int currentWeaponPresetMenu = -1;
 	inline int currentWeaponEdit = 0;
+	inline const ImVec2 weaponKitSize = ImVec2(256, 256);
 	inline const ImVec2 camoSelectSize = ImVec2(145, 145);
 	inline const ImVec2 camoPreviewSize = ImVec2(168, 168);
 	inline const ImVec2 buttonPromptSize = ImVec2(40, 40);
@@ -159,9 +160,10 @@ namespace BO3PT
 	inline std::unordered_map<std::string, WeaponCamoGroup> camosImgList;
 
 	void LoadWeaponProfiles();
-	void CreateNewWeaponPreset(std::string_view presetName);
-	void DeleteWeaponPreset(std::string_view preset);
-	void WriteWeaponLoadout(MenuWeaponPreset& preset);
+	void CreateWeaponPreset(std::string_view presetName);
+	void DeleteWeaponPreset(const MenuWeaponPreset& preset);
+	void SaveWeaponLoadout(const MenuWeaponPreset& preset);
+	void WriteWeaponLoadoutToGame(const MenuWeaponPreset& weaponPreset, Walnut::JSONBuilder* json = nullptr);
 
 	MenuWeaponPreset ParseWeaponLoadout(std::string_view filename);
 #pragma endregion
@@ -372,9 +374,10 @@ namespace BO3PT
 	inline std::vector<AutosplitPreset> autosplitPresets;
 
 	void LoadAutosplitPresets();
-	void WriteAutosplitPreset(const AutosplitPreset& preset);
-	void CreateNewAutosplitPreset(std::string_view presetName);
-	void DeleteAutosplitPreset(std::string_view preset);
+	void CreateAutosplitPreset(std::string_view presetName);
+	void DeleteAutosplitPreset(const AutosplitPreset& preset);
+	void SaveAutosplitPreset(const AutosplitPreset& preset);
+	void WriteAutosplitPresetToGame(const AutosplitPreset& preset, Walnut::JSONBuilder* json = nullptr);
 	void WriteSplitXML(std::string_view preset, const std::vector<std::pair<std::string, int>>& splits);
 	void WriteLayoutXML(std::string_view preset, int numSplits);
 	AutosplitPreset ParseSplitJson(std::string_view filename);

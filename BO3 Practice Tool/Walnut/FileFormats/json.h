@@ -9,8 +9,8 @@ namespace Walnut
     {
     public:
         JSONBuilder() { m_Document.SetObject(); }
-        JSONBuilder(std::string_view filename);
-        JSONBuilder(const std::string& buffer);
+        static JSONBuilder FromFile(std::string_view filename);
+        static JSONBuilder FromString(const std::string& buffer);
 
         rapidjson::Value& AddObject(rapidjson::Value& parent, std::string_view keyName);
         rapidjson::Value& AddArray(rapidjson::Value& parent, std::string_view keyName);

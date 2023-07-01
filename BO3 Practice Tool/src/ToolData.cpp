@@ -3,7 +3,6 @@
 #include "Fonts/Icons.h"
 #include "Walnut/Random.h"
 #include "Walnut/FileFormats/xml.h"
-#include "Walnut/FileFormats/json.h"
 #include "Walnut/Logger.h"
 #include "Keybinds.h"
 #include "GUIState.h"
@@ -19,27 +18,25 @@
 #include <set>
 #include <regex>
 
-using namespace BO3PT;
+using WLog = Walnut::Logger;
+using WMT = Walnut::MessageType;
+using WJson = Walnut::JSONBuilder;
 
 DWORD WaitToKillCompiler(PROCESS_INFORMATION processInfo)
 {
     DWORD exitCode = 0;
     DWORD result = WaitForSingleObject(processInfo.hProcess, 3000);
-    if (result == WAIT_TIMEOUT)
-    {
-        Walnut::Logger::Log(Walnut::MessageType::Info, "Killing compiler for timeout");
+    if (result == WAIT_TIMEOUT) {
+        WLog::Log(WMT::Info, "Killing compiler for timeout");
         TerminateProcess(processInfo.hProcess, 0);
     }
-    else if (result == WAIT_OBJECT_0)
-    {
-        if (!GetExitCodeProcess(processInfo.hProcess, &exitCode))
-        {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "GetExitCodeProcess failed with error code: " + GetLastError());
+    else if (result == WAIT_OBJECT_0) {
+        if (!GetExitCodeProcess(processInfo.hProcess, &exitCode)) {
+            WLog::Log(WMT::Error, "GetExitCodeProcess failed with error code: " + GetLastError());
         }
     }
-    else
-    {
-        Walnut::Logger::Log(Walnut::MessageType::Error, "WaitForSingleObject failed with error code: " + GetLastError());
+    else {
+        WLog::Log(WMT::Error, "WaitForSingleObject failed with error code: " + GetLastError());
     }
     return exitCode;
 }
@@ -57,10 +54,11 @@ static bool buildKitsLoaded = false;
 namespace BO3PT
 {
 #pragma region GUIFunctions
+
     void InitVariables()
     {
         InitHotKeyBinds();
-        LoadGumProfiles();
+        LoadBGBProfiles();
         LoadAutosplitPresets();
         LoadWeaponProfiles();
         zombiesForRound = GetZombieCountForRound(1, 1);
@@ -86,11 +84,11 @@ namespace BO3PT
         CalcLockdownTime(1, 1);
         CalcValveProbabilities();
         // Currently only 1 image is loaded for valves, so I'm not bothering to load and unload it for ram benefits
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/GK Valve Solver"))
-        {
+        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/GK Valve Solver")) {
             const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
+            if (name.find(".png") == name.npos) {
                 continue;
+            }
             valveSolverImgList.emplace_back(std::make_unique<Walnut::Image>(entry.path().string()));
         }
     }
@@ -296,19 +294,26 @@ namespace BO3PT
         }
     }
 
-    void HelpMarker(const std::string& text)
+    void VerifyInternalFiles()
     {
-        ImGui::TextDisabled(ICON_FA_CIRCLE_QUESTION);
-        if (ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextWrapped(text.c_str());
-            ImGui::PopTextWrapPos();
-            ImGui::EndTooltip();
+        if (!DoesPathExist(selfDirectory + "\\bindings.json")) {
+            WJson::WriteEmpty(selfDirectory + "\\bindings.json");
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings")) {
+            std::filesystem::create_directory(selfDirectory + "\\Settings");
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Autosplits")) {
+            std::filesystem::create_directory(selfDirectory + "\\Settings\\Autosplits");
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Gum Profiles")) {
+            std::filesystem::create_directory(selfDirectory + "\\Settings\\Gum Profiles");
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Weapon Loadouts")) {
+            std::filesystem::create_directory(selfDirectory + "\\Settings\\Weapon Loadouts");
         }
     }
 
-    void VerifyFileStructure()
+    void VerifyExternalFiles()
     {
         std::string practiceToolDirectory = bo3Directory + "\\Practice Tool";
         std::string gscDirectory = practiceToolDirectory + "\\GSC";
@@ -322,29 +327,17 @@ namespace BO3PT
         if (!DoesPathExist(settingsFolder)) {
             std::filesystem::create_directory(settingsFolder);
         }
-        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt")) {
-            std::ofstream(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
-        }
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json");
         }
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt")) {
+            std::ofstream(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
+        }
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Weapon Loadout.txt")) {
+            std::ofstream(practiceToolDirectory + "\\Settings\\Active Weapon Loadout.txt");
+        }
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
-        }
-        if (!DoesPathExist(selfDirectory + "\\bindings.json")) {
-            Walnut::JSONBuilder::WriteEmpty(selfDirectory + "\\bindings.json");
-        }
-        if (!DoesPathExist(selfDirectory + "\\Settings")) {
-            std::filesystem::create_directory(selfDirectory + "\\Settings");
-        }
-        if (!DoesPathExist(selfDirectory + "\\Settings\\Autosplits")) {
-            std::filesystem::create_directory(selfDirectory + "\\Settings\\Autosplits");
-        }
-        if (!DoesPathExist(selfDirectory + "\\Settings\\Gum Profiles")) {
-            std::filesystem::create_directory(selfDirectory + "\\Settings\\Gum Profiles");
-        }
-        if (!DoesPathExist(selfDirectory + "\\Settings\\Weapon Loadouts")) {
-            std::filesystem::create_directory(selfDirectory + "\\Settings\\Weapon Loadouts");
         }
         if (DoesPathExist(selfDirectory + "\\GSC")) {
             std::string startDirectory = selfDirectory + "\\GSC";
@@ -362,21 +355,21 @@ namespace BO3PT
                     std::filesystem::rename(oldFile, newFile);
                 }
                 catch (const std::filesystem::filesystem_error& e) {
-                    Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to move file " + oldFile + " to " + newFile + " with error message: " + std::string(e.what()));
+                    WLog::Log(WMT::Error, "Failed to move file " + oldFile + " to " + newFile + " with error message: " + std::string(e.what()));
                     std::filesystem::remove(oldFile);
                 }
             }
             if (!std::filesystem::remove(startDirectory)) {
-                Walnut::Logger::Log(Walnut::MessageType::Error, "Couldn't remove GSC directory with error code: " + std::error_code(errno, std::system_category()).message());
+                WLog::Log(WMT::Error, "Couldn't remove GSC directory with error code: " + std::error_code(errno, std::system_category()).message());
             }
         }
     }
 
-    void WritePracticePatches(bool active)
+    void WritePracticePatches()
     {
         std::string data;
         
-        if (active) {
+        if (GUIState::IsStateSet(Active)) {
             for (const MapPracticePatch& list : practicePatches.m_PracticePatches) {
                 data.append(std::to_string(list.m_Index - 1) + ",");
             }
@@ -387,9 +380,7 @@ namespace BO3PT
             }
         }
         data.replace(data.size() - 1, 1, "");
-        std::ofstream file(bo3Directory + "\\Practice Tool\\Settings\\Practice Presets.txt");
-        file << data;
-        file.close();
+        std::ofstream(bo3Directory + "\\Practice Tool\\Settings\\Practice Presets.txt").write(data.c_str(), data.size());
     }
 
     void NotifyGame(const std::vector<int>& passList)
@@ -419,37 +410,36 @@ namespace BO3PT
         std::string nmPass = compiler + " --inject " + "\"" + gsc + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
         std::unordered_set<std::string_view> wantedFiles = { "DebugCompiler.exe", "DebugCompiler.exe.config", "External.dll", "Ionic.Zip.dll", "Irony.dll", "No Mods.gsc", "Practice Tool.gsc", "System.Buffers.dll", "System.Collections.Immutable.dll", "System.Memory.dll",
             "System.Numerics.Vectors.dll", "System.Reflection.Metadata.dll", "System.Runtime.CompilerServices.Unsafe.dll", "t7cinternal.dll", "T7CompilerLib.dll", "t8cinternal.dll", "T89CompilerLib.dll", "TreyarchCompiler.dll", "xdevkit.dll", "xdrpc.dll" };
-        for (const auto& fileName : wantedFiles)
-        {
+        for (const auto& fileName : wantedFiles) {
             std::filesystem::path path(std::filesystem::path(gsc) / fileName);
-            if (!std::filesystem::exists(path))
-            {
+            if (!std::filesystem::exists(path)) {
                 GUIState::UnsetState(Active);
                 ImGuiHelper::PopupWrapper::PrepPopup(ImGuiHelper::InjectFailed);
-                Walnut::Logger::Log(Walnut::MessageType::Error, "Required files to inject missing");
+                WLog::Log(WMT::Error, "Required files to inject missing");
                 return;
             }
         }
 
         LPSTR args;
-        if (enable)
+        if (enable) {
             args = &ptPass[0];
-        else
+        }
+        else {
             args = &nmPass[0];
+        }
 
         STARTUPINFOA startupInfo = { sizeof(startupInfo) };
         PROCESS_INFORMATION processInfo = { 0 };
-        if (CreateProcessA(NULL, args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
-        {
+        if (CreateProcessA(NULL, args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo)) {
             DWORD exitCode = WaitToKillCompiler(processInfo);
-            if (exitCode != 0)
-                Walnut::Logger::Log(Walnut::MessageType::Error, "Compiler process failed with error code: " + std::to_string(exitCode));
+            if (exitCode != 0) {
+                WLog::Log(WMT::Error, "Compiler process failed with error code: " + std::to_string(exitCode));
+            }
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
         }
-        else
-        {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to inject tool with error code: " + GetLastError());
+        else {
+            WLog::Log(WMT::Error, "Failed to inject tool with error code: " + GetLastError());
             GUIState::UnsetState(Active);
         }
     }
@@ -517,11 +507,10 @@ namespace BO3PT
         std::string ptexe;
 
         errno_t err = fopen_s(&file, filename.c_str(), "wb");
-        if (err != 0)
-        {
+        if (err != 0) {
             char errorMsg[256];
             strerror_s(errorMsg, sizeof(errorMsg), err);
-            Walnut::Logger::Log(Walnut::MessageType::Error, "Opening file " + filename + " failed with error code: " + errorMsg);
+            WLog::Log(WMT::Error, "Opening file " + filename + " failed with error code: " + errorMsg);
             return 0;
         }
         curl_easy_setopt(curl, CURLOPT_URL, downloadURL.c_str());
@@ -531,9 +520,8 @@ namespace BO3PT
         res = curl_easy_perform(curl);
         curl_easy_cleanup(curl);
         curl_global_cleanup();
-        if (res != CURLE_OK)
-        {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "curl download failed with error code: " + res);
+        if (res != CURLE_OK) {
+            WLog::Log(WMT::Error, "curl download failed with error code: " + res);
             return 0;
         }
 
@@ -542,21 +530,18 @@ namespace BO3PT
         std::filesystem::path output_directory("./");
         mz_zip_archive zip_archive;
         mz_zip_zero_struct(&zip_archive);
-        if (!mz_zip_reader_init_file(&zip_archive, filename.c_str(), 0))
-        {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to open zip file: " + filename);
+        if (!mz_zip_reader_init_file(&zip_archive, filename.c_str(), 0)) {
+            WLog::Log(WMT::Error, "Failed to open zip file: " + filename);
             return 0;
         }
 
         int num_files = mz_zip_reader_get_num_files(&zip_archive);
-        Walnut::Logger::Log(Walnut::MessageType::Info, "Extracting " + num_files + std::string(" files from ") + filename + " to " + output_directory.string());
+        WLog::Log(WMT::Info, "Extracting " + num_files + std::string(" files from ") + filename + " to " + output_directory.string());
 
-        for (int i = 0; i < num_files; i++)
-        {
+        for (int i = 0; i < num_files; i++) {
             mz_zip_archive_file_stat file_stat;
-            if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat))
-            {
-                Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to get file stat for index " + i);
+            if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat)) {
+                WLog::Log(WMT::Error, "Failed to get file stat for index " + i);
                 continue;
             }
 
@@ -564,52 +549,50 @@ namespace BO3PT
 
             std::string currentFile(file_stat.m_filename);
             bool wantedFileFound = false;
-            for (const std::string_view& wantedFile : wantedFiles)
-            {
-                if (currentFile.find(wantedFile) != currentFile.npos)
-                {
+            for (const std::string_view& wantedFile : wantedFiles) {
+                if (currentFile.find(wantedFile) != currentFile.npos) {
                     wantedFileFound = true;
                     break;
                 }
             }
 
-            if (!wantedFileFound)
+            if (!wantedFileFound) {
                 continue;
+            }
 
-            Walnut::Logger::Log(Walnut::MessageType::Info, "Extracting " + std::string(file_stat.m_filename) + " to " + output_file_path.string());
+            WLog::Log(WMT::Info, "Extracting " + std::string(file_stat.m_filename) + " to " + output_file_path.string());
 
             std::filesystem::create_directories(output_file_path.parent_path());
 
-            if (mz_zip_reader_is_file_a_directory(&zip_archive, i))
+            if (mz_zip_reader_is_file_a_directory(&zip_archive, i)) {
                 std::filesystem::create_directory(output_file_path);
-            else
-            {
-                if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path))
-                {
+            }
+            else {
+                if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path)) {
                     std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.old.exe");
                     ptexe = output_file_path.string();
                 }
-                else if (std::filesystem::exists(output_file_path))
+                else if (std::filesystem::exists(output_file_path)) {
                     std::filesystem::remove(output_file_path);
-                if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0))
-                {
-                    Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to extract file " + std::string(file_stat.m_filename));
+                }
+                if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0)) {
+                    WLog::Log(WMT::Error, "Failed to extract file " + std::string(file_stat.m_filename));
                     return 0;
                 }
             }
         }
-        Walnut::Logger::Log(Walnut::MessageType::Success, "Extraction completed successfully");
+        WLog::Log(WMT::Success, "Extraction completed successfully");
 
         mz_zip_reader_end(&zip_archive);
         std::filesystem::remove(filename);
 
-        if (!ptexe.empty())
-        {
+        if (!ptexe.empty()) {
             STARTUPINFOA startupInfo = { sizeof(startupInfo) };
             PROCESS_INFORMATION processInfo = { 0 };
             LPSTR args = &ptexe[0];
-            if (!CreateProcessA(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo))
-                Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to start new practice tool exe");
+            if (!CreateProcessA(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo)) {
+                WLog::Log(WMT::Error, "Failed to start new practice tool exe");
+            }
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
             done = 1;
@@ -617,7 +600,161 @@ namespace BO3PT
         return 1;
     }
 
-    std::vector<BGB> GumSearch(int type, std::string_view searchText)
+#pragma endregion
+
+#pragma region BGB
+#define BGB_PRESETS_FILE "\\Settings\\Gum Profiles\\bgbPresets.csv"
+#define ACTIVE_BGB_PRESET_FILE "\\Practice Tool\\Settings\\Active Gum Preset.txt"
+
+    void LoadBGBProfiles()
+    {
+        bgbPresets.clear();
+
+        std::string line;
+        std::ifstream file(selfDirectory + BGB_PRESETS_FILE);
+
+        while (getline(file, line)) {
+            BGBPreset loadedPreset;
+            std::stringstream sstream(line);
+            std::string substr;
+            getline(sstream, substr, ',');
+            loadedPreset.m_Name = substr;
+            for (int i = 0; i < 5; i++) {
+                getline(sstream, substr, ',');
+                int index = atoi(substr.c_str());
+                index > 18 ? loadedPreset.m_BGBs.emplace_back(bgbs.m_Megas[index - 19]) : loadedPreset.m_BGBs.emplace_back(bgbs.m_Classics[index]);
+            }
+            bgbPresets.emplace_back(loadedPreset);
+        }
+        file.close();
+
+        if (bgbPresets.size()) {
+            bgbContext = bgbPresets[currentBGBPreset].m_BGBs[0];
+        }
+    }
+
+    void CreateBGBPreset(std::string_view presetName)
+    {
+        BGBPreset newPreset;
+        newPreset.m_Name = presetName;
+        
+        for (int i = 0; i < 5; i++) {
+            newPreset.m_BGBs.emplace_back(bgbs.m_Classics[i]);
+        }
+
+        bgbPresets.emplace_back(newPreset);
+        currentBGBPreset = static_cast<int>(bgbPresets.size()) - 1;
+        SaveBGBPresets();
+    }
+
+    void DeleteBGBPreset(const BGBPreset& preset)
+    {
+        std::string line;
+        std::string presetData;
+        std::ifstream inFile(selfDirectory + BGB_PRESETS_FILE);
+
+        while (getline(inFile, line)) {
+            std::stringstream sstream(line);
+            std::string name;
+            getline(sstream, name, ',');
+            if (name != preset.m_Name) {
+                presetData.append(line + "\n");
+            }
+        }
+        inFile.close();
+
+        std::ofstream(selfDirectory + BGB_PRESETS_FILE).write(presetData.c_str(), presetData.size());
+        bgbPresets.erase(std::find(bgbPresets.begin(), bgbPresets.end(), preset));
+        if (currentBGBPreset > 0) {
+            currentBGBPreset--;
+        }
+        if (!bgbPresets.size() || !writeBGBs || !GUIState::IsStateSet(Active)) {
+            std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write("-1,-1,-1,-1,-1", 14);
+        }
+        else {
+            std::string activeData;
+            for (const BGB& gum : preset.m_BGBs) {
+                activeData.append(gum.m_Index + ",");
+            }
+            activeData.replace(activeData.size() - 1, 1, "");
+            std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write(activeData.c_str(), activeData.size());
+        }
+    }
+
+    void SaveBGBPresets()
+    {
+        if (!bgbPresets.size()) {
+            std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write("-1,-1,-1,-1,-1", 14);
+            return;
+        }
+
+        std::string presetData;
+        
+        for (const BGBPreset& preset : bgbPresets) {
+            presetData.append(preset.m_Name + ",");
+            for (const BGB& gum : preset.m_BGBs) {
+                presetData.append(gum.m_Index + ",");
+            }
+            presetData.replace(presetData.size() - 1, 1, "\n");
+        }
+
+        std::ofstream(selfDirectory + BGB_PRESETS_FILE).write(presetData.c_str(), presetData.size());
+        if (writeBGBs && GUIState::IsStateSet(Active)) {
+            WriteBGBPresetToGame(bgbPresets[currentBGBPreset]);
+        }
+    }
+
+    void WriteBGBPresetToGame(const BGBPreset& preset)
+    {
+        if (preset.m_Name.empty()) {
+            std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write("-1,-1,-1,-1,-1", 14);
+            return;
+        }
+        std::string activeData;
+        for (const BGB& gum : preset.m_BGBs) {
+            activeData.append(gum.m_Index + ",");
+        }
+        activeData.replace(activeData.size() - 1, 1, "");
+        std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write(activeData.c_str(), activeData.size());
+    }
+
+    void SwapBGBPreset(BGB bgbOld, BGB bgbNew)
+    {
+        for (BGB& bgb : bgbPresets[currentBGBPreset].m_BGBs) {
+            if (bgb.m_Index == bgbNew.m_Index) {
+                bgb = bgbOld;
+            }
+            else if (bgb.m_Index == bgbOld.m_Index) {
+                bgb = bgbNew;
+            }
+        }
+
+        SaveBGBPresets();
+    }
+
+    void SwapBGBTrack(BGB bgbOld, BGB bgbNew)
+    {
+        for (BGB& bgb : gumTrackBGBs) {
+            if (bgb.m_Index == bgbNew.m_Index) {
+                bgb = bgbOld;
+            }
+            else if (bgb.m_Index == bgbOld.m_Index) {
+                bgb = bgbNew;
+            }
+        }
+    }
+
+    bool BGBPresetExists(std::string_view presetName)
+    {
+        for (const BGBPreset& preset : bgbPresets) {
+            if (preset.m_Name == presetName) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::vector<BGB> BGBSearch(int type, std::string_view searchText)
     {
         if (searchText.empty()) {
             if (type) {
@@ -643,172 +780,18 @@ namespace BO3PT
 
         return bgbsOut;
     }
-#pragma endregion
 
-#pragma region BGB
-#define PRESET_FILE "/Settings/Gum Profiles/GumPresets.csv"
-
-    void LoadGumProfiles()
-    {
-        gumPresets.clear();
-
-        std::string line;
-        std::ifstream file(selfDirectory + PRESET_FILE);
-
-        while (getline(file, line)) {
-            BGBPreset loadedPreset;
-            std::stringstream sstream(line);
-            std::string substr;
-            getline(sstream, substr, ',');
-            loadedPreset.m_Name = substr;
-            for (int i = 0; i < 5; i++) {
-                getline(sstream, substr, ',');
-                int index = atoi(substr.c_str());
-                index > 18 ? loadedPreset.m_BGBs.emplace_back(bgbs.m_Megas[index - 19]) : loadedPreset.m_BGBs.emplace_back(bgbs.m_Classics[index]);
-            }
-            gumPresets.emplace_back(loadedPreset);
-        }
-        file.close();
-
-        if (gumPresets.size()) {
-            bgbContext = gumPresets[currentGumPreset].m_BGBs[0];
-        }
-        //else
-            //gumPresets.emplace_back(inactiveGumPreset);
-    }
-
-    void DeleteGumPreset(std::string_view presetName)
-    {
-        std::string line;
-        std::string outData;
-        std::ifstream inFile(selfDirectory + PRESET_FILE);
-
-        while (getline(inFile, line))
-        {
-            std::stringstream sstream(line);
-            std::string name;
-            getline(sstream, name, ',');
-            if (name != presetName)
-                outData.append(line + "\n");
-        }
-        inFile.close();
-
-        std::ofstream outFile(selfDirectory + PRESET_FILE);
-        outFile << outData;
-        outFile.close();
-        if (currentGumPreset > 0) currentGumPreset--;
-        LoadGumProfiles();
-    }
-
-    void CreateNewGumPreset(std::string_view presetName)
-    {
-        std::string line;
-        std::ifstream checkFile(selfDirectory + PRESET_FILE);
-        while (getline(checkFile, line));
-
-        std::ofstream file(selfDirectory + PRESET_FILE, std::ios::app);
-        if (line != "")
-            file << "\n";
-        checkFile.close();
-        file << presetName << ",0,1,2,3,4\n";
-        file.close();
-        LoadGumProfiles();
-        currentGumPreset = static_cast<int>(gumPresets.size()) - 1;
-    }
-
-    void WriteGumPreset(const BGBPreset& gumPreset)
-    {
-        std::string line;
-        std::string outData;
-        std::ifstream inFile(selfDirectory + PRESET_FILE);
-
-        while (getline(inFile, line)) {
-            std::stringstream sstream(line);
-            std::string name;
-            getline(sstream, name, ',');
-            std::string preset(gumPresets[currentGumPreset].m_Name);
-            if (name != preset) {
-                outData.append(line + "\n");
-                continue;
-            }
-            outData.append(preset + ",");
-            for (const BGB& gum : gumPreset.m_BGBs) {
-                outData.append(gum.m_Index + ",");
-            }
-            outData.replace(outData.size() - 1, 1, "\n");
-        }
-        inFile.close();
-
-        std::ofstream outFile(selfDirectory + PRESET_FILE);
-        outFile << outData;
-        outFile.close();
-
-        LoadGumProfiles();
-    }
-
-    void WritePresetToGame(const BGBPreset& gumPreset, std::string_view file)
-    {
-        if (gumPreset.m_Name.empty()) {
-            std::ofstream(file.data()).write("-1,-1,-1,-1,-1", 13);
-            return;
-        }
-
-        std::string outData;
-        for (const BGB& bgb : gumPreset.m_BGBs) {
-            outData.append(bgb.m_Index + ",");
-        }
-        outData.replace(outData.size() - 1, 1, "");
-        std::ofstream outFile(file.data());
-        outFile << outData;
-        outFile.close();
-    }
-
-    void SwapBGBPreset(BGB bgbOld, BGB bgbNew)
-    {
-        for (BGB& bgb : gumPresets[currentGumPreset].m_BGBs) {
-            if (bgb.m_Index == bgbNew.m_Index) {
-                bgb = bgbOld;
-            }
-            else if (bgb.m_Index == bgbOld.m_Index) {
-                bgb = bgbNew;
-            }
-        }
-
-        WriteGumPreset(gumPresets[currentGumPreset]);
-    }
-
-    void SwapBGBTrack(BGB bgbOld, BGB bgbNew)
-    {
-        for (BGB& bgb : gumTrackBGBs) {
-            if (bgb.m_Index == bgbNew.m_Index) {
-                bgb = bgbOld;
-            }
-            else if (bgb.m_Index == bgbOld.m_Index) {
-                bgb = bgbNew;
-            }
-        }
-    }
-
-    bool CheckPresetExists(std::string_view inPreset)
-    {
-        for (const BGBPreset& preset : gumPresets) {
-            if (preset.m_Name == inPreset) {
-                return true;
-            }
-        }
-        return false;
-    }
 #pragma endregion
 
 #pragma region WeaponLoadouts
+#define ACTIVE_WEAPON_LOADOUT_FILE "\\Practice Tool\\Settings\\Active Weapon Loadout.json"
+#define ACTIVE_WEAPON_LOADOUT_DIR "\\Settings\\Weapon Loadouts\\"
 
     void LoadWeaponProfiles()
     {
         weaponPresets.clear();
-        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Weapon Loadouts"))
-        {
-            if (std::filesystem::is_regular_file(file) && file.path().extension().string() == ".json")
-            {
+        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Weapon Loadouts")) {
+            if (std::filesystem::is_regular_file(file) && file.path().extension().string() == ".json") {
                 MenuWeaponPreset preset = ParseWeaponLoadout(file.path().string());
                 preset.m_Name = file.path().stem().string();
                 weaponPresets.emplace_back(preset);
@@ -816,41 +799,52 @@ namespace BO3PT
         }
     }
 
-    void CreateNewWeaponPreset(std::string_view presetName)
+    void CreateWeaponPreset(std::string_view presetName)
     {
-        std::string filename = selfDirectory + "\\Settings\\Weapon Loadouts\\" + presetName.data() + ".json";
+        std::string filename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + presetName.data() + ".json";
 
-        Walnut::JSONBuilder builder;
+        WJson builder;
+        MenuWeaponPreset newPreset;
+        newPreset.m_Name = presetName;
 
         for (int i = 0; i < static_cast<int>(menuWeaponLists.m_WeaponTypes.size()); i++) {
             rapidjson::Value& weaponGroup = builder.AddObject(builder.GetDocument(), menuWeaponLists.m_WeaponTypes[i]);
+            std::vector<MenuWeaponPresetItem> typeList;
             for (const MenuWeapon& weapon : menuWeaponLists.m_Weapons[i]) {
                 rapidjson::Value& weaponObject = builder.AddObject(weaponGroup, weapon.m_Name);
                 weaponObject.AddMember("Optic", -1, builder.GetAllocator());
                 builder.AddArray(weaponObject, "Attachments");
-                weaponObject.AddMember("Camo", -1, builder.GetAllocator());
+                weaponObject.AddMember("Camo", 0, builder.GetAllocator());
+
+                MenuWeaponPresetItem weaponItem;
+                weaponItem.m_EquippedOptic = -1;
+                weaponItem.m_EquippedAttachments = { };
+                weaponItem.m_Camo = { "", "" };
+                typeList.emplace_back(weaponItem);
             }
+            newPreset.m_PresetItems.insert({ menuWeaponLists.m_WeaponTypes[i], typeList });
         }
 
+        weaponPresets.emplace_back(newPreset);
         builder.SaveToFile(filename);
-        LoadWeaponProfiles();
+        currentWeaponPreset = static_cast<int>(weaponPresets.size()) - 1;
     }
 
-    void DeleteWeaponPreset(std::string_view preset)
+    void DeleteWeaponPreset(const MenuWeaponPreset& preset)
     {
-        if (std::filesystem::exists(selfDirectory + "\\Settings\\Weapon Loadouts\\" + preset.data() + ".json")) {
-            std::filesystem::remove(selfDirectory + "\\Settings\\Weapon Loadouts\\" + preset.data() + ".json");
+        if (std::filesystem::exists(selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json")) {
+            std::filesystem::remove(selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json");
         }
         if (currentWeaponPreset > 0) {
             currentWeaponPreset--;
         }
-        LoadWeaponProfiles();
+        weaponPresets.erase(std::find(weaponPresets.begin(), weaponPresets.end(), preset));
     }
 
-    void WriteWeaponLoadout(MenuWeaponPreset& preset)
+    void SaveWeaponLoadout(const MenuWeaponPreset& preset)
     {
-        const std::string filename = selfDirectory + "\\Settings\\Weapon Loadouts\\" + preset.m_Name + ".json";
-        Walnut::JSONBuilder builder(filename);
+        const std::string filename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json";
+        WJson builder;
 
         for (int i = 0; i < static_cast<int>(menuWeaponLists.m_WeaponTypes.size()); i++) {
             const std::string& weaponType = menuWeaponLists.m_WeaponTypes[i];
@@ -858,30 +852,42 @@ namespace BO3PT
             for (int j = 0; j < static_cast<int>(menuWeaponLists.m_Weapons[i].size()); j++) {
                 const MenuWeapon& weapon = menuWeaponLists.m_Weapons[i][j];
                 rapidjson::Value& weaponObject = builder.AddObject(weaponGroup, weapon.m_Name);
-                weaponObject.AddMember("Optic", preset.m_PresetItems[weaponType][j].m_EquippedOptic, builder.GetAllocator());
+                weaponObject.AddMember("Optic", preset.m_PresetItems.find(weaponType)->second[j].m_EquippedOptic, builder.GetAllocator());
                 rapidjson::Value& attachmentsArray = builder.AddArray(weaponObject, "Attachments");
-                for (const int& attachment : preset.m_PresetItems[weaponType][j].m_EquippedAttachments) {
+                for (const int& attachment : preset.m_PresetItems.find(weaponType)->second[j].m_EquippedAttachments) {
                     attachmentsArray.PushBack(attachment, builder.GetAllocator());
                 }
-                weaponObject.AddMember("Camo", camoNameToIndex[preset.m_PresetItems[weaponType][j].m_Camo.second], builder.GetAllocator());
+                weaponObject.AddMember("Camo", camoNameToIndex[preset.m_PresetItems.find(weaponType)->second[j].m_Camo.second], builder.GetAllocator());
             }
         }
 
-        if (!preset.m_Name.empty()) {
-            builder.SaveToFile(filename);
+        builder.SaveToFile(filename);
+        if (writeWeaponPresets && GUIState::IsStateSet(Active)) {
+            WriteWeaponLoadoutToGame(preset, &builder);
         }
-        if (!writeWeaponPresets) {
-            Walnut::JSONBuilder::WriteEmpty(std::string_view(bo3Directory + "\\Practice Tool\\Settings\\Active Weapon Loadout.json"));
+    }
+
+    void WriteWeaponLoadoutToGame(const MenuWeaponPreset& preset, Walnut::JSONBuilder* json)
+    {
+        if (preset.m_Name.empty()) {
+            if (!json) {
+                WJson::WriteEmpty(std::string_view(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE));
+            }
+            else {
+                json->SaveToFile(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE);
+            }
         }
         else {
-            builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Weapon Loadout.json");
+            const std::string filename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json";
+            WJson builder = WJson::FromFile(filename);
+            builder.SaveToFile(filename);
         }
     }
 
     MenuWeaponPreset ParseWeaponLoadout(std::string_view filename)
     {
         MenuWeaponPreset returnPreset;
-        Walnut::JSONBuilder builder(filename);
+        WJson builder = WJson::FromFile(filename);
 
         for (const std::string& weaponType : menuWeaponLists.m_WeaponTypes) {
             std::vector<MenuWeaponPresetItem> presetEntry;
@@ -931,53 +937,67 @@ namespace BO3PT
 
 
 #pragma region ZombieCalc
+
     int GetZombieCountForRound(int round, int playerCount)
     {
         int maxZombies = 24;
-        float multiplier = round / 5.f;
-        if (multiplier < 1)
-            multiplier = 1;
-        if (round >= 10)
+        float multiplier = max(1.0f, round / 5.0f);
+        if (round >= 10) {
             multiplier *= (round * 0.15f);
-        if (playerCount == 1)
+        }
+        if (playerCount == 1) {
             maxZombies += static_cast<int>(3 * multiplier);
-        else
+        }
+        else {
             maxZombies += static_cast<int>(((playerCount - 1) * 6) * multiplier);
+        }
         return MaxZombieFunc(maxZombies, round);
     }
 
     int MaxZombieFunc(int maxZombies, int round)
     {
-        if (round < 2)
+        if (round < 2) {
             return static_cast<int>(maxZombies * 0.25);
-        if (round < 3)
+        }
+        if (round < 3) {
             return static_cast<int>(maxZombies * 0.3);
-        if (round < 4)
+        }
+        if (round < 4) {
             return static_cast<int>(maxZombies * 0.5);
-        if (round < 5)
+        }
+        if (round < 5) {
             return static_cast<int>(maxZombies * 0.7);
-        if (round < 6)
+        }
+        if (round < 6) {
             return static_cast<int>(maxZombies * 0.9);
+        }
         return static_cast<int>(maxZombies);
     }
 
     int GetZombiesUpToRound(int round, int playerCount)
     {
-        if (round == 1)
+        if (round == 1) {
             return 0;
+        }
         return GetZombieCountForRound(round - 1, playerCount) + GetZombiesUpToRound(round - 1, playerCount);
     }
 
     int GetZombieHealthForRound(int round)
     {
-        if (round > 162) return INT_MAX;
+        if (round > 162) {
+            return INT_MAX;
+        }
         int zombieHealth = 150;
-        if (round < 10) zombieHealth += 100 * (round - 1);
-        else zombieHealth += 100 * (9 - 1);
-        if (round < 10)
+        if (round < 10) {
+            zombieHealth += 100 * (round - 1);
+        }
+        else {
+            zombieHealth += 100 * (9 - 1);
+        }
+        if (round < 10) {
             return zombieHealth;
-        for (int i = 10; i <= round; i++)
-        {
+        }
+        for (int i = 10; i <= round; i++) {
             zombieHealth += static_cast<int>(zombieHealth * 0.1);
         }
         return zombieHealth;
@@ -985,55 +1005,61 @@ namespace BO3PT
 
     int GetZombieSpawnRateForRound(int round, int playerCount)
     {
-        if (round == 1)
+        if (round == 1) {
             return 2100;
+        }
         float startDelay = 2.0f;
-        if (playerCount == 2)
+        if (playerCount == 2) {
             startDelay = 1.5f;
-        else if (playerCount == 3)
+        }
+        else if (playerCount == 3) {
             startDelay = 0.89f;
-        else if (playerCount == 4)
+        }
+        else if (playerCount == 4) {
             startDelay = 0.67f;
-        float calcSpawnRate = startDelay * static_cast<float>(pow(0.95f, round - 1)) + 0.1f;
-        if (calcSpawnRate < 0.2f)
-            calcSpawnRate = 0.2f;
+        }
+        float calcSpawnRate = max(0.2f, startDelay * static_cast<float>(pow(0.95f, round - 1)) + 0.1f);
         int calcRoundedTime = static_cast<int>(calcSpawnRate * 1000);
         return RoundTimeNearest50(calcRoundedTime);
     }
 
     float RawSpawnRateForRound(int round, int playerCount)
     {
-        if (round == 1)
+        if (round == 1) {
             return 2.1f;
+        }
         float startDelay = 2.0f;
-        if (playerCount == 2)
+        if (playerCount == 2) {
             startDelay = 1.5f;
-        else if (playerCount == 3)
+        }
+        else if (playerCount == 3) {
             startDelay = 0.89f;
-        else if (playerCount == 4)
+        }
+        else if (playerCount == 4) {
             startDelay = 0.67f;
+        }
         return startDelay * static_cast<float>(pow(0.95f, round - 1));
     }
 
     int RoundTimeNearest50(int time)
     {
         int newTime = time % 50;
-        if (newTime < 25)
+        if (newTime < 25) {
             newTime = time - newTime;
-        else
+        }
+        else {
             newTime = time + (50 - newTime);
+        }
         return newTime;
     }
 
     int GetSpecialEnemySpawnRate(int playerCount, const std::string& specialEnemy)
     {
-        switch (hashstr(specialEnemy.c_str()))
-        {
+        switch (hashstr(specialEnemy.c_str())) {
         case hashstr("Meatballs"):
         case hashstr("Manglers"):
         case hashstr("Valks"):
-            switch (playerCount)
-            {
+            switch (playerCount) {
             case 1:
                 return 2350;
             case 2:
@@ -1045,8 +1071,7 @@ namespace BO3PT
             }
             break;
         case hashstr("Dogs"):
-            switch (numDogRounds)
-            {
+            switch (numDogRounds) {
             case 1:
                 return 2100;
             case 2:
@@ -1058,8 +1083,7 @@ namespace BO3PT
             }
             break;
         case hashstr("Spiders"):
-            switch (playerCount)
-            {
+            switch (playerCount) {
             case 1:
                 return 2350;
             case 2:
@@ -1081,42 +1105,51 @@ namespace BO3PT
     std::string CalcRoundTime(int round, int playerCount, int corpseDelay, bool specialEnemies)
     {
         int roundIntermission = 12600;
-        if (round == 1)
+        if (round == 1) {
             roundIntermission = 8150;
+        }
         int zombieCount = GetZombieCountForRound(round, playerCount);
         int specialEnemiesSpawnTime = 0;
-        if (specialEnemies)
-        {
+        if (specialEnemies) {
             zombieCount -= specialEnemyCount_1 + specialEnemyCount_2 + specialEnemyCount_3;
-            if (specialEnemyCount_1)
+            if (specialEnemyCount_1) {
                 specialEnemiesSpawnTime += GetSpecialEnemySpawnRate(playerCount, specialEnemy_1) * specialEnemyCount_1;
-            if (specialEnemyCount_2)
+            }
+            if (specialEnemyCount_2) {
                 specialEnemiesSpawnTime += GetSpecialEnemySpawnRate(playerCount, specialEnemy_2) * specialEnemyCount_2;
-            if (specialEnemyCount_3)
+            }
+            if (specialEnemyCount_3) {
                 specialEnemiesSpawnTime += GetSpecialEnemySpawnRate(playerCount, specialEnemy_3) * specialEnemyCount_3;
+            }
         }
         int zombieSpawnsTime = GetZombieSpawnRateForRound(round, playerCount) * (zombieCount - 1) + specialEnemiesSpawnTime + roundIntermission;
-        if (corpseDelay) zombieSpawnsTime += 100 * corpseDelay;
+        if (corpseDelay) {
+            zombieSpawnsTime += 100 * corpseDelay;
+        }
         return ParseTimeFromMilli(zombieSpawnsTime);
     }
 
     std::string SpecialRoundTime(int round, int playerCount, int corpseDelay, bool soe)
     {
         int roundIntermission = 12600;
-        if (round == 1)
+        if (round == 1) {
             roundIntermission = 8150;
+        }
         int zombieCount = GetZombieCountForRound(round, playerCount);
         int zombieSpawnsTime;
-        if (soe)
+        if (soe) {
             zombieSpawnsTime = 2100 * (zombieCount - 1);
-        else
-        {
-            if (moonRoundSkip)
+        }
+        else {
+            if (moonRoundSkip) {
                 zombieCount = 25;
+            }
             zombieSpawnsTime = GetZombieSpawnRateForRound(round + (moonEarthTravels * 2 - moonRoundSkips) + 1, 1) * (zombieCount - 1);
         }
         zombieSpawnsTime += +roundIntermission;
-        if (corpseDelay) zombieSpawnsTime += 100 * corpseDelay;
+        if (corpseDelay) {
+            zombieSpawnsTime += 100 * corpseDelay;
+        }
         return ParseTimeFromMilli(zombieSpawnsTime);
     }
 
@@ -1128,18 +1161,10 @@ namespace BO3PT
 
     void CalcLockdownTime(int round, int playerCount)
     {
-        float rawSpawnRate_1 = RawSpawnRateForRound(round, playerCount);
-        if (rawSpawnRate_1 < 0.1f)
-            rawSpawnRate_1 = 0.1f;
-        float rawSpawnRate_2 = rawSpawnRate_1 - playerCount * 0.1f;
-        if (rawSpawnRate_2 < 0.1f)
-            rawSpawnRate_2 = 0.1f;
-        float rawSpawnRate_3 = rawSpawnRate_2 - playerCount * 0.1f;
-        if (rawSpawnRate_3 < 0.1f)
-            rawSpawnRate_3 = 0.1f;
-        float rawSpawnRate_4 = rawSpawnRate_3 - playerCount * 0.1f;
-        if (rawSpawnRate_4 < 0.1f)
-            rawSpawnRate_4 = 0.1f;
+        float rawSpawnRate_1 = max(0.1f, RawSpawnRateForRound(round, playerCount));
+        float rawSpawnRate_2 = max(0.1f, rawSpawnRate_1 - playerCount * 0.1f);
+        float rawSpawnRate_3 = max(0.1f, rawSpawnRate_2 - playerCount * 0.1f);
+        float rawSpawnRate_4 = max(0.1f, rawSpawnRate_3 - playerCount * 0.1f);
 
         int spawnRate_1 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_1 * 1000)) + 50;
         int spawnRate_2 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_2 * 1000)) + 50;
@@ -1161,77 +1186,81 @@ namespace BO3PT
         waveTime_3 = ParseTimeFromMilli(spawnRate_3 * waveCount_3 + waveIntermission_3 + 500);
         waveTime_4 = ParseTimeFromMilli(spawnRate_4 * waveCount_4 + waveIntermission_4 + 500);
     }
+
 #pragma endregion
 
 #pragma region GKValveSolver
+
     void CalcValveProbabilities()
     {
         valveDirectionCounts_1 = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
         valveDirectionCounts_2 = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
-        for (std::string& solutions : valveLocations)
-        {
-            if (passwordChosen && passwordLocation != solutions)
+        for (const std::string& solutions : valveLocations) {
+            if (passwordChosen && passwordLocation != solutions) {
                 continue;
+            }
             int checked = -1;
-            for (std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_1[solutions])
-            {
+            for (const std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_1[solutions]) {
                 checked++;
-                if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end())
+                if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end()) {
                     continue;
-                if (greenChosen && solution.first != greenLocation)
+                }
+                if (greenChosen && solution.first != greenLocation) {
                     continue;
+                }
                 int num = locationToInt[solution.first];
-                if (checkedGreenArray[locationToInt[solution.first]])
+                if (checkedGreenArray[locationToInt[solution.first]]) {
                     continue;
+                }
                 int index = -1;
-                for (std::string& direction : solution.second)
-                {
+                for (const std::string& direction : solution.second) {
                     index++;
-                    if (direction == "P")
+                    if (direction == "P") {
                         continue;
+                    }
                     int number = atoi(direction.c_str()) - 1;
                     valveDirectionCounts_1[index][number]++;
                 }
             }
         }
-        for (std::string& solutions : valveLocations)
-        {
-            if (passwordLocation != "" && passwordLocation != solutions)
+        for (const std::string& solutions : valveLocations) {
+            if (passwordLocation != "" && passwordLocation != solutions) {
                 continue;
+            }
             int checked = -1;
-            for (std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_2[solutions])
-            {
+            for (const std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_2[solutions]) {
                 checked++;
-                if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end())
+                if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end()) {
                     continue;
-                if (greenChosen && solution.first != greenLocation)
+                }
+                if (greenChosen && solution.first != greenLocation) {
                     continue;
+                }
                 int num = locationToInt[solution.first];
-                if (checkedGreenArray[locationToInt[solution.first]])
+                if (checkedGreenArray[locationToInt[solution.first]]) {
                     continue;
+                }
                 int index = -1;
-                for (std::string& direction : solution.second)
-                {
+                for (const std::string& direction : solution.second) {
                     index++;
-                    if (direction == "P")
+                    if (direction == "P") {
                         continue;
+                    }
                     int number = atoi(direction.c_str()) - 1;
                     valveDirectionCounts_2[index][number]++;
                 }
             }
         }
         int odds = 0;
-        for (std::vector<int>& counts : valveDirectionCounts_1)
-        {
+        for (const std::vector<int>& counts : valveDirectionCounts_1) {
             int index = -1;
-            for (int& count : counts)
-            {
+            for (const int& count : counts) {
                 index++;
                 int divideBy = valveDirectionCounts_1[odds][0] + valveDirectionCounts_1[odds][1] + valveDirectionCounts_1[odds][2];
-                if (!divideBy)
+                if (!divideBy) {
                     valveDirectionOdds_1[odds][index] = "P";
-                else
-                {
+                }
+                else {
                     float percentage = count * 100.0f / divideBy;
                     char buf[8];
                     sprintf_s(buf, "%.2f", percentage);
@@ -1243,17 +1272,15 @@ namespace BO3PT
             odds++;
         }
         odds = 0;
-        for (std::vector<int>& counts : valveDirectionCounts_2)
-        {
+        for (const std::vector<int>& counts : valveDirectionCounts_2) {
             int index = -1;
-            for (int& count : counts)
-            {
+            for (const int& count : counts) {
                 index++;
                 int divideBy = valveDirectionCounts_2[odds][0] + valveDirectionCounts_2[odds][1] + valveDirectionCounts_2[odds][2];
-                if (!divideBy)
+                if (!divideBy) {
                     valveDirectionOdds_2[odds][index] = "P";
-                else
-                {
+                }
+                else {
                     float percentage = count * 100.0f / divideBy;
                     char buf[8];
                     sprintf_s(buf, "%.2f", percentage);
@@ -1273,21 +1300,23 @@ namespace BO3PT
         std::string turnToGreen = "";
         int compareAgainst = (passwordChosen) ? 1 : 0;
         noGreenChoice = false;
-        for (int i = 0; i < 6; i++)
-        {
-            if (checkedGreenArray[i])
-            {
-                if (passwordChosen && passwordLocation == valveLocations[i])
+        for (int i = 0; i < 6; i++) {
+            if (checkedGreenArray[i]) {
+                if (passwordChosen && passwordLocation == valveLocations[i]) {
                     continue;
+                }
                 notGreen++;
             }
-            else
+            else {
                 turnToGreen = valveLocations[i];
-            if (i - notGreen > compareAgainst)
+            }
+            if (i - notGreen > compareAgainst) {
                 return;
+            }
         }
-        if (notGreen >= 6)
+        if (notGreen >= 6) {
             return;
+        }
         noGreenChoice = true;
         greenLocation = turnToGreen;
         valveGreen[locationToInt[greenLocation]] = true;
@@ -1301,60 +1330,52 @@ namespace BO3PT
         excludedValves = { };
         possibleValves_1 = { };
         possibleValves_2 = { };
-        for (int valve = 0; valve < 6; valve++)
-        {
-            for (int direction = 0; direction < 3; direction++)
-            {
-                if (passwordLocation == valveLocations[valve])
-                {
+        for (int valve = 0; valve < 6; valve++) {
+            for (int direction = 0; direction < 3; direction++) {
+                if (passwordLocation == valveLocations[valve]) {
                     result.emplace_back("P");
                     break;
                 }
-                if (valveDirections[valve][direction])
-                {
+                if (valveDirections[valve][direction]) {
                     result.emplace_back(std::to_string(direction + 1));
                     break;
                 }
-                if (direction == 2)
+                if (direction == 2) {
                     result.emplace_back("0");
+                }
             }
         }
-        if (result.size() != 6)
-        {
+        if (result.size() != 6) {
             valveComboSet = false;
             return;
         }
-        if (passwordChosen)
+        if (passwordChosen) {
             valveComboSet = true;
-        for (std::string& solutions : valveLocations)
-        {
-            for (std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_1[solutions])
-            {
-                if (result == solution.second)
-                {
+        }
+        for (std::string& solutions : valveLocations) {
+            for (const std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_1[solutions]) {
+                if (result == solution.second) {
                     excludedValves.emplace_back(result);
                 }
-                else if (passwordLocation == solutions)
-                {
+                else if (passwordLocation == solutions) {
                     possibleValves_1.insert({ solution.first, solution.second });
                 }
             }
-            for (std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_2[solutions])
-            {
-                if (result == solution.second)
-                {
+            for (const std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_2[solutions]) {
+                if (result == solution.second) {
                     excludedValves.emplace_back(result);
                 }
-                else if (passwordLocation == solutions)
-                {
+                else if (passwordLocation == solutions) {
                     possibleValves_2.insert({ solution.first, solution.second });
                 }
             }
         }
     }
+
 #pragma endregion
 
 #pragma region IceCodeGuide
+
     void LoadIceCodePairs()
     {
         iceCodePairs.emplace_back(IceCodePair({ iceCodeImgList["dot-digit"], iceCodeImgList["dot-symbol"] }));
@@ -1387,18 +1408,16 @@ namespace BO3PT
 
     void ProgressGame(bool success, int numCode)
     {
-        if (!gameStarted)
-        {
+        if (!gameStarted) {
             gameStarted = true;
             gameTimer.Reset();
         }
-        if (success)
-        {
+        if (success) {
             gameProgress++;
-            for (bool& checked : gameChecked)
+            for (bool& checked : gameChecked) {
                 checked = false;
-            if (gameProgress >= 12)
-            {
+            }
+            if (gameProgress >= 12) {
                 gameTime = "Time: " + ParseTimeFromMilli(gameTimer.Elapsed());
                 std::stringstream ss;
                 ss.precision(4);
@@ -1415,8 +1434,7 @@ namespace BO3PT
             Walnut::Random::Init();
             std::shuffle(randomIceCodePairs.begin(), randomIceCodePairs.end(), std::default_random_engine(Walnut::Random::UInt()));
         }
-        else if (!gameChecked[numCode])
-        {
+        else if (!gameChecked[numCode]) {
             gameChecked[numCode] = true;
             timesMissed++;
         }
@@ -1427,16 +1445,18 @@ namespace BO3PT
         ss << "Accuracy: " << percentage << "%%";
         accuracy = "Accuracy: " + ss.str();
     }
+
 #pragma endregion
 
 #pragma region Autosplits
+#define AUTOSPLIT_PRESET_DIR "\\Settings\\Autosplits\\"
+#define ACTIVE_AUTOSPLIT_PRESET_FILE "\\Practice Tool\\Settings\\Active Autosplit Preset.json"
+
     void LoadAutosplitPresets()
     {
         autosplitPresets.clear();
-        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Autosplits"))
-        {
-            if (std::filesystem::is_regular_file(file) && file.path().extension().string() == ".json")
-            {
+        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Autosplits")) {
+            if (std::filesystem::is_regular_file(file) && file.path().extension().string() == ".json") {
                 AutosplitPreset preset = ParseSplitJson(file.path().string());
                 preset.m_Name = file.path().stem().string();
                 autosplitPresets.emplace_back(preset);
@@ -1444,11 +1464,50 @@ namespace BO3PT
         }
     }
 
-    void WriteAutosplitPreset(const AutosplitPreset& preset)
+    void CreateAutosplitPreset(std::string_view presetName)
     {
-        std::string filename = selfDirectory + "\\Settings\\Autosplits\\" + preset.m_Name + ".json";
+        std::string filename = selfDirectory + AUTOSPLIT_PRESET_DIR + presetName.data() + ".json";
+       
+        WJson builder;
+        AutosplitPreset newPreset;
+        newPreset.m_Name = presetName;
 
-        Walnut::JSONBuilder builder;
+        rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
+        settings.AddMember("In Game Timer", false, builder.GetAllocator());
+        settings.AddMember("In Game Round Timer", false, builder.GetAllocator());
+        settings.AddMember("Amount of Splits", 0, builder.GetAllocator());
+        settings.AddMember("Map Index", 0, builder.GetAllocator());
+        settings.AddMember("Split Type", 0, builder.GetAllocator());
+
+        newPreset.m_IGT = false;
+        newPreset.m_IGRT = false;
+        newPreset.m_NumSplits = 0;
+        newPreset.m_Map = 0;
+        newPreset.m_SplitType = 0;
+
+        rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
+
+        autosplitPresets.emplace_back(newPreset);
+        builder.SaveToFile(filename);
+        currentAutosplitPreset = static_cast<int>(autosplitPresets.size()) - 1;
+    }
+
+    void DeleteAutosplitPreset(const AutosplitPreset& preset)
+    {
+        if (std::filesystem::exists(selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json")) {
+            std::filesystem::remove(selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json");
+        }
+        if (currentAutosplitPreset > 0) {
+            currentAutosplitPreset--;
+        }
+        autosplitPresets.erase(std::find(autosplitPresets.begin(), autosplitPresets.end(), preset));
+    }
+
+    void SaveAutosplitPreset(const AutosplitPreset& preset)
+    {
+        const std::string filename = selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json";
+
+        WJson builder;
 
         rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
         settings.AddMember("In Game Timer", preset.m_IGT, builder.GetAllocator());
@@ -1458,59 +1517,39 @@ namespace BO3PT
         settings.AddMember("Split Type", preset.m_SplitType, builder.GetAllocator());
 
         rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
-        for (std::pair<std::string, int> pair : preset.m_Splits)
-        {
+        for (std::pair<std::string, int> pair : preset.m_Splits) {
             rapidjson::Value key(rapidjson::StringRef(pair.first.c_str()), builder.GetAllocator());
             rapidjson::Value value(pair.second);
             splitData.AddMember(key, value, builder.GetAllocator());
         }
 
-        if (!preset.m_Name.empty()) {
-            builder.SaveToFile(filename);
+        builder.SaveToFile(filename);
+        if (writeSplits && GUIState::IsStateSet(Active)) {
+            WriteAutosplitPresetToGame(preset, &builder);
         }
-        if (!writeSplits) {
-            Walnut::JSONBuilder::WriteEmpty(std::string_view(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json"));
+    }
+
+    void WriteAutosplitPresetToGame(const AutosplitPreset& preset, Walnut::JSONBuilder* json)
+    {
+        if (preset.m_Name.empty()) {
+            if (!json) {
+                WJson::WriteEmpty(std::string_view(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE));
+            }
+            else {
+                json->SaveToFile(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE);
+            }
         }
         else {
-            builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json");
+            const std::string filename = selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json";
+            WJson builder = WJson::FromFile(filename);
+            builder.SaveToFile(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE);
         }
-            
-    }
-
-    void CreateNewAutosplitPreset(std::string_view presetName)
-    {
-        std::string filename = selfDirectory + "\\Settings\\Autosplits\\" + presetName.data() + ".json";
-       
-        Walnut::JSONBuilder builder;
-
-        rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
-        settings.AddMember("In Game Timer", false, builder.GetAllocator());
-        settings.AddMember("In Game Round Timer", false, builder.GetAllocator());
-        settings.AddMember("Amount of Splits", 0, builder.GetAllocator());
-        settings.AddMember("Map Index", 0, builder.GetAllocator());
-        settings.AddMember("Split Type", 0, builder.GetAllocator());
-
-        rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
-
-        builder.SaveToFile(filename);
-        LoadAutosplitPresets();
-    }
-
-    void DeleteAutosplitPreset(std::string_view preset)
-    {
-        if (std::filesystem::exists(selfDirectory + "\\Settings\\Autosplits\\" + preset.data() + ".json")) {
-            std::filesystem::remove(selfDirectory + "\\Settings\\Autosplits\\" + preset.data() + ".json");
-        }
-        if (currentAutosplitPreset > 0) {
-            currentAutosplitPreset--;
-        }
-        LoadAutosplitPresets();
     }
 
     void WriteSplitXML(std::string_view preset, const std::vector<std::pair<std::string, int>>& splits)
     {
-        if (!DoesPathExist(selfDirectory + "/Exported Splits"))
-            std::filesystem::create_directory(selfDirectory + "/Exported Splits");
+        if (!DoesPathExist(selfDirectory + "\\Exported Splits"))
+            std::filesystem::create_directory(selfDirectory + "\\Exported Splits");
 
         Walnut::XMLBuilder builder("1.0", "Run");
 
@@ -1537,8 +1576,7 @@ namespace BO3PT
 
         rapidxml::xml_node<>* segmentsNode = builder.AddNode(builder.GetRootNode(), "Segments");
 
-        for (const std::pair<std::string, int>& split : splits)
-        {
+        for (const std::pair<std::string, int>& split : splits) {
             rapidxml::xml_node<>* segmentNode = builder.AddNode(segmentsNode, "Segment");
 
             builder.AddNode(segmentNode, "Name", split.first.c_str());
@@ -1564,13 +1602,13 @@ namespace BO3PT
 
         builder.AddNode(builder.GetRootNode(), "AutoSplitterSettings");
 
-        builder.SaveToFile(selfDirectory + "/Exported Splits/" + preset.data() + ".lss");
+        builder.SaveToFile(selfDirectory + "\\Exported Splits\\" + preset.data() + ".lss");
     }
 
     void WriteLayoutXML(std::string_view preset, int numSplits)
     {
-        if (!DoesPathExist(selfDirectory + "/Exported Splits"))
-            std::filesystem::create_directory(selfDirectory + "/Exported Splits");
+        if (!DoesPathExist(selfDirectory + "\\Exported Splits"))
+            std::filesystem::create_directory(selfDirectory + "\\Exported Splits");
 
         Walnut::XMLBuilder builder("1.0", "Layout");
 
@@ -1796,13 +1834,13 @@ namespace BO3PT
         builder.AddNode(detailedTimerSettings, "DecimalsSize", "35");
         builder.AddNode(detailedTimerSettings, "SegmentTimerDecimalsSize", "35");
 
-        builder.SaveToFile(selfDirectory + "/Exported Splits/" + preset.data() + ".lsl");
+        builder.SaveToFile(selfDirectory + "\\Exported Splits\\" + preset.data() + ".lsl");
     }
 
     AutosplitPreset ParseSplitJson(std::string_view filename)
     {
         AutosplitPreset returnPreset;
-        Walnut::JSONBuilder builder(filename);
+        WJson builder = WJson::FromFile(filename);
 
         if (builder.GetDocument().HasMember("Settings") && builder.GetDocument()["Settings"].IsObject()) {
             const rapidjson::Value& settings = builder.GetDocument()["Settings"];
@@ -1813,24 +1851,29 @@ namespace BO3PT
 
                 switch (hashstr(key.c_str())) {
                 case hashstr("In Game Timer"):
-                    if (value.IsBool())
+                    if (value.IsBool()) {
                         returnPreset.m_IGT = value.GetBool();
+                    }
                     break;
                 case hashstr("In Game Round Timer"):
-                    if (value.IsBool())
+                    if (value.IsBool()) {
                         returnPreset.m_IGRT = value.GetBool();
+                    }
                     break;
                 case hashstr("Amount of Splits"):
-                    if (value.IsInt())
+                    if (value.IsInt()) {
                         returnPreset.m_NumSplits = value.GetInt();
+                    }
                     break;
                 case hashstr("Map Index"):
-                    if (value.IsInt())
+                    if (value.IsInt()) {
                         returnPreset.m_Map = value.GetInt();
+                    }
                     break;
                 case hashstr("Split Type"):
-                    if (value.IsInt())
+                    if (value.IsInt()) {
                         returnPreset.m_SplitType = value.GetInt();
+                    }
                     break;
                 default:
                     break;
@@ -1845,12 +1888,13 @@ namespace BO3PT
                     returnPreset.m_Splits.push_back({ it->name.GetString(), it->value.GetInt() });
                 }
                 else {
-                    Walnut::Logger::Log(Walnut::MessageType::Error, "Autosplits json error: Incorrect typings found at key " + std::string(it->name.GetString()));
+                    WLog::Log(WMT::Error, "Autosplits json error: Incorrect typings found at key " + std::string(it->name.GetString()));
                 }
             }
         }
 
         return returnPreset;
     }
+
 #pragma endregion
 }

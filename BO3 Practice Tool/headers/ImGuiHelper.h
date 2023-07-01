@@ -103,4 +103,8 @@ namespace ImGuiHelper {
 		static bool Render(std::string_view name, const std::vector<std::string>& items, int& index, const ImVec2& size);
 	};
 
+	struct HelpMarker {
+		static void Render(std::string_view text);
+	};
+
 }

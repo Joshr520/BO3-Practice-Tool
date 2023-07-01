@@ -135,7 +135,7 @@ namespace BO3PT
 		hotkeyDefs.insert({ "Increment Gum Tracker", { "Gum Tracker", std::function<void()>(IncrementGumTracker) } }); hotkeyDefs.insert({ "Decrement Gum Tracker", { "Gum Tracker", std::function<void()>(DecrementGumTracker) } });
 		hotkeyDefs.insert({ "Toggle Gum Tracker", { "Gum Tracker", std::function<void()>(ToggleGumTracker) } });
 
-		keybindBuilder = Walnut::JSONBuilder(std::string_view(selfDirectory + "\\bindings.json"));
+		keybindBuilder = Walnut::JSONBuilder::FromFile(selfDirectory + "\\bindings.json");
 
 		LoadKeybinds();
 		keybindBuilder.SaveToFile(selfDirectory + "\\bindings.json");
@@ -411,7 +411,7 @@ namespace BO3PT
 
 	void IncrementGumTracker()
 	{
-		if (showGumSelection)
+		if (showBGBSelection)
 			return;
 		if (gumTrackCurrentIndex == 4)
 			gumTrackCurrentIndex = 0;
@@ -421,7 +421,7 @@ namespace BO3PT
 	}
 	void DecrementGumTracker()
 	{
-		if (showGumSelection)
+		if (showBGBSelection)
 			return;
 		if (gumTrackCurrentIndex == 0)
 			gumTrackCurrentIndex = 4;
@@ -431,7 +431,7 @@ namespace BO3PT
 	}
 	void ToggleGumTracker()
 	{
-		if (showGumSelection)
+		if (showBGBSelection)
 			return;
 		gumTrackChosen[gumTrackCurrentIndex] = !gumTrackChosen[gumTrackCurrentIndex];
 		if (std::all_of(std::begin(gumTrackChosen), std::end(gumTrackChosen), [](bool value) { return value; }))
