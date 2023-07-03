@@ -77,7 +77,6 @@ WatchInterface()
         param = compiler::readserver();
         while(param >= 0)
         {
-            compiler::nprintln(param);
             params[params.size] = param;
             param = compiler::readserver();
         }

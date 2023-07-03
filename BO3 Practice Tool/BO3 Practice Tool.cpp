@@ -103,6 +103,8 @@ static int mapError = 0;
 extern Walnut::Application* Walnut::CreateApplication(int argc, char** argv);
 bool g_ApplicationRunning = true;
 
+std::mutex asyncSearchLock;
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
 	while (g_ApplicationRunning) {
@@ -120,8 +122,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     WLog::Log(WMT::Success, "Practice Tool Finish");
     WLog::Log(WMT::Info, "Resetting presets");
-    WriteBGBPresetToGame({});
-    WriteAutosplitPresetToGame({});
+    GUIState::UnsetState(Active);
+    WriteBGBPresetToGame();
+    WriteWeaponLoadoutToGame();
+    WriteAutosplitPresetToGame();
     WritePracticePatches();
 
     return 0;
@@ -466,7 +470,7 @@ public:
                     autosplitPresets[currentAutosplitPreset].m_Map = mapError;
                     autosplitPresets[currentAutosplitPreset].m_Splits = {  };
                     autosplitPresets[currentAutosplitPreset].m_NumSplits = 0;
-                    WriteAutosplitPresetToGame(autosplitPresets[currentAutosplitPreset]);
+                    WriteAutosplitPresetToGame();
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::SameLine();
@@ -500,8 +504,9 @@ public:
                     builder.SaveToFile(selfDirectory + "\\settings.json");
                     VerifyExternalFiles();
                     WLog::Log(WMT::Info, "Writing default presets");
-                    WriteBGBPresetToGame({});
-                    WriteAutosplitPresetToGame({});
+                    WriteBGBPresetToGame();
+                    WriteWeaponLoadoutToGame();
+                    WriteAutosplitPresetToGame();
                     WritePracticePatches();
                 }
             }
@@ -523,8 +528,9 @@ public:
                 ResetToggles();
                 writeBGBs = false;
                 writeSplits = false;
-                WriteBGBPresetToGame({});
-                WriteAutosplitPresetToGame({});
+                WriteBGBPresetToGame();
+                WriteWeaponLoadoutToGame();
+                WriteAutosplitPresetToGame();
                 GUIState::UnsetState(Active);
                 auto thread = std::thread(SearchForGame);
                 thread.detach();
@@ -610,9 +616,10 @@ void SetupData()
 
     if (GUIState::IsStateSet(SteamFound)) {
         WLog::Log(WMT::Info, "Writing default presets");
-        WriteBGBPresetToGame({});
+        WriteBGBPresetToGame();
+        WriteWeaponLoadoutToGame();
         WritePracticePatches();
-        WriteAutosplitPresetToGame({});
+        WriteAutosplitPresetToGame();
     }
 
     GUIState::AddMember({ std::function<void()>(BGBLoadoutFunc) });
@@ -659,11 +666,12 @@ void SearchForGame()
             GetModuleFileNameExA(tempHandle, NULL, windowFilename, 256);
             std::string name = windowFilename;
             if (name.find("BlackOps3.exe") != name.npos) {
+                std::unique_lock<std::mutex> lock(asyncSearchLock);
                 if (MemState::SetPID(L"BlackOps3.exe") && MemState::SetAddresses(L"BlackOps3.exe")) {
                     std::stringstream log;
-                    log << std::string(20, ' ') + "Base Address: " << MemState::GetBaseAddress() << "\n";
-                    log << std::string(20, ' ') + "Map Address: " << MemState::GetMapNameAddress() << "\n";
-                    log << "Round Address: " << MemState::GetRoundAddress();
+                    log << std::string(40, '-') + "Base Address: " << MemState::GetBaseAddress() << "\n";
+                    log << std::string(40, '-') + "Map Address: " << MemState::GetMapNameAddress() << "\n";
+                    log << std::string(40, '-') + "Round Address: " << MemState::GetRoundAddress();
                     WLog::Log(WMT::Success, "Loading Process Addresses:\n" + log.str());
                     if (!MemState::SetHandle()) {
                         WLog::Log(WMT::Error, "Error opening process with error code " + GetLastError());
@@ -802,6 +810,8 @@ void Sidebar()
     ImGui::PopStyleColor();
     ImGui::SameLine();
 
+    std::unique_lock<std::mutex> lock(asyncSearchLock);
+
     if (!GUIState::IsStateSet(SteamFound) || MemState::GetState() == Unloaded) {
         ImGui::BeginDisabled();
     }
@@ -812,21 +822,19 @@ void Sidebar()
         }
         else {
             if (GUIState::IsStateSet(Active)) {
-                WriteBGBPresetToGame({});
-                WriteAutosplitPresetToGame({});
-                WritePracticePatches();
                 ResetToggles();
                 WLog::Log(WMT::Info, "Toggling tool off");
                 GUIState::UnsetState(Active);
             }
             else {
-                WriteBGBPresetToGame(bgbPresets[currentBGBPreset]);
-                WriteAutosplitPresetToGame(autosplitPresets[currentAutosplitPreset]);
-                WritePracticePatches();
                 WLog::Log(WMT::Info, "Toggling tool on");
                 GUIState::SetState(Active);
 
             }
+            WriteBGBPresetToGame();
+            WriteWeaponLoadoutToGame();
+            WriteAutosplitPresetToGame();
+            WritePracticePatches();
             std::thread(InjectTool, GUIState::IsStateSet(Active)).detach();
         }
     }
@@ -862,6 +870,7 @@ void Sidebar()
     if (!GUIState::IsStateSet(SteamFound) || MemState::GetState() == Unloaded) {
         ImGui::EndDisabled();
     }
+    lock.unlock();
     TextFont::Render("Resources", sidebarFont);
     ImGui::Separator(2.5f);
     // Resources
@@ -898,7 +907,7 @@ void BGBLoadoutFunc()
             ImGui::SetNextItemWidth(250);
             if (ImGui::BeginCombo("Gum Presets", bgbPresets[currentBGBPreset].m_Name.c_str(), ImGuiComboFlags_HeightRegular)) {
                 if (Selection::RenderBGBPreset(bgbPresets, currentBGBPreset) && writeBGBs && GUIState::IsStateSet(Active)) {
-                    WriteBGBPresetToGame(bgbPresets[currentBGBPreset]);
+                    WriteBGBPresetToGame();
                 }
                 ImGui::EndCombo();
             }
@@ -907,7 +916,7 @@ void BGBLoadoutFunc()
                 ImGui::BeginDisabled();
             }
             if (ImGui::Checkbox("Active", &writeBGBs)) {
-                WriteBGBPresetToGame(bgbPresets[currentBGBPreset]);
+                WriteBGBPresetToGame();
             }
             if (!GUIState::IsStateSet(Active)) {
                 ImGui::EndDisabled();
@@ -1061,7 +1070,7 @@ void WeaponLoadoutFunc()
             ImGui::SetNextItemWidth(250);
             if (ImGui::BeginCombo("Weapon Loadouts", weaponPresets[currentWeaponPreset].m_Name.c_str(), ImGuiComboFlags_HeightRegular)) {
                 if (Selection::RenderWeaponLoadout(weaponPresets, currentWeaponPreset) && writeWeaponPresets && GUIState::IsStateSet(Active)) {
-                    WriteWeaponLoadoutToGame(weaponPresets[currentWeaponPreset]);
+                    WriteWeaponLoadoutToGame();
                 }
                 ImGui::EndCombo();
             }
@@ -1070,7 +1079,7 @@ void WeaponLoadoutFunc()
                 ImGui::BeginDisabled();
             }
             if (ImGui::Checkbox("Active", &writeWeaponPresets)) {
-                WriteWeaponLoadoutToGame(weaponPresets[currentWeaponPreset]);
+                WriteWeaponLoadoutToGame();
             }
             if (!GUIState::IsStateSet(Active)) {
                 ImGui::EndDisabled();
@@ -1223,6 +1232,7 @@ void WeaponLoadoutFunc()
             drawList->AddRectFilled(actionTextPos, actionTextPos + ImGui::CalcTextSize("Remove"), IM_COL32(0, 0, 0, 170));
             drawList->AddText(actionTextPos, COLOR_WHITE, "Remove");
             // Optics selections
+            const bool incompatible = selectedWeaponType == "Sniper Rifles" && std::find(equippedAttachments.begin(), equippedAttachments.end(), 0) != equippedAttachments.end();
             for (int i = 0; i < static_cast<int>(selectedWeapon.m_Optics.size()); i++) {
                 const std::string& optic = selectedWeapon.m_Optics[i];
                 const ImVec2 pos = ImGui::GetWindowPos() + ImVec2(50 + i * (attachmentSize.x + style.ItemSpacing.x), 50);
@@ -1237,6 +1247,9 @@ void WeaponLoadoutFunc()
                 drawList->AddRectFilled(textPos, textPos + ImGui::CalcTextSize(optic.c_str()), IM_COL32(0, 0, 0, 170));
                 drawList->AddText(textPos, COLOR_WHITE, optic.c_str());
                 drawList->AddRect(pos, posEnd, COLOR_WHITE);
+                if (incompatible) {
+                    drawList->AddImage(weaponWarning->GetDescriptorSet(), ImVec2(posEnd.x - 32, pos.y), ImVec2(posEnd.x, pos.y + 32));
+                }
                 if (imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                     if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false) || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_R, false)) {
@@ -1245,6 +1258,9 @@ void WeaponLoadoutFunc()
                             SaveWeaponLoadout(weaponPresets[currentWeaponPreset]);
                         }
                         else {
+                            if (incompatible) {
+                                equippedAttachments.erase(std::find(equippedAttachments.begin(), equippedAttachments.end(), 0));
+                            }
                             presetWeapon.m_EquippedOptic = i;
                             SaveWeaponLoadout(weaponPresets[currentWeaponPreset]);
                         }
@@ -1273,6 +1289,9 @@ void WeaponLoadoutFunc()
                     auto it = std::find(equippedAttachments.begin(), equippedAttachments.end(), i);
                     drawList->AddText(pos + ImVec2(5, 5), COLOR_WHITE, std::to_string(std::distance(equippedAttachments.begin(), it) + 1).c_str());
                 }
+                if (attachment == "Ballistics CPU" && presetWeapon.m_EquippedOptic >= 0) {
+                    drawList->AddImage(weaponWarning->GetDescriptorSet(), ImVec2(posEnd.x - 32, pos.y), ImVec2(posEnd.x, pos.y + 32));
+                }
                 if (imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                     if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false) || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_R, false)) {
@@ -1281,6 +1300,9 @@ void WeaponLoadoutFunc()
                             SaveWeaponLoadout(weaponPresets[currentWeaponPreset]);
                         }
                         else {
+                            if (attachment == "Ballistics CPU" && selectedWeaponType == "Sniper Rifles" && presetWeapon.m_EquippedOptic >= 0) {
+                                presetWeapon.m_EquippedOptic = -1;
+                            }
                             equippedAttachments.emplace_back(i);
                             if (equippedAttachments.size() > selectedWeapon.m_NumAttachments) {
                                 equippedAttachments.erase(equippedAttachments.begin());
@@ -1448,7 +1470,7 @@ void AutosplitsFunc()
                     }
 
                     if (prevItem != currentAutosplitPreset) {
-                        WriteAutosplitPresetToGame(autosplitPresets[currentAutosplitPreset]);
+                        WriteAutosplitPresetToGame();
                     }
                     ImGui::EndCombo();
                 }
@@ -1457,7 +1479,7 @@ void AutosplitsFunc()
                     ImGui::BeginDisabled();
                 }
                 if (ImGui::Checkbox("Active", &writeSplits)) {
-                    WriteAutosplitPresetToGame(autosplitPresets[currentAutosplitPreset]);
+                    WriteAutosplitPresetToGame();
                 }
                 if (!GUIState::IsStateSet(Active)) {
                     ImGui::EndDisabled();

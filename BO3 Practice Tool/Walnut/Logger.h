@@ -43,8 +43,5 @@ namespace Walnut
 		static std::vector<Message> s_LogMessages;
 		static std::ofstream s_LogFile;
 		static std::string s_LogFilename;
-		static bool s_Collapsed;
-		static ImVec2 s_LogWindowSize;
-		static ImVec2 s_LogWindowFull;
 	};
 }

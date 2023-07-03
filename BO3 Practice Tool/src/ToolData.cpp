@@ -333,8 +333,8 @@ namespace BO3PT
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
         }
-        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Weapon Loadout.txt")) {
-            std::ofstream(practiceToolDirectory + "\\Settings\\Active Weapon Loadout.txt");
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Weapon Loadout.json")) {
+            std::ofstream(practiceToolDirectory + "\\Settings\\Active Weapon Loadout.json");
         }
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
@@ -679,6 +679,7 @@ namespace BO3PT
             activeData.replace(activeData.size() - 1, 1, "");
             std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write(activeData.c_str(), activeData.size());
         }
+        WriteBGBPresetToGame();
     }
 
     void SaveBGBPresets()
@@ -699,17 +700,16 @@ namespace BO3PT
         }
 
         std::ofstream(selfDirectory + BGB_PRESETS_FILE).write(presetData.c_str(), presetData.size());
-        if (writeBGBs && GUIState::IsStateSet(Active)) {
-            WriteBGBPresetToGame(bgbPresets[currentBGBPreset]);
-        }
+        WriteBGBPresetToGame();
     }
 
-    void WriteBGBPresetToGame(const BGBPreset& preset)
+    void WriteBGBPresetToGame()
     {
-        if (preset.m_Name.empty()) {
+        if (!bgbPresets.size() || !GUIState::IsStateSet(Active) || !writeBGBs) {
             std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write("-1,-1,-1,-1,-1", 14);
             return;
         }
+        const BGBPreset& preset = bgbPresets[currentBGBPreset];
         std::string activeData;
         for (const BGB& gum : preset.m_BGBs) {
             activeData.append(gum.m_Index + ",");
@@ -828,6 +828,7 @@ namespace BO3PT
         weaponPresets.emplace_back(newPreset);
         builder.SaveToFile(filename);
         currentWeaponPreset = static_cast<int>(weaponPresets.size()) - 1;
+        WriteWeaponLoadoutToGame(&builder);
     }
 
     void DeleteWeaponPreset(const MenuWeaponPreset& preset)
@@ -839,6 +840,7 @@ namespace BO3PT
             currentWeaponPreset--;
         }
         weaponPresets.erase(std::find(weaponPresets.begin(), weaponPresets.end(), preset));
+        WriteWeaponLoadoutToGame();
     }
 
     void SaveWeaponLoadout(const MenuWeaponPreset& preset)
@@ -862,25 +864,24 @@ namespace BO3PT
         }
 
         builder.SaveToFile(filename);
-        if (writeWeaponPresets && GUIState::IsStateSet(Active)) {
-            WriteWeaponLoadoutToGame(preset, &builder);
-        }
+        WriteWeaponLoadoutToGame(&builder);
     }
 
-    void WriteWeaponLoadoutToGame(const MenuWeaponPreset& preset, Walnut::JSONBuilder* json)
+    void WriteWeaponLoadoutToGame(Walnut::JSONBuilder* json)
     {
-        if (preset.m_Name.empty()) {
-            if (!json) {
-                WJson::WriteEmpty(std::string_view(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE));
-            }
-            else {
-                json->SaveToFile(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE);
-            }
+        if (!weaponPresets.size() || !GUIState::IsStateSet(Active) || !writeWeaponPresets) {
+            WJson::WriteEmpty(std::string_view(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE));
         }
         else {
-            const std::string filename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json";
-            WJson builder = WJson::FromFile(filename);
-            builder.SaveToFile(filename);
+            if (json) {
+                json->SaveToFile(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE);
+            }
+            else {
+                const MenuWeaponPreset& preset = weaponPresets[currentWeaponPreset];
+                const std::string filename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json";
+                WJson builder = WJson::FromFile(filename);
+                builder.SaveToFile(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE);
+            }
         }
     }
 
@@ -1490,6 +1491,7 @@ namespace BO3PT
         autosplitPresets.emplace_back(newPreset);
         builder.SaveToFile(filename);
         currentAutosplitPreset = static_cast<int>(autosplitPresets.size()) - 1;
+        WriteAutosplitPresetToGame(&builder);
     }
 
     void DeleteAutosplitPreset(const AutosplitPreset& preset)
@@ -1501,6 +1503,7 @@ namespace BO3PT
             currentAutosplitPreset--;
         }
         autosplitPresets.erase(std::find(autosplitPresets.begin(), autosplitPresets.end(), preset));
+        WriteAutosplitPresetToGame();
     }
 
     void SaveAutosplitPreset(const AutosplitPreset& preset)
@@ -1524,25 +1527,24 @@ namespace BO3PT
         }
 
         builder.SaveToFile(filename);
-        if (writeSplits && GUIState::IsStateSet(Active)) {
-            WriteAutosplitPresetToGame(preset, &builder);
-        }
+        WriteAutosplitPresetToGame(&builder);
     }
 
-    void WriteAutosplitPresetToGame(const AutosplitPreset& preset, Walnut::JSONBuilder* json)
+    void WriteAutosplitPresetToGame(Walnut::JSONBuilder* json)
     {
-        if (preset.m_Name.empty()) {
-            if (!json) {
-                WJson::WriteEmpty(std::string_view(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE));
-            }
-            else {
-                json->SaveToFile(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE);
-            }
+        if (!autosplitPresets.size() || !GUIState::IsStateSet(Active) || !writeSplits) {
+            WJson::WriteEmpty(std::string_view(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE));
         }
         else {
-            const std::string filename = selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json";
-            WJson builder = WJson::FromFile(filename);
-            builder.SaveToFile(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE);
+            if (json) {
+                json->SaveToFile(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE);
+            }
+            else {
+                const AutosplitPreset& preset = autosplitPresets[currentAutosplitPreset];
+                const std::string filename = selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json";
+                WJson builder = WJson::FromFile(filename);
+                builder.SaveToFile(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE);
+            }
         }
     }
 

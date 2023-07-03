@@ -167,7 +167,6 @@ XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /e /i /y
 XCOPY "$(ProjectDir)Exported Splits" "$(TargetDir)Exported Splits" /s /e /i /y
 XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /e /i /y
 XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /e /i /y
-COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y
 COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
 </Command>
     </PostBuildEvent>
@@ -198,7 +197,6 @@ XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /e /i /y
 XCOPY "$(ProjectDir)Exported Splits" "$(TargetDir)Exported Splits" /s /e /i /y
 XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /e /i /y
 XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /e /i /y
-COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y
 COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
 </Command>
     </PostBuildEvent>
@@ -234,7 +232,6 @@ XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /e /i /y
 XCOPY "$(ProjectDir)Exported Splits" "$(TargetDir)Exported Splits" /s /e /i /y
 XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /e /i /y
 XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /e /i /y
-COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y
 COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
 </Command>
     </PostBuildEvent>

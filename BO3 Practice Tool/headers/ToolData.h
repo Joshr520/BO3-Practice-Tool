@@ -126,7 +126,7 @@ namespace BO3PT
 	void CreateBGBPreset(std::string_view presetName);
 	void DeleteBGBPreset(const BGBPreset& preset);
 	void SaveBGBPresets();
-	void WriteBGBPresetToGame(const BGBPreset& preset);
+	void WriteBGBPresetToGame();
 	void SwapBGBPreset(BGB bgbOld, BGB bgbNew);
 	void SwapBGBTrack(BGB bgbOld, BGB bgbNew);
 
@@ -163,7 +163,7 @@ namespace BO3PT
 	void CreateWeaponPreset(std::string_view presetName);
 	void DeleteWeaponPreset(const MenuWeaponPreset& preset);
 	void SaveWeaponLoadout(const MenuWeaponPreset& preset);
-	void WriteWeaponLoadoutToGame(const MenuWeaponPreset& weaponPreset, Walnut::JSONBuilder* json = nullptr);
+	void WriteWeaponLoadoutToGame(Walnut::JSONBuilder* json = nullptr);
 
 	MenuWeaponPreset ParseWeaponLoadout(std::string_view filename);
 #pragma endregion
@@ -377,7 +377,7 @@ namespace BO3PT
 	void CreateAutosplitPreset(std::string_view presetName);
 	void DeleteAutosplitPreset(const AutosplitPreset& preset);
 	void SaveAutosplitPreset(const AutosplitPreset& preset);
-	void WriteAutosplitPresetToGame(const AutosplitPreset& preset, Walnut::JSONBuilder* json = nullptr);
+	void WriteAutosplitPresetToGame(Walnut::JSONBuilder* json = nullptr);
 	void WriteSplitXML(std::string_view preset, const std::vector<std::pair<std::string, int>>& splits);
 	void WriteLayoutXML(std::string_view preset, int numSplits);
 	AutosplitPreset ParseSplitJson(std::string_view filename);

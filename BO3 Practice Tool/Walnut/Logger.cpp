@@ -7,24 +7,27 @@
 #include <chrono>
 
 static bool scrollDown = false;
-ImGuiWindowFlags logFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoDocking;
+ImGuiWindowFlags logFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoDocking;
 
 namespace Walnut
 {
 	std::vector<Message> Logger::s_LogMessages;
 	std::ofstream Logger::s_LogFile;
 	std::string Logger::s_LogFilename;
-	bool Logger::s_Collapsed;
-	ImVec2 Logger::s_LogWindowSize;
-	ImVec2 Logger::s_LogWindowFull;
+	
+	static bool collapsed;
+	static bool newMessage;
+	static bool windowChanged;
+	static float scrollY;
+	static ImVec2 windowSize;
 
 	void Logger::InitLogger(std::string_view filename)
 	{
 		s_LogFilename = filename.data();
 		s_LogFile.open(s_LogFilename);
 		s_LogFile.close();
-		s_LogWindowSize = LOG_WINDOW_COLLAPSED_SIZE;
-		s_Collapsed = true;
+		windowSize = LOG_WINDOW_COLLAPSED_SIZE;
+		collapsed = true;
 		logFlags |= ImGuiWindowFlags_NoTitleBar;
 
 		Log(MessageType::Success, "Logger Init Completed");
@@ -81,34 +84,45 @@ namespace Walnut
 		s_LogFile.open(s_LogFilename, std::ios::app);
 		s_LogFile.write(logEntry.m_Message.c_str(), logEntry.m_Message.size());
 		s_LogFile.close();
+
+		newMessage = true;
 	}
 
 	void Logger::DrawLogWindow()
 	{
-		if (!s_Collapsed) {
-			s_LogWindowSize = ImVec2(ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y / 2);
+		if (!collapsed) {
+			windowSize = ImVec2(ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y / 2);
 		}
 
 		ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImVec2 pos = ImVec2(viewport->Pos.x + viewport->Size.x - s_LogWindowSize.x, viewport->Pos.y + viewport->Size.y - s_LogWindowSize.y);
+		ImVec2 pos = ImVec2(viewport->Pos.x + viewport->Size.x - windowSize.x, viewport->Pos.y + viewport->Size.y - windowSize.y);
 		ImGui::SetNextWindowPos(pos);
-		ImGui::SetNextWindowSize(s_LogWindowSize);
+		ImGui::SetNextWindowSize(windowSize);
 		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.2f, 0.2f, 0.2f, 1.f));
-		if (!s_Collapsed) {
+		if (!collapsed) {
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.05f, 0.05f, 0.05f, 0.9f));
 		}
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		ImGui::Begin("Logs", NULL, logFlags);
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor();
-		if (!s_Collapsed) {
+		if (!collapsed) {
 			ImGui::PopStyleColor();
 		}
 
-		if (!s_Collapsed) {
+		if (!collapsed) {
 			for (const Message& message : s_LogMessages) {
 				ImGui::TextColored(message.m_Color, message.m_Message.c_str());
 			}
+		}
+
+		if (windowChanged && !collapsed) {
+			windowChanged = false;
+			ImGui::SetScrollY(scrollY);
+		}
+		if (newMessage && !collapsed) {
+			newMessage = false;
+			ImGui::SetScrollHereY(1.0f);
 		}
 
 		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionMax().x - 25.0f, ImGui::GetWindowContentRegionMax().y + ImGui::GetScrollY() * 2 - 25.0f));
@@ -116,18 +130,25 @@ namespace Walnut
 			ToggleCollapsed();
 		}
 
+		if (!collapsed) {
+			scrollY = ImGui::GetScrollY();
+		}
+
 		ImGui::End();
 	}
 
 	void Logger::ToggleCollapsed()
 	{
-		s_Collapsed = !s_Collapsed;
-		if (s_Collapsed) {
-			s_LogWindowSize = LOG_WINDOW_COLLAPSED_SIZE;
+		collapsed = !collapsed;
+		windowChanged = true;
+		if (collapsed) {
+			windowSize = LOG_WINDOW_COLLAPSED_SIZE;
 			logFlags |= ImGuiWindowFlags_NoTitleBar;
+			logFlags |= ImGuiWindowFlags_NoScrollbar;
 		}
 		else {
 			logFlags &= ~ImGuiWindowFlags_NoTitleBar;
+			logFlags &= ~ImGuiWindowFlags_NoScrollbar;
 		}
 	}
 }
