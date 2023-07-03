@@ -1,0 +1,144 @@
+{
+    "Submachine Guns": {
+        "Vesper": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "VMP": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Kuda": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Pharo": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Weevil": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        }
+    },
+    "Assault Rifles": {
+        "ICR-1": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "KN-44": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "M8A7": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Sheiva": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "HVK-30": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Man-O-War": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        }
+    },
+    "Shotguns": {
+        "KRM-262": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Argus": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "205 Brecci": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Haymaker 12": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        }
+    },
+    "Light Machine Guns": {
+        "BRM": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Dingo": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "48 Dredge": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Gorgon": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        }
+    },
+    "Sniper Rifles": {
+        "Locus": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "Drakon": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "SVG-100": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        }
+    },
+    "Secondaries": {
+        "Bowie Knife": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "RK5": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "L-CAR 9": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        },
+        "XM-53": {
+            "Optic": -1,
+            "Attachments": [],
+            "Camo": 0
+        }
+    }
+}

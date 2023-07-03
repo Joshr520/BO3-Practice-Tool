@@ -71,8 +71,8 @@ namespace Walnut {
 		m_Width = width;
 		m_Height = height;
 		
-		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
 		std::unique_lock<std::mutex> lock(imgMutex);
+		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
 		SetData(data);
 		lock.unlock();
 		stbi_image_free(data);

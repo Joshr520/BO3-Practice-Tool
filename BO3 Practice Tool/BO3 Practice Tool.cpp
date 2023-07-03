@@ -1109,7 +1109,7 @@ void WeaponLoadoutFunc()
                 drawList->AddText(textPos, COLOR_WHITE, weaponType.c_str());
                 drawList->AddRect(pos, posEnd, COLOR_WHITE);
 
-                if (imageRect.Contains(ImGui::GetMousePos())) {
+                if (ImGui::IsWindowHovered() && imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                     if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
                         currentWeaponPresetMenu = i;
@@ -1172,7 +1172,7 @@ void WeaponLoadoutFunc()
                             drawList->AddText(textPos, COLOR_WHITE, camo.c_str());
                             drawList->AddRect(pos, posEnd, COLOR_WHITE);
 
-                            if (imageRect.Contains(ImGui::GetMousePos())) {
+                            if (ImGui::IsWindowHovered() && imageRect.Contains(ImGui::GetMousePos())) {
                                 drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                                 if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
                                     presetWeapon.m_Camo = { type, camo };
@@ -1250,7 +1250,7 @@ void WeaponLoadoutFunc()
                 if (incompatible) {
                     drawList->AddImage(weaponWarning->GetDescriptorSet(), ImVec2(posEnd.x - 32, pos.y), ImVec2(posEnd.x, pos.y + 32));
                 }
-                if (imageRect.Contains(ImGui::GetMousePos())) {
+                if (ImGui::IsWindowHovered() && imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                     if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false) || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_R, false)) {
                         if (i == presetWeapon.m_EquippedOptic) {
@@ -1292,7 +1292,7 @@ void WeaponLoadoutFunc()
                 if (attachment == "Ballistics CPU" && presetWeapon.m_EquippedOptic >= 0) {
                     drawList->AddImage(weaponWarning->GetDescriptorSet(), ImVec2(posEnd.x - 32, pos.y), ImVec2(posEnd.x, pos.y + 32));
                 }
-                if (imageRect.Contains(ImGui::GetMousePos())) {
+                if (ImGui::IsWindowHovered() && imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                     if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false) || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_R, false)) {
                         if (std::find(equippedAttachments.begin(), equippedAttachments.end(), i) != equippedAttachments.end()) {
@@ -1337,7 +1337,7 @@ void WeaponLoadoutFunc()
                     drawList->AddText(textPos, COLOR_WHITE, "Choose Camo");
                 }
                 drawList->AddRect(pos, posEnd, COLOR_WHITE);
-                if (imageRect.Contains(ImGui::GetMousePos())) {
+                if (ImGui::IsWindowHovered() && imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                     if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
                         camoSelection = true;
@@ -1364,7 +1364,7 @@ void WeaponLoadoutFunc()
                 drawList->AddRectFilled(textPos, textPos + ImGui::CalcTextSize(weapon.m_Name.c_str()), IM_COL32(0, 0, 0, 170));
                 drawList->AddText(textPos, COLOR_WHITE, weapon.m_Name.c_str());
                 drawList->AddRect(pos, posEnd, COLOR_WHITE);
-                if (imageRect.Contains(ImGui::GetMousePos())) {
+                if (ImGui::IsWindowHovered() && imageRect.Contains(ImGui::GetMousePos())) {
                     drawList->AddRect(pos, posEnd, COLOR_ORANGE);
                     if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_MouseLeft, false)) {
                         currentWeaponEdit = i;
