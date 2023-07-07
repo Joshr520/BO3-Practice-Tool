@@ -14,9 +14,6 @@ LoadSplits()
 
     if(maps[map] != level.script) return;
 
-    level notify("end_server");
-    SetDvar("sv_cheats", 0);
-
     level.num_splits = split_size + 1;
 
     split_funcs = [];
@@ -129,6 +126,8 @@ LoadSplits()
     WaitFadeIn();
     thread Split();
     thread PrintSplitMessage();
+    level notify("end_server");
+    SetDvar("sv_cheats", 0);
     start_time = GetTime();
 
     foreach(index, func in active_funcs)

@@ -3607,71 +3607,69 @@ void GKValveSolverFunc()
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize("Green, P").x / 2);
             ImGui::Text("Green, P");
             for (int column = 0; column < 6; column++) {
-                if (valveLocations[column] == passwordLocation) {
+                if (valves.m_ValveLocations[column] == passwordLocation) {
                     continue;
                 }
                 ImGui::TableSetColumnIndex(used);
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, COLOR_GREY);
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(valveLocations[column].c_str()).x / 2);
-                ImGui::Text(valveLocations[column].c_str());
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(valves.m_ValveLocations[column].c_str()).x / 2);
+                ImGui::Text(valves.m_ValveLocations[column].c_str());
                 used++;
             }
             for (int row = 0; row < 6; row++) {
-                if (possibleValves_1.find(valveLocations[row]) == possibleValves_1.end()) {
-                    continue;
+                if (possibleValves_1.find(valves.m_ValveLocations[row]) != BO3PT::possibleValves_1.end()) {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, COLOR_GREY);
+                    std::string key = valveLocationsAbbr[valves.m_ValveLocations[row]] + ", " + valveLocationsAbbr[passwordLocation] + " - 1";
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(key.c_str()).x / 2);
+                    ImGui::Text(key.c_str());
+                    used = 1;
+                    for (int column = 0; column < 6; column++) {
+                        if (valves.m_ValveLocations[column] == passwordLocation) {
+                            continue;
+                        }
+                        ImU32 color;
+                        ImGui::TableSetColumnIndex(used);
+                        if (possibleValves_1[valves.m_ValveLocations[row]][column] == "P") {
+                            color = COLOR_PINK;
+                        }
+                        else if (valveDirections[column][static_cast<size_t>(std::stoi(possibleValves_1[valves.m_ValveLocations[row]][column])) - 1]) {
+                            color = COLOR_GREEN;
+                        }
+                        else {
+                            color = COLOR_RED;
+                        }
+                        Button::RenderFake(possibleValves_1[valves.m_ValveLocations[row]][column].c_str(), ImVec2(145, 25), color);
+                        used++;
+                    }
                 }
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, COLOR_GREY);
-                std::string key = valveLocationsAbbr[valveLocations[row]] + ", " + valveLocationsAbbr[passwordLocation] + " - 1";
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(key.c_str()).x / 2);
-                ImGui::Text(key.c_str());
-                used = 1;
-                for (int column = 0; column < 6; column++) {
-                    if (valveLocations[column] == passwordLocation) {
-                        continue;
+                if (possibleValves_2.find(valves.m_ValveLocations[row]) != possibleValves_2.end()) {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, COLOR_GREY);
+                    std::string key = valveLocationsAbbr[valves.m_ValveLocations[row]] + ", " + valveLocationsAbbr[passwordLocation] + " - 2";
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(key.c_str()).x / 2);
+                    ImGui::Text(key.c_str());
+                    used = 1;
+                    for (int column = 0; column < 6; column++) {
+                        if (valves.m_ValveLocations[column] == passwordLocation) {
+                            continue;
+                        }
+                        ImU32 color;
+                        ImGui::TableSetColumnIndex(used);
+                        if (possibleValves_2[valves.m_ValveLocations[row]][column] == "P") {
+                            color = COLOR_PINK;
+                        }
+                        else if (valveDirections[column][static_cast<size_t>(std::stoi(possibleValves_2[valves.m_ValveLocations[row]][column])) - 1]) {
+                            color = COLOR_GREEN;
+                        }
+                        else {
+                            color = COLOR_RED;
+                        }
+                        Button::RenderFake(possibleValves_2[valves.m_ValveLocations[row]][column].c_str(), ImVec2(145, 25), color);
+                        used++;
                     }
-                    ImU32 color;
-                    ImGui::TableSetColumnIndex(used);
-                    if (possibleValves_1[valveLocations[row]][column] == "P") {
-                        color = COLOR_PINK;
-                    }
-                    else if (valveDirections[column][static_cast<size_t>(std::stoi(possibleValves_1[valveLocations[row]][column])) - 1]) {
-                        color = COLOR_GREEN;
-                    }
-                    else {
-                        color = COLOR_RED;
-                    }
-                    Button::RenderFake(possibleValves_1[valveLocations[row]][column].c_str(), ImVec2(145, 25), color);
-                    used++;
-                }
-                if (possibleValves_2.find(valveLocations[row]) == possibleValves_2.end()) {
-                    continue;
-                }
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, COLOR_GREY);
-                key = valveLocationsAbbr[valveLocations[row]] + ", " + valveLocationsAbbr[passwordLocation] + " - 2";
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(key.c_str()).x / 2);
-                ImGui::Text(key.c_str());
-                used = 1;
-                for (int column = 0; column < 6; column++) {
-                    if (valveLocations[column] == passwordLocation) {
-                        continue;
-                    }
-                    ImU32 color;
-                    ImGui::TableSetColumnIndex(used);
-                    if (possibleValves_2[valveLocations[row]][column] == "P") {
-                        color = COLOR_PINK;
-                    }
-                    else if (valveDirections[column][static_cast<size_t>(std::stoi(possibleValves_2[valveLocations[row]][column])) - 1]) {
-                        color = COLOR_GREEN;
-                    }
-                    else {
-                        color = COLOR_RED;
-                    }
-                    Button::RenderFake(possibleValves_2[valveLocations[row]][column].c_str(), ImVec2(145, 25), color);
-                    used++;
                 }
             }
             ImGui::EndTable();
@@ -3684,13 +3682,13 @@ void GKValveSolverFunc()
         for (int i = 0; i < 6; i++) {
             ImGui::BeginGroup();
             ImGui::AlignTextToFramePadding();
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (60 - ImGui::CalcTextSize(valveLocations[i].c_str()).x / 2));
-            ImGui::Text(valveLocations[i].c_str());
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (60 - ImGui::CalcTextSize(valves.m_ValveLocations[i].c_str()).x / 2));
+            ImGui::Text(valves.m_ValveLocations[i].c_str());
             ImGui::SameLine();
             std::string checkedGreen = "Not Green##";
-            checkedGreen += valveLocations[i];
+            checkedGreen += valves.m_ValveLocations[i];
             bool disableCheck = false;
-            if (greenLocation == valveLocations[i] || passwordLocation == valveLocations[i]) {
+            if (greenLocation == valves.m_ValveLocations[i] || passwordLocation == valves.m_ValveLocations[i]) {
                 ImGui::BeginDisabled();
                 disableCheck = true;
                 checkedGreenArray[i] = false;
@@ -3700,7 +3698,7 @@ void GKValveSolverFunc()
                 CalcValveProbabilities();
                 CalcRemainingGreen();
             }
-            if (disableCheck && (greenLocation == valveLocations[i] || passwordLocation == valveLocations[i])) {
+            if (disableCheck && (greenLocation == valves.m_ValveLocations[i] || passwordLocation == valves.m_ValveLocations[i])) {
                 ImGui::EndDisabled();
             }
             if (checkedGreenArray[i]) {
@@ -3711,7 +3709,7 @@ void GKValveSolverFunc()
                 color = COLOR_GREEN;
             }
             std::string green = "Green##";
-            green += valveLocations[i];
+            green += valves.m_ValveLocations[i];
             if (Button::RenderSingle(green, ImVec2(120, 25), false, color)) {
                 if (valveGreen[i]) {
                     if (!noGreenChoice) {
@@ -3726,7 +3724,7 @@ void GKValveSolverFunc()
                 else {
                     valveGreen = { false, false, false, false, false, false };
                     valveGreen[i] = true;
-                    greenLocation = valveLocations[i];
+                    greenLocation = valves.m_ValveLocations[i];
                     if (valvePassword[i]) {
                         valvePassword[i] = false;
                         passwordChosen = false;
@@ -3734,8 +3732,9 @@ void GKValveSolverFunc()
                         valveSolutionsText_2 = { "?", "?", "?", "?", "?", "?" };
                     }
                     if (passwordChosen) {
-                        valveSolutionsText_1 = valveSolutions_1[passwordLocation][greenLocation];
-                        valveSolutionsText_2 = valveSolutions_2[passwordLocation][greenLocation];
+                        std::pair<std::vector<std::string>, std::vector<std::string>> solution = SolveValves(passwordLocation, greenLocation);
+                        valveSolutionsText_1 = solution.first;
+                        valveSolutionsText_2 = solution.second;
                     }
                     greenChosen = true;
                     CalcValveProbabilities();
@@ -3752,7 +3751,7 @@ void GKValveSolverFunc()
                 color = COLOR_RED;
             }
             std::string password = "Password##";
-            password += valveLocations[i];
+            password += valves.m_ValveLocations[i];
             if (Button::RenderSingle(password, ImVec2(120, 25), false, color)) {
                 if (valvePassword[i]) {
                     valvePassword = { false, false, false, false, false, false };
@@ -3766,7 +3765,7 @@ void GKValveSolverFunc()
                 else {
                     valvePassword = { false, false, false, false, false, false };
                     valvePassword[i] = true;
-                    passwordLocation = valveLocations[i];
+                    passwordLocation = valves.m_ValveLocations[i];
                     if (valveGreen[i]) {
                         valveGreen[i] = false;
                         greenChosen = false;
@@ -3774,8 +3773,9 @@ void GKValveSolverFunc()
                         valveSolutionsText_2 = { "?", "?", "?", "?", "?", "?" };
                     }
                     if (greenChosen) {
-                        valveSolutionsText_1 = valveSolutions_1[passwordLocation][greenLocation];
-                        valveSolutionsText_2 = valveSolutions_2[passwordLocation][greenLocation];
+                        std::pair<std::vector<std::string>, std::vector<std::string>> solution = SolveValves(passwordLocation, greenLocation);
+                        valveSolutionsText_1 = solution.first;
+                        valveSolutionsText_2 = solution.second;
                     }
                     passwordChosen = true;
                     CalcExcludedValves();
@@ -3794,7 +3794,7 @@ void GKValveSolverFunc()
                 color = COLOR_RED;
             }
             std::string num_1 = "1##";
-            num_1 += valveLocations[i];
+            num_1 += valves.m_ValveLocations[i];
             float startPos_1 = ImGui::GetCursorPosX();
             if (Button::RenderSingle(num_1, ImVec2(78, 25), false, color)) {
                 if (valveDirections[i][0]) {
@@ -3813,7 +3813,7 @@ void GKValveSolverFunc()
                 color = COLOR_RED;
             }
             std::string num_2 = "2##";
-            num_2 += valveLocations[i];
+            num_2 += valves.m_ValveLocations[i];
             ImGui::SameLine();
             float startPos_2 = ImGui::GetCursorPosX();
             if (Button::RenderSingle(num_2, ImVec2(78, 25), false, color)) {
@@ -3834,7 +3834,7 @@ void GKValveSolverFunc()
                 color = COLOR_RED;
             }
             std::string num_3 = "3##";
-            num_3 += valveLocations[i];
+            num_3 += valves.m_ValveLocations[i];
             float startPos_3 = ImGui::GetCursorPosX();
             if (Button::RenderSingle(num_3, ImVec2(78, 25), false, color)) {
                 if (valveDirections[i][2]) {
@@ -3948,8 +3948,8 @@ void GKValveSolverFunc()
                     ImGui::TableSetColumnIndex(column);
                     if (!row) {
                         ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, COLOR_GREY);
-                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(valveLocations[column].c_str()).x / 2);
-                        ImGui::Text(valveLocations[column].c_str());
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2 - ImGui::CalcTextSize(valves.m_ValveLocations[column].c_str()).x / 2);
+                        ImGui::Text(valves.m_ValveLocations[column].c_str());
                         continue;
                     }
                     if (!greenChosen || !passwordChosen) {
@@ -3957,7 +3957,7 @@ void GKValveSolverFunc()
                     }
                     else {
                         if (row == 1) {
-                            if (valveSolutionsText_1[column] == "P") {
+                            if (BO3PT::valveSolutionsText_1[column] == "P") {
                                 ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, COLOR_PINK);
                             }
                             else if (valveDirections[column][static_cast<size_t>(std::stoi(valveSolutionsText_1[column])) - 1]) {

@@ -39,6 +39,8 @@ on_player_spawned()
 {
     if(self IsTestClient()) return;
 
+    self thread StalingradSoftPatch();
+
     level flag::wait_till("initial_blackscreen_passed");
 }
 
@@ -93,8 +95,20 @@ InitVars()
 InitCustomFlags()
 {
     level flag::init("round_skip_request");
-    level flag::init("puzzle_practice");
-    level flag::init("tomb_soft_patch");
+    
+    switch(level.script)
+    {
+        case "zm_stalingrad":
+        {
+            level flag::init("gk_soft_patch");
+        }
+        case "zm_tomb":
+        {
+            level flag::init("puzzle_practice");
+            level flag::init("tomb_soft_patch");
+            break;
+        }
+    }
 }
 
 IsTrue(bool)

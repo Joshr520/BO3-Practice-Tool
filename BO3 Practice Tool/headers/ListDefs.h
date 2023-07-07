@@ -84,18 +84,14 @@ struct BGBPreset {
 	}
 };
 
-struct ValvePosition {
-	std::string m_Department;
-	std::string m_DragonCommand;
-	std::string m_Armory;
-	std::string m_Supply;
-	std::string m_Infirmary;
-	std::string m_Tank;
+struct ValvePositions {
+	std::vector<std::pair<std::string, std::vector<std::string>>> m_Positions;
 };
 
 struct ValveSolutions {
-	std::unordered_map<std::string, std::unordered_map<std::string, ValvePosition>> m_ValveSolutions1;
-	std::unordered_map<std::string, std::unordered_map<std::string, ValvePosition>> m_ValveSolutions2;
+	std::vector<std::string> m_ValveLocations;
+	std::vector<ValvePositions> m_ValveSolutions1;
+	std::vector<ValvePositions> m_ValveSolutions2;
 };
 
 struct AutosplitGroup {
@@ -551,92 +547,119 @@ inline BGBLists bgbs = {
 
 inline ValveSolutions valves = {
 	{
-		{ "Department", {
-			{ "Dragon Command", { "P", "1", "2", "2", "1", "1" } },
-			{ "Armory", { "P", "2", "1", "3", "3", "1" } },
-			{ "Supply", { "P", "3", "3", "1", "2", "3" } },
-			{ "Infirmary", { "P", "2", "1", "1", "2", "3" } },
-			{ "Tank", { "P", "1", "3", "2", "3", "1" } }
-		}},
-		{ "Dragon Command", {
-			{ "Department", { "1", "P", "1", "3", "3", "1" } },
-			{ "Armory", { "3", "P", "1", "3", "1", "1" } },
-			{ "Supply", { "3", "P", "2", "2", "1", "1" } },
-			{ "Infirmary", { "1", "P", "2", "1", "1", "2" } },
-			{ "Tank", { "1", "P", "1", "1", "1", "1" } }
-		}},
-		{ "Armory", {
-			{ "Department", { "2", "1", "P", "3", "3", "3" } },
-			{ "Dragon Command", { "1", "1", "P", "3", "1", "1" } },
-			{ "Supply", { "2", "2", "P", "1", "2", "3" } },
-			{ "Infirmary", { "3", "1", "P", "3", "1", "3" } },
-			{ "Tank", { "3", "1", "P", "2", "1", "1" } }
-		}},
-		{ "Supply", {
-			{ "Department", { "1", "1", "2", "P", "3", "1" } },
-			{ "Dragon Command", { "2", "2", "1", "P", "2", "3" } },
-			{ "Armory", { "3", "1", "2", "P", "1", "1" } },
-			{ "Infirmary", { "3", "1", "3", "P", "2", "3" } },
-			{ "Tank", { "1", "2", "1", "P", "3", "1" } }
-		}},
-		{ "Infirmary", {
-			{ "Department", { "1", "3", "2", "1", "P", "2" } },
-			{ "Dragon Command", { "2", "1", "3", "3", "P", "3" } },
-			{ "Armory", { "2", "2", "2", "1", "P", "2" } },
-			{ "Supply", { "1", "2", "2", "1", "P", "1" } },
-			{ "Tank", { "3", "3", "3", "2", "P", "2" } }
-		}},
-		{ "Tank", {
-			{ "Department", { "1", "3", "1", "1", "2", "P" } },
-			{ "Dragon Command", { "2", "1", "3", "2", "2", "P" } },
-			{ "Armory", { "2", "2", "1", "1", "2", "P" } },
-			{ "Supply", { "1", "3", "2", "1", "1", "P" } },
-			{ "Infirmary", { "3", "1", "2", "2", "1", "P" } }
-		}}
+		{ "Department", "Dragon Command", "Armory", "Supply", "Infirmary", "Tank" }
 	},
 	{
-		{ "Department", {
-			{ "Dragon Command", { "P", "3", "3", "2", "2", "2" } },
-			{ "Armory", { "P", "3", "2", "1", "1", "2" } },
-			{ "Supply", { "P", "2", "2", "2", "3", "1" } },
-			{ "Infirmary", { "P", "1", "3", "3", "3", "3" } },
-			{ "Tank", { "P", "3", "1", "1", "1", "3" } }
-		}},
-		{ "Dragon Command", {
-			{ "Department", { "2", "P", "1", "1", "2", "3" } },
-			{ "Armory", { "2", "P", "3", "1", "2", "2" } },
-			{ "Supply", { "2", "P", "3", "3", "3", "3" } },
-			{ "Infirmary", { "3", "P", "3", "2", "2", "2" } },
-			{ "Tank", { "2", "P", "3", "2", "3", "2" } }
-		}},
-		{ "Armory", {
-			{ "Department", { "3", "3", "P", "2", "2", "2" } },
-			{ "Dragon Command", { "2", "2", "P", "2", "2", "2" } },
-			{ "Supply", { "1", "2", "P", "3", "3", "1" } },
-			{ "Infirmary", { "1", "2", "P", "1", "2", "2" } },
-			{ "Tank", { "1", "3", "P", "1", "1", "2" } }
-		}},
-		{ "Supply", {
-			{ "Department", { "3", "3", "1", "P", "2", "3" } },
-			{ "Dragon Command", { "1", "3", "2", "P", "1", "2" } },
-			{ "Armory", { "3", "3", "3", "P", "2", "2" } },
-			{ "Infirmary", { "1", "2", "2", "P", "3", "2" } },
-			{ "Tank", { "2", "1", "3", "P", "3", "3" } }
-		}},
-		{ "Infirmary", {
-			{ "Department", { "3", "1", "2", "2", "P", "1" } },
-			{ "Dragon Command", { "1", "2", "1", "3", "P", "1" } },
-			{ "Armory", { "3", "1", "3", "3", "P", "1" } },
-			{ "Supply", { "3", "3", "3", "3", "P", "3" } },
-			{ "Tank", { "2", "2", "1", "1", "P", "3" } }
-		}},
-		{ "Tank", {
-			{ "Department", { "2", "1", "2", "2", "3", "P" } },
-			{ "Dragon Command", { "1", "3", "1", "3", "1", "P" } },
-			{ "Armory", { "2", "1", "3", "3", "3", "P" } },
-			{ "Supply", { "3", "3", "3", "2", "2", "P" } },
-			{ "Infirmary", { "1", "2", "1", "3", "3", "P" } }
-		}},
+		{
+			{
+				{ "Dragon Command", { "P", "1", "2", "2", "1", "1" } },
+				{ "Armory", { "P", "2", "1", "3", "3", "1" } },
+				{ "Supply", { "P", "3", "3", "1", "2", "3" } },
+				{ "Infirmary", { "P", "2", "1", "1", "2", "3" } },
+				{ "Tank", { "P", "1", "3", "2", "3", "1" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "1", "P", "1", "3", "3", "1" } },
+				{ "Armory", { "3", "P", "1", "3", "1", "1" } },
+				{ "Supply", { "3", "P", "2", "2", "1", "1" } },
+				{ "Infirmary", { "1", "P", "2", "1", "1", "2" } },
+				{ "Tank", { "1", "P", "1", "1", "1", "1" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "2", "1", "P", "3", "3", "3" } },
+				{ "Dragon Command", { "1", "1", "P", "3", "1", "1" } },
+				{ "Supply", { "2", "2", "P", "1", "2", "3" } },
+				{ "Infirmary", { "3", "1", "P", "3", "1", "3" } },
+				{ "Tank", { "3", "1", "P", "2", "1", "1" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "1", "1", "2", "P", "3", "1" } },
+				{ "Dragon Command", { "2", "2", "1", "P", "2", "3" } },
+				{ "Armory", { "3", "1", "2", "P", "1", "1" } },
+				{ "Infirmary", { "3", "1", "3", "P", "2", "3" } },
+				{ "Tank", { "1", "2", "1", "P", "3", "1" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "1", "3", "2", "1", "P", "2" } },
+				{ "Dragon Command", { "2", "1", "3", "3", "P", "3" } },
+				{ "Armory", { "2", "2", "2", "1", "P", "2" } },
+				{ "Supply", { "1", "2", "2", "1", "P", "1" } },
+				{ "Tank", { "3", "3", "3", "2", "P", "2" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "1", "3", "1", "1", "2", "P" } },
+				{ "Dragon Command", { "2", "1", "3", "2", "2", "P" } },
+				{ "Armory", { "2", "2", "1", "1", "2", "P" } },
+				{ "Supply", { "1", "3", "2", "1", "1", "P" } },
+				{ "Infirmary", { "3", "1", "2", "2", "1", "P" } }
+			}
+		}
+	},
+	{
+		{
+			{
+				{ "Dragon Command", { "P", "3", "3", "2", "2", "2" } },
+				{ "Armory", { "P", "3", "2", "1", "1", "2" } },
+				{ "Supply", { "P", "2", "2", "2", "3", "1" } },
+				{ "Infirmary", { "P", "1", "3", "3", "3", "3" } },
+				{ "Tank", { "P", "3", "1", "1", "1", "3" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "2", "P", "1", "1", "2", "3" } },
+				{ "Armory", { "2", "P", "3", "1", "2", "2" } },
+				{ "Supply", { "2", "P", "3", "3", "3", "3" } },
+				{ "Infirmary", { "3", "P", "3", "2", "2", "2" } },
+				{ "Tank", { "2", "P", "3", "2", "3", "2" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "3", "3", "P", "2", "2", "2" } },
+				{ "Dragon Command", { "2", "2", "P", "2", "2", "2" } },
+				{ "Supply", { "1", "2", "P", "3", "3", "1" } },
+				{ "Infirmary", { "1", "2", "P", "1", "2", "2" } },
+				{ "Tank", { "1", "3", "P", "1", "1", "2" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "3", "3", "1", "P", "2", "3" } },
+				{ "Dragon Command", { "1", "3", "2", "P", "1", "2" } },
+				{ "Armory", { "3", "3", "3", "P", "2", "2" } },
+				{ "Infirmary", { "1", "2", "2", "P", "3", "2" } },
+				{ "Tank", { "2", "1", "3", "P", "3", "3" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "3", "1", "2", "2", "P", "1" } },
+				{ "Dragon Command", { "1", "2", "1", "3", "P", "1" } },
+				{ "Armory", { "3", "1", "3", "3", "P", "1" } },
+				{ "Supply", { "3", "3", "3", "3", "P", "3" } },
+				{ "Tank", { "2", "2", "1", "1", "P", "3" } }
+			}
+		},
+		{
+			{
+				{ "Department", { "2", "1", "2", "2", "3", "P" } },
+				{ "Dragon Command", { "1", "3", "1", "3", "1", "P" } },
+				{ "Armory", { "2", "1", "3", "3", "3", "P" } },
+				{ "Supply", { "3", "3", "3", "2", "2", "P" } },
+				{ "Infirmary", { "1", "2", "1", "3", "3", "P" } }
+			}
+		},
 	}
 };
 

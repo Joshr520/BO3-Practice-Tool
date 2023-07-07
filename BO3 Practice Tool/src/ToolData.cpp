@@ -1196,12 +1196,13 @@ namespace BO3PT
     {
         valveDirectionCounts_1 = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
         valveDirectionCounts_2 = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
-        for (const std::string& solutions : valveLocations) {
-            if (passwordChosen && passwordLocation != solutions) {
+        for (int i = 0; i < static_cast<int>(valves.m_ValveLocations.size()); i++) {
+            const std::string& location = valves.m_ValveLocations[i];
+            if (passwordChosen && passwordLocation != location) {
                 continue;
             }
             int checked = -1;
-            for (const std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_1[solutions]) {
+            for (const std::pair<std::string, std::vector<std::string>>& solution : valves.m_ValveSolutions1[i].m_Positions) {
                 checked++;
                 if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end()) {
                     continue;
@@ -1224,12 +1225,13 @@ namespace BO3PT
                 }
             }
         }
-        for (const std::string& solutions : valveLocations) {
-            if (passwordLocation != "" && passwordLocation != solutions) {
+        for (int i = 0; i < static_cast<int>(valves.m_ValveLocations.size()); i++) {
+            const std::string& location = valves.m_ValveLocations[i];
+            if (passwordLocation != "" && passwordLocation != location) {
                 continue;
             }
             int checked = -1;
-            for (const std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_2[solutions]) {
+            for (const std::pair<std::string, std::vector<std::string>>& solution : valves.m_ValveSolutions2[i].m_Positions) {
                 checked++;
                 if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end()) {
                     continue;
@@ -1303,13 +1305,13 @@ namespace BO3PT
         noGreenChoice = false;
         for (int i = 0; i < 6; i++) {
             if (checkedGreenArray[i]) {
-                if (passwordChosen && passwordLocation == valveLocations[i]) {
+                if (passwordChosen && passwordLocation == valves.m_ValveLocations[i]) {
                     continue;
                 }
                 notGreen++;
             }
             else {
-                turnToGreen = valveLocations[i];
+                turnToGreen = valves.m_ValveLocations[i];
             }
             if (i - notGreen > compareAgainst) {
                 return;
@@ -1326,14 +1328,13 @@ namespace BO3PT
 
     void CalcExcludedValves()
     {
-        std::vector<std::vector<std::string>> results;
         std::vector<std::string> result;
         excludedValves = { };
         possibleValves_1 = { };
         possibleValves_2 = { };
         for (int valve = 0; valve < 6; valve++) {
             for (int direction = 0; direction < 3; direction++) {
-                if (passwordLocation == valveLocations[valve]) {
+                if (passwordLocation == valves.m_ValveLocations[valve]) {
                     result.emplace_back("P");
                     break;
                 }
@@ -1353,24 +1354,55 @@ namespace BO3PT
         if (passwordChosen) {
             valveComboSet = true;
         }
-        for (std::string& solutions : valveLocations) {
-            for (const std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_1[solutions]) {
+        for (int i = 0; i < static_cast<int>(valves.m_ValveLocations.size()); i++) {
+            const std::string& location = valves.m_ValveLocations[i];
+            if (passwordLocation != location) {
+                continue;
+            }
+            for (const std::pair<std::string, std::vector<std::string>>& solution : valves.m_ValveSolutions1[i].m_Positions) {
                 if (result == solution.second) {
                     excludedValves.emplace_back(result);
                 }
-                else if (passwordLocation == solutions) {
+                else if (passwordLocation == location) {
                     possibleValves_1.insert({ solution.first, solution.second });
                 }
             }
-            for (const std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_2[solutions]) {
+            for (const std::pair<std::string, std::vector<std::string>>& solution : valves.m_ValveSolutions2[i].m_Positions) {
                 if (result == solution.second) {
                     excludedValves.emplace_back(result);
                 }
-                else if (passwordLocation == solutions) {
+                else if (passwordLocation == location) {
                     possibleValves_2.insert({ solution.first, solution.second });
                 }
             }
+            break;
         }
+    }
+
+    std::pair<std::vector<std::string>, std::vector<std::string>> SolveValves(std::string_view password, std::string_view green)
+    {
+        std::vector<std::string> solution1;
+        std::vector<std::string> solution2;
+
+        for (int i = 0; i < static_cast<int>(valves.m_ValveLocations.size()); i++) {
+            const std::string& location = valves.m_ValveLocations[i];
+            if (password != location) {
+                continue;
+            }
+            int index = 0;
+            for (int j = 0; j < static_cast<int>(valves.m_ValveSolutions1.size()); j++) {
+                const std::pair<std::string, std::vector<std::string>>& solution = valves.m_ValveSolutions1[i].m_Positions[j];
+                if (green == solution.first) {
+                    solution1 = solution.second;
+                    index = j;
+                    break;
+                }
+            }
+            solution2 = valves.m_ValveSolutions2[i].m_Positions[index].second;
+            break;
+        }
+
+        return { solution1, solution2 };
     }
 
 #pragma endregion

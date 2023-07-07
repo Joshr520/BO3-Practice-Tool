@@ -322,7 +322,6 @@ namespace BO3PT
 	inline std::vector<std::vector<int>> valveDirectionCounts_2 = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
 	inline std::vector<std::string> valveSolutionsText_1 = { "?", "?", "?", "?", "?", "?" };
 	inline std::vector<std::string> valveSolutionsText_2 = { "?", "?", "?", "?", "?", "?" };
-	inline std::vector<std::string> valveLocations = { "Department", "Dragon Command", "Armory", "Supply", "Infirmary", "Tank" };
 	inline std::vector<bool> valveGreen = { false, false, false, false, false, false };
 	inline std::vector<bool> valvePassword = { false, false, false, false, false, false };
 	inline std::vector<std::vector<bool>> valveDirections = { { false, false, false }, { false, false, false }, { false, false, false }, { false, false, false }, { false, false, false }, { false, false, false } };
@@ -330,8 +329,6 @@ namespace BO3PT
 	inline std::vector<std::vector<std::string>> valveDirectionOdds_2 = { { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" }, { "", "", "" } };
 	inline std::vector<std::vector<std::string>> excludedValves = { };
 	inline std::unordered_map<std::string, int> locationToInt = { { "Department", 0 }, { "Dragon Command", 1 }, { "Armory", 2 }, { "Supply", 3}, {"Infirmary", 4}, { "Tank", 5 } };
-	inline std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> valveSolutions_1 = { };
-	inline std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> valveSolutions_2 = { };
 	inline std::unordered_map<std::string, std::vector<std::string>> possibleValves_1 = { };
 	inline std::unordered_map<std::string, std::vector<std::string>> possibleValves_2 = { };
 	inline std::unordered_map<std::string, std::string> valveLocationsAbbr = { { "Department", "Dept"}, { "Dragon Command", "DC"}, { "Armory", "Arm"}, { "Supply", "Supply"}, { "Infirmary", "Inf"}, { "Tank", "Tank"} };
@@ -340,6 +337,8 @@ namespace BO3PT
 	void CalcValveProbabilities();
 	void CalcRemainingGreen();
 	void CalcExcludedValves();
+
+	std::pair<std::vector<std::string>, std::vector<std::string>> SolveValves(std::string_view password, std::string_view green);
 #pragma endregion
 
 #pragma region IceCodeGuide

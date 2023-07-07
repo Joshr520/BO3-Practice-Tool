@@ -1,5 +1,4 @@
 #include "json.h"
-#include "Walnut/Logger.h"
 
 #include <rapidjson/error/en.h>
 #include <rapidjson/prettywriter.h>
