@@ -97,7 +97,7 @@ namespace BO3PT
 
 	bool DoesPathExist(std::string_view s);
 	bool CheckVersions(const std::string& newVersion, std::string_view currentVersion);
-	bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles);
+	bool DownloadAndExtractZip(std::string_view url, const std::unordered_set<std::string_view>& wantedFiles);
 #pragma endregion
 
 #pragma region MapOptions

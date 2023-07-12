@@ -13,14 +13,14 @@ namespace BO3PT {
 
     class MemState {
     public:
-        static uintptr_t* GetModuleBaseAddress(uint32_t processID, const wchar_t* moduleName);
+        static void* GetModuleBaseAddress(uint32_t processID, const wchar_t* moduleName);
         static DWORD GetProcessIdByName(const wchar_t* processName);
 
         static DWORD GetPID() { return s_PID; }
         static HANDLE GetHandle() { return s_Handle; }
-        static uintptr_t* GetBaseAddress() { return s_BaseAddress; }
-        static uintptr_t* GetMapNameAddress() { return s_MapNameAddress; }
-        static uintptr_t* GetRoundAddress() { return s_RoundAddress; }
+        static void* GetBaseAddress() { return s_BaseAddress; }
+        static void* GetMapNameAddress() { return s_MapNameAddress; }
+        static void* GetRoundAddress() { return s_RoundAddress; }
         static int GetRoundValue() { return s_RoundValue; }
         static char* GetMapNameValue() { return s_MapNameValue; }
         static MemStates GetState() { return s_State; }
@@ -32,9 +32,9 @@ namespace BO3PT {
     private:
         static DWORD s_PID;
         static HANDLE s_Handle;
-        static uintptr_t* s_BaseAddress;
-        static uintptr_t* s_MapNameAddress;
-        static uintptr_t* s_RoundAddress;
+        static void* s_BaseAddress;
+        static void* s_MapNameAddress;
+        static void* s_RoundAddress;
         static int s_RoundValue;
         static char s_MapNameValue[13];
         static MemStates s_State;

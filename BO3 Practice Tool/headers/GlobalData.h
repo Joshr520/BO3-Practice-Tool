@@ -13,7 +13,8 @@ namespace BO3PT
 	inline std::string currentMap = "";
 	inline std::string bo3Directory;
 	inline std::string selfDirectory;
-	inline std::string downloadURL;
+	inline std::string toolDownloadURL;
+	inline std::string compilerDownloadURL;
 
 	constexpr unsigned long hashstr(const char* str, int h = 0) { return !str[h] ? 55 : (hashstr(str, h + 1) * 33) + (unsigned char)(str[h]); }
 	std::string ParseTimeFromMilli(int milliseconds);

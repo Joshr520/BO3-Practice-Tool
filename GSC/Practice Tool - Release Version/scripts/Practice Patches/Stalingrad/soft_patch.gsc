@@ -1,6 +1,6 @@
 StalingradSoftPatch()
 {
-    level flag::set("gk_soft_patch");
+    level flag::set("stalingrad_soft_patch");
     WaitFadeIn();
     if(level.script != "zm_stalingrad")
     {
@@ -179,7 +179,7 @@ detour zm_stalingrad_pap<scripts\zm\zm_stalingrad_pap_quest.gsc>::function_809fb
 	}
 	else
 	{
-		if(!level flag::get("gk_soft_patch"))
+		if(!level flag::get("stalingrad_soft_patch"))
         {
             level.var_583e4a97.var_5d8406ed["fountain1"].b_available = 1;
         }

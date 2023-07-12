@@ -28,7 +28,8 @@ on_player_connect()
     message = hud::createserverfontstring("big", 1.1);
     message hud::setpoint("TOP", "TOP", 0, 0);
     message SetText("BO3 Practice Tool Loaded: ^6github.com/Joshr520/BO3-Practice-Tool");
-    wait 3;
+    message SetTypewriterFX(50, 15000, 0);
+    wait 5;
     message FadeOverTime(5);
     message.alpha = 0;
     wait 5;
@@ -38,8 +39,6 @@ on_player_connect()
 on_player_spawned()
 {
     if(self IsTestClient()) return;
-
-    self thread StalingradSoftPatch();
 
     level flag::wait_till("initial_blackscreen_passed");
 }
@@ -98,9 +97,14 @@ InitCustomFlags()
     
     switch(level.script)
     {
+        case "zm_island":
+        {
+            level flag::init("island_soft_patch");
+            break;
+        }
         case "zm_stalingrad":
         {
-            level flag::init("gk_soft_patch");
+            level flag::init("stalingrad_soft_patch");
         }
         case "zm_tomb":
         {

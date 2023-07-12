@@ -8,14 +8,14 @@ namespace BO3PT
 {
     DWORD MemState::s_PID;
     HANDLE MemState::s_Handle;
-    uintptr_t* MemState::s_BaseAddress;
-    uintptr_t* MemState::s_MapNameAddress;
-    uintptr_t* MemState::s_RoundAddress;
+    void* MemState::s_BaseAddress;
+    void* MemState::s_MapNameAddress;
+    void* MemState::s_RoundAddress;
     int MemState::s_RoundValue;
     char MemState::s_MapNameValue[13];
     MemStates MemState::s_State;
 
-    uintptr_t* MemState::GetModuleBaseAddress(uint32_t processID, const wchar_t* moduleName)
+    void* MemState::GetModuleBaseAddress(uint32_t processID, const wchar_t* moduleName)
     {
         void* hSnap = nullptr;
         MODULEENTRY32W Mod32 = { 0 };
@@ -28,7 +28,7 @@ namespace BO3PT
         while (Module32NextW(hSnap, &Mod32)) {
             if (!_wcsicmp(moduleName, Mod32.szModule)) {
                 CloseHandle(hSnap);
-                return (uintptr_t*)Mod32.modBaseAddr;
+                return (void*)Mod32.modBaseAddr;
             }
         }
 
@@ -73,8 +73,8 @@ namespace BO3PT
             s_State = Unloaded;
             return false;
         }
-        s_MapNameAddress = s_BaseAddress + 0x179DF840 / 8;
-        s_RoundAddress = s_BaseAddress + 0x1140DC30 / 8;
+        s_MapNameAddress = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(s_BaseAddress) + 0x179DF840);
+        s_RoundAddress = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(s_BaseAddress) + 0xA55BDEC);
         return true;
     }
 

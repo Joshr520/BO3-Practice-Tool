@@ -36,7 +36,6 @@ using HelpMarker = ImGuiHelper::HelpMarker;
 void SetupData();
 void SearchForGame();
 bool CheckUpdate();
-bool PerformUpdate();
 std::string SelectFolder();
 
 void Sidebar();
@@ -268,7 +267,7 @@ public:
                 ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 30.0f);
                 float width = ImGui::GetContentRegionAvail().x / 2.0f - 5;
                 if (ImGui::Button("OK", ImVec2(width, 25))) {
-                    if (!PerformUpdate()) {
+                    if (!DownloadAndExtractZip(toolDownloadURL, { "BO3 Practice Tool", "Resource Images" })) {
                         Popup::PrepPopup(PopupStates::UpdateFailed);
                     }
                     ImGui::CloseCurrentPopup();
@@ -308,7 +307,7 @@ public:
                 if (ImGui::Button("Download Files", ImVec2(width, 25))) {
                     ImGui::CloseCurrentPopup();
                     Popup::ClosePopup();
-                    DownloadAndExtractZip({ "GSC" });
+                    DownloadAndExtractZip(compilerDownloadURL, { "Compiler" });
                     VerifyExternalFiles();
                 }
                 ImGui::SameLine();
@@ -538,7 +537,7 @@ public:
             
             currentMap = MemState::GetMapNameValue();
 
-            if ((currentMap.substr(0, 2) != "zm" && prevMap != "core_frontend") || (!MemState::GetRoundValue() && prevRound)) {
+            if ((!currentMap.empty() && currentMap.substr(0, 2) != "zm" && prevMap != "core_frontend") || (!MemState::GetRoundValue() && prevRound)) {
                 ResetToggles();
             }
 
@@ -721,17 +720,27 @@ bool CheckUpdate()
             WLog::Log(WMT::Error, "JSON returned from get invalid");
             return false;
         }
-        const char* downloadGet = "";
-        const char* tagGet = "";
-        if (!builder.RetrieveValueFromKey("browser_download_url", downloadGet)) {
-            return false;
-        }
-        if (!builder.RetrieveValueFromKey("tag_name", tagGet)) {
-            return false;
-        }
+        const rapidjson::Document& document = builder.GetDocument();
 
-        downloadURL = downloadGet;
-        tagName = tagGet;
+        if (document.HasMember("assets") && document["assets"].IsArray()) {
+            const rapidjson::Value& assets = document["assets"];
+            for (rapidjson::Value::ConstValueIterator it = assets.Begin(); it != assets.End(); it++) {
+                const rapidjson::Value& asset = *it;
+
+                if (asset.HasMember("name") && asset["name"].IsString() && asset.HasMember("browser_download_url") && asset["browser_download_url"].IsString()) {
+                    std::string name = asset["name"].GetString();
+                    if (name.find("BO3PracticeTool") != std::string::npos) {
+                        toolDownloadURL = asset["browser_download_url"].GetString();
+                    }
+                    else if (name.find("Compiler") != std::string::npos) {
+                        compilerDownloadURL = asset["browser_download_url"].GetString();
+                    }
+                }
+            }
+        }
+        if (document.HasMember("tag_name") && document["tag_name"].IsString()) {
+            tagName = document["tag_name"].GetString();
+        }
 
         if (!CheckVersions(tagName, internalVersion)) {
             WLog::Log(WMT::Info, "New version not available");
@@ -740,16 +749,6 @@ bool CheckUpdate()
         WLog::Log(WMT::Info, "New version detected");
     }
 
-    return true;
-}
-
-bool PerformUpdate()
-{
-    std::string ptexe;
-
-    if (DownloadAndExtractZip({ "BO3 Practice Tool", "GSC", "Resource Images" })) {
-        return false;
-    }
     return true;
 }
 

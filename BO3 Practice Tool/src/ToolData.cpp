@@ -316,13 +316,13 @@ namespace BO3PT
     void VerifyExternalFiles()
     {
         std::string practiceToolDirectory = bo3Directory + "\\Practice Tool";
-        std::string gscDirectory = practiceToolDirectory + "\\GSC";
+        std::string compilerDirectory = practiceToolDirectory + "\\Compiler";
         std::string settingsFolder = practiceToolDirectory + "\\Settings";
         if (!DoesPathExist(practiceToolDirectory)) {
             std::filesystem::create_directory(practiceToolDirectory);
         }
-        if (!DoesPathExist(gscDirectory)) {
-            std::filesystem::create_directory(gscDirectory);
+        if (!DoesPathExist(compilerDirectory)) {
+            std::filesystem::create_directory(compilerDirectory);
         }
         if (!DoesPathExist(settingsFolder)) {
             std::filesystem::create_directory(settingsFolder);
@@ -339,15 +339,15 @@ namespace BO3PT
         if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
         }
-        if (DoesPathExist(selfDirectory + "\\GSC")) {
-            std::string startDirectory = selfDirectory + "\\GSC";
+        if (DoesPathExist(selfDirectory + "\\Compiler")) {
+            std::string startDirectory = selfDirectory + "\\Compiler";
             for (const auto& entry : std::filesystem::directory_iterator(startDirectory))
             {
                 if (entry.is_directory() || entry.path().filename().string() == "." || entry.path().filename().string() == "..")
                     continue;
                 std::string name = entry.path().filename().string();
                 std::string oldFile = entry.path().string();
-                std::string newFile = gscDirectory + "\\" + name;
+                std::string newFile = compilerDirectory + "\\" + name;
                 if (!DoesPathExist(oldFile)) {
                     continue;
                 }
@@ -360,7 +360,7 @@ namespace BO3PT
                 }
             }
             if (!std::filesystem::remove(startDirectory)) {
-                WLog::Log(WMT::Error, "Couldn't remove GSC directory with error code: " + std::error_code(errno, std::system_category()).message());
+                WLog::Log(WMT::Error, "Couldn't remove Compiler directory with error code: " + std::error_code(errno, std::system_category()).message());
             }
         }
     }
@@ -404,14 +404,14 @@ namespace BO3PT
 
     void InjectTool(bool enable)
     {
-        std::string gsc = bo3Directory + "/Practice Tool/GSC";
-        std::string compiler = "\"" + gsc + "/DebugCompiler.exe\"";
-        std::string ptPass = compiler + " --inject " + "\"" + gsc + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
-        std::string nmPass = compiler + " --inject " + "\"" + gsc + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
+        std::string compilerDir = bo3Directory + "/Practice Tool/Compiler";
+        std::string compilerEXE = "\"" + compilerDir + "/DebugCompiler.exe\"";
+        std::string ptPass = compilerEXE + " --inject " + "\"" + compilerDir + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
+        std::string nmPass = compilerEXE + " --inject " + "\"" + compilerDir + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
         std::unordered_set<std::string_view> wantedFiles = { "DebugCompiler.exe", "DebugCompiler.exe.config", "External.dll", "Ionic.Zip.dll", "Irony.dll", "No Mods.gsc", "Practice Tool.gsc", "System.Buffers.dll", "System.Collections.Immutable.dll", "System.Memory.dll",
             "System.Numerics.Vectors.dll", "System.Reflection.Metadata.dll", "System.Runtime.CompilerServices.Unsafe.dll", "t7cinternal.dll", "T7CompilerLib.dll", "t8cinternal.dll", "T89CompilerLib.dll", "TreyarchCompiler.dll", "xdevkit.dll", "xdrpc.dll" };
         for (const auto& fileName : wantedFiles) {
-            std::filesystem::path path(std::filesystem::path(gsc) / fileName);
+            std::filesystem::path path(std::filesystem::path(compilerDir) / fileName);
             if (!std::filesystem::exists(path)) {
                 GUIState::UnsetState(Active);
                 ImGuiHelper::PopupWrapper::PrepPopup(ImGuiHelper::InjectFailed);
@@ -497,7 +497,7 @@ namespace BO3PT
         return newNumbers.size() > currentNumbers.size();
     }
 
-    bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles)
+    bool DownloadAndExtractZip(std::string_view url, const std::unordered_set<std::string_view>& wantedFiles)
     {
         curl_global_init(CURL_GLOBAL_ALL);
         CURL* curl = curl_easy_init();
@@ -511,9 +511,9 @@ namespace BO3PT
             char errorMsg[256];
             strerror_s(errorMsg, sizeof(errorMsg), err);
             WLog::Log(WMT::Error, "Opening file " + filename + " failed with error code: " + errorMsg);
-            return 0;
+            return false;
         }
-        curl_easy_setopt(curl, CURLOPT_URL, downloadURL.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, toolDownloadURL.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteToFile);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
@@ -522,7 +522,7 @@ namespace BO3PT
         curl_global_cleanup();
         if (res != CURLE_OK) {
             WLog::Log(WMT::Error, "curl download failed with error code: " + res);
-            return 0;
+            return false;
         }
 
         fclose(file);
@@ -532,7 +532,7 @@ namespace BO3PT
         mz_zip_zero_struct(&zip_archive);
         if (!mz_zip_reader_init_file(&zip_archive, filename.c_str(), 0)) {
             WLog::Log(WMT::Error, "Failed to open zip file: " + filename);
-            return 0;
+            return false;
         }
 
         int num_files = mz_zip_reader_get_num_files(&zip_archive);
@@ -577,7 +577,7 @@ namespace BO3PT
                 }
                 if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0)) {
                     WLog::Log(WMT::Error, "Failed to extract file " + std::string(file_stat.m_filename));
-                    return 0;
+                    return false;
                 }
             }
         }
@@ -597,7 +597,7 @@ namespace BO3PT
             CloseHandle(processInfo.hThread);
             done = 1;
         }
-        return 1;
+        return true;
     }
 
 #pragma endregion
