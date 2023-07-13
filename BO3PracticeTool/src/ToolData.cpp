@@ -503,7 +503,7 @@ namespace BO3PT
         CURL* curl = curl_easy_init();
         CURLcode res;
         FILE* file;
-        std::string filename = "BO3 Practice Tool.zip";
+        std::string filename = "BO3PracticeTool.zip";
         std::string ptexe;
 
         errno_t err = fopen_s(&file, filename.c_str(), "wb");
@@ -521,7 +521,7 @@ namespace BO3PT
         curl_easy_cleanup(curl);
         curl_global_cleanup();
         if (res != CURLE_OK) {
-            WLog::Log(WMT::Error, "curl download failed with error code: " + res);
+            WLog::Log(WMT::Error, "curl download failed with error code: " + std::to_string(res));
             return false;
         }
 
@@ -568,8 +568,8 @@ namespace BO3PT
                 std::filesystem::create_directory(output_file_path);
             }
             else {
-                if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path)) {
-                    std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.old.exe");
+                if (currentFile == "BO3PracticeTool.exe" && std::filesystem::exists(output_file_path)) {
+                    std::filesystem::rename(output_file_path, output_directory / "BO3PracticeTool.old.exe");
                     ptexe = output_file_path.string();
                 }
                 else if (std::filesystem::exists(output_file_path)) {

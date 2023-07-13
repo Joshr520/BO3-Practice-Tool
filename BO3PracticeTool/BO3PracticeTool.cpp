@@ -38,12 +38,13 @@ void SearchForGame();
 bool CheckUpdate();
 std::string SelectFolder();
 
-void Sidebar();
+void SidebarFunc();
 void BGBLoadoutFunc();
 void WeaponLoadoutFunc();
 void AutosplitsFunc();
 void PracticePatchesFunc();
 void SettingsFunc();
+void DocsFunc();
 void PlayerOptionsFunc();
 void ZombieOptionsFunc();
 void RoundOptionsFunc();
@@ -65,12 +66,12 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* use
 
 // ImGUI data
 static ImVec4 clear_color = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-static ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoDocking;
+static ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar;
 static ImGuiWindowFlags dockFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoScrollbar;
 static ImGuiViewport* viewport;
 
-static MSSelection sidebarSelections({ {{"Gobblegum Loadouts", "Weapon Loadouts", "Autosplits", "Practice Patches", "Settings"}}, {{"Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options", "Craftable Options", "Blocker Options", "Map Options"}},
-        {{"Gum Tracker", "Zombie Calculator", "Code Guides", "GK Valve Solver"}} });
+static MSSelection sidebarSelections({ {{ "Gobblegum Loadouts", "Weapon Loadouts", "Autosplits", "Practice Patches", "Settings", "Documentation" }}, {{ "Player Options", "Zombie Options", "Round Options", "Powerup Options", "Egg Step Options", "Craftable Options", "Blocker Options", "Map Options" }},
+        {{ "Gum Tracker", "Zombie Calculator", "Code Guides", "GK Valve Solver" }} });
 static MSSelection weaponSelections;
 static std::vector<MSSelection> autosplitSelections;
 
@@ -157,7 +158,7 @@ public:
         ImGui::PushFont(titleFont);
         ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.2f, 0.2f, 0.2f, 1.f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-        ImGui::Begin("BO3 Practice Tool", NULL, flags);
+        ImGui::Begin("##BO3PracticeTool", NULL, flags);
         ImGui::PopStyleVar();
         ImGui::PopStyleColor();
         // Setup dockspace
@@ -187,7 +188,7 @@ public:
 
         ImGui::PopFont();
         ImGui::Begin("##Sidebar", 0, dockFlags);
-        Sidebar();
+        SidebarFunc();
         ImGui::End();
 
         ImGui::Begin("##Body", 0, dockFlags);
@@ -195,7 +196,7 @@ public:
         switch (Popup::GetPrepState()) {
         case PopupStates::Update: {
             ImGui::OpenPopup("Update Available");
-            Popup::OpenPopup(PopupStates::Update);
+            Popup::OpenPopup(PopupStates::Update); ImGui::OpenPopup("Download Compiler Files");
             break;
         }
         case PopupStates::UpdateFailed: {
@@ -211,6 +212,11 @@ public:
         case PopupStates::JoinDiscord: {
             ImGui::OpenPopup("Join Discord");
             Popup::OpenPopup(PopupStates::JoinDiscord);
+            break;
+        }
+        case PopupStates::DownloadCompilerFiles: {
+            ImGui::OpenPopup("Download Compiler Files");
+            Popup::OpenPopup(PopupStates::DownloadCompilerFiles);
             break;
         }
         case PopupStates::DirectoryError: {
@@ -267,7 +273,7 @@ public:
                 ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 30.0f);
                 float width = ImGui::GetContentRegionAvail().x / 2.0f - 5;
                 if (ImGui::Button("OK", ImVec2(width, 25))) {
-                    if (!DownloadAndExtractZip(toolDownloadURL, { "BO3 Practice Tool", "Resource Images" })) {
+                    if (!DownloadAndExtractZip(toolDownloadURL, { "BO3PracticeTool", "Resource Images" })) {
                         Popup::PrepPopup(PopupStates::UpdateFailed);
                     }
                     ImGui::CloseCurrentPopup();
@@ -305,10 +311,10 @@ public:
                 ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 30.0f);
                 float width = ImGui::GetContentRegionAvail().x / 2.0f - 5;
                 if (ImGui::Button("Download Files", ImVec2(width, 25))) {
-                    ImGui::CloseCurrentPopup();
-                    Popup::ClosePopup();
                     DownloadAndExtractZip(compilerDownloadURL, { "Compiler" });
                     VerifyExternalFiles();
+                    ImGui::CloseCurrentPopup();
+                    Popup::ClosePopup();
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Exit", ImVec2(width, 25))) {
@@ -342,11 +348,33 @@ public:
             }
             break;
         }
+        case PopupStates::DownloadCompilerFiles: {
+            ImGui::SetNextWindowSize(modalSize);
+            ImGui::SetNextWindowPos(modalPos, ImGuiCond_Always);
+            if (ImGui::BeginPopupModal("Download Compiler Files", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::TextWrapped("Would you like to download the latest compiler files for the practice tool?");
+                ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 30.0f);
+                float width = ImGui::GetContentRegionAvail().x / 2.0f - 5;
+                if (ImGui::Button("Download", ImVec2(width, 25))) {
+                    DownloadAndExtractZip(compilerDownloadURL, { "Compiler" });
+                    VerifyExternalFiles();
+                    ImGui::CloseCurrentPopup();
+                    Popup::ClosePopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Close", ImVec2(width, 25))) {
+                    ImGui::CloseCurrentPopup();
+                    Popup::ClosePopup();
+                }
+                ImGui::EndPopup();
+            }
+            break;
+        }
         case PopupStates::DirectoryError: {
             ImGui::SetNextWindowSize(modalSize);
             ImGui::SetNextWindowPos(modalPos, ImGuiCond_Always);
             if (ImGui::BeginPopupModal("Directory Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
-                ImGui::TextWrapped("Incorrect Folder Chosen");
+                ImGui::TextWrapped("Incorrect Folder Chosen. Please choose the Call of Duty Black Ops III folder located in the respective steam directory.");
                 ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 30.0f);
                 float width = ImGui::GetContentRegionAvail().x;
                 if (ImGui::Button("OK", ImVec2(width, 25))) {
@@ -563,7 +591,7 @@ public:
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	Walnut::ApplicationSpecification spec;
-	spec.Name = "BO3 Practice Tool";
+	spec.Name = "BO3PracticeTool";
     spec.Width = 1280;
     spec.Height = 720;
 
@@ -626,6 +654,7 @@ void SetupData()
     GUIState::AddMember({ std::function<void()>(AutosplitsFunc) });
     GUIState::AddMember({ std::function<void()>(PracticePatchesFunc) });
     GUIState::AddMember({ std::function<void()>(SettingsFunc) });
+    GUIState::AddMember({ std::function<void()>(DocsFunc) });
     GUIState::AddMember({ std::function<void()>(PlayerOptionsFunc) });
     GUIState::AddMember({ std::function<void()>(ZombieOptionsFunc) });
     GUIState::AddMember({ std::function<void()>(RoundOptionsFunc) });
@@ -689,8 +718,8 @@ void SearchForGame()
 
 bool CheckUpdate()
 {
-    if (DoesPathExist(selfDirectory + "/BO3 Practice Tool.old.exe")) {
-        if (std::filesystem::remove(selfDirectory + "/BO3 Practice Tool.old.exe")) {
+    if (DoesPathExist(selfDirectory + "/BO3PracticeTool.old.exe")) {
+        if (std::filesystem::remove(selfDirectory + "/BO3PracticeTool.old.exe")) {
             WLog::Log(WMT::Info, "Deleting old exe");
         }
         else {
@@ -800,11 +829,15 @@ std::string SelectFolder()
     return returnFolder;
 }
 
-void Sidebar()
+void SidebarFunc()
 {
     ImGui::PushStyleColor(ImGuiCol_Button, COLOR_TRANSPARENT);
     if (ImGui::ImageButton("Discord Icon", discordIcon->GetDescriptorSet(), ImVec2(45, 45))) {
         Popup::PrepPopup(PopupStates::JoinDiscord);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_DOWNLOAD, ImVec2(35, 50))) {
+        Popup::PrepPopup(PopupStates::DownloadCompilerFiles);
     }
     ImGui::PopStyleColor();
     ImGui::SameLine();
@@ -1712,6 +1745,11 @@ void SettingsFunc()
         }
     }
     ImGui::EndGroup();
+}
+
+void DocsFunc()
+{
+    ImGui::Text("Docs coming next update!");
 }
 
 void PlayerOptionsFunc()

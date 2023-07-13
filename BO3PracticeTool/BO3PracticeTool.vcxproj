@@ -32,6 +32,7 @@
     <ProjectGuid>{4d6220c0-d15f-43ce-b040-b23564ba3485}</ProjectGuid>
     <RootNamespace>BO3PracticeTool</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>BO3PracticeTool</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -239,6 +240,7 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
   <ItemGroup>
     <ClInclude Include="Fonts\Icons.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="headers\Docs.h" />
     <ClInclude Include="headers\GlobalData.h" />
     <ClInclude Include="headers\GUIState.h" />
     <ClInclude Include="headers\ImGuiHelper.h" />
@@ -271,7 +273,7 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClInclude Include="Walnut\FileFormats\xml.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BO3 Practice Tool.cpp" />
+    <ClCompile Include="BO3PracticeTool.cpp" />
     <ClCompile Include="imgui\fonts\binary_to_compressed_c.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
@@ -281,6 +283,7 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\Docs.cpp" />
     <ClCompile Include="src\GlobalData.cpp" />
     <ClCompile Include="src\GUIState.cpp" />
     <ClCompile Include="src\ImGuiHelper.cpp" />
@@ -296,7 +299,7 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClCompile Include="Walnut\FileFormats\xml.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="BO3 Practice Tool.rc" />
+    <ResourceCompile Include="BO3PracticeTool.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Icon.ico" />

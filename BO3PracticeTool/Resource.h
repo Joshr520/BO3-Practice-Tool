@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by BO3 Practice Tool.rc
+// Used by BO3PracticeTool.rc
 
 #define IDS_APP_TITLE			103
 

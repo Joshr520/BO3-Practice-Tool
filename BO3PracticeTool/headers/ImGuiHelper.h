@@ -68,6 +68,7 @@ namespace ImGuiHelper {
 		UpdateFailed,
 		InjectFailed,
 		JoinDiscord,
+		DownloadCompilerFiles,
 		DirectoryError,
 		GumPresetCreation,
 		GumPresetError,
