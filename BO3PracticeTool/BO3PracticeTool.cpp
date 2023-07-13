@@ -273,7 +273,7 @@ public:
                 ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 30.0f);
                 float width = ImGui::GetContentRegionAvail().x / 2.0f - 5;
                 if (ImGui::Button("OK", ImVec2(width, 25))) {
-                    if (!DownloadAndExtractZip(toolDownloadURL, { "BO3PracticeTool", "Resource Images" })) {
+                    if (!DownloadAndExtractZip(compilerDownloadURL, { "Compiler" }) || !DownloadAndExtractZip(toolDownloadURL, { "BO3PracticeTool", "Resource Images" })) {
                         Popup::PrepPopup(PopupStates::UpdateFailed);
                     }
                     ImGui::CloseCurrentPopup();
