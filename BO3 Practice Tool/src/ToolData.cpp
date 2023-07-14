@@ -514,7 +514,7 @@ namespace BO3PT
             WLog::Log(WMT::Error, "Opening file " + filename + " failed with error code: " + errorMsg);
             return false;
         }
-        curl_easy_setopt(curl, CURLOPT_URL, toolDownloadURL.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, url.data());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteToFile);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
@@ -1508,33 +1508,44 @@ namespace BO3PT
         }
     }
 
-    void CreateAutosplitPreset(std::string_view presetName)
+    void CreateAutosplitPreset(std::string_view presetName, bool duplicatePreset)
     {
         std::string filename = selfDirectory + AUTOSPLIT_PRESET_DIR + presetName.data() + ".json";
        
-        WJson builder;
-        AutosplitPreset newPreset;
-        newPreset.m_Name = presetName;
+        if (duplicatePreset) {
+            std::string oldFilename = selfDirectory + AUTOSPLIT_PRESET_DIR + autosplitPresets[currentAutosplitPreset].m_Name + ".json";
+            AutosplitPreset newPreset = autosplitPresets[currentAutosplitPreset];
+            newPreset.m_Name = presetName;
+            autosplitPresets.emplace_back(newPreset);
 
-        rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
-        settings.AddMember("In Game Timer", false, builder.GetAllocator());
-        settings.AddMember("In Game Round Timer", false, builder.GetAllocator());
-        settings.AddMember("Amount of Splits", 0, builder.GetAllocator());
-        settings.AddMember("Map Index", 0, builder.GetAllocator());
-        settings.AddMember("Split Type", 0, builder.GetAllocator());
+            std::filesystem::copy_file(oldFilename, filename);
+        }
+        else {
+            WJson builder;
+            AutosplitPreset newPreset;
+            newPreset.m_Name = presetName;
 
-        newPreset.m_IGT = false;
-        newPreset.m_IGRT = false;
-        newPreset.m_NumSplits = 0;
-        newPreset.m_Map = 0;
-        newPreset.m_SplitType = 0;
+            rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
+            settings.AddMember("In Game Timer", false, builder.GetAllocator());
+            settings.AddMember("In Game Round Timer", false, builder.GetAllocator());
+            settings.AddMember("Amount of Splits", 0, builder.GetAllocator());
+            settings.AddMember("Map Index", 0, builder.GetAllocator());
+            settings.AddMember("Split Type", 0, builder.GetAllocator());
 
-        rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
+            newPreset.m_IGT = false;
+            newPreset.m_IGRT = false;
+            newPreset.m_NumSplits = 0;
+            newPreset.m_Map = 0;
+            newPreset.m_SplitType = 0;
 
-        autosplitPresets.emplace_back(newPreset);
-        builder.SaveToFile(filename);
+            rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
+
+            autosplitPresets.emplace_back(newPreset);
+            builder.SaveToFile(filename);
+            WriteAutosplitPresetToGame(&builder);
+        }
+
         currentAutosplitPreset = static_cast<int>(autosplitPresets.size()) - 1;
-        WriteAutosplitPresetToGame(&builder);
     }
 
     void DeleteAutosplitPreset(const AutosplitPreset& preset)

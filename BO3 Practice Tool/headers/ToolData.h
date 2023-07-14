@@ -374,7 +374,7 @@ namespace BO3PT
 	inline std::vector<AutosplitPreset> autosplitPresets;
 
 	void LoadAutosplitPresets();
-	void CreateAutosplitPreset(std::string_view presetName);
+	void CreateAutosplitPreset(std::string_view presetName, bool duplicatePreset = false);
 	void DeleteAutosplitPreset(const AutosplitPreset& preset);
 	void SaveAutosplitPreset(const AutosplitPreset& preset);
 	void WriteAutosplitPresetToGame(Walnut::JSONBuilder* json = nullptr);

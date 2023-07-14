@@ -466,7 +466,7 @@ public:
                         Popup::PrepPopup(PopupStates::AutosplitPresetError);
                     }
                     else {
-                        CreateAutosplitPreset(presetInput);
+                        CreateAutosplitPreset(presetInput, duplicatePreset);
                     }
                     duplicatePreset = false;
                     strcpy_s(presetInput, "");
