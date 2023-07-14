@@ -1,6 +1,7 @@
 #include "Keybinds.h"
 #include "ToolData.h"
 #include "GlobalData.h"
+#include "GUIState.h"
 #include "Walnut/Application.h"
 #include "Walnut/Input/Input.h"
 #include <Walnut/FileFormats/json.h>
@@ -134,7 +135,7 @@ namespace BO3PT
 		hotkeyDefs.insert({ "Increment Gum Tracker", { "Gum Tracker", std::function<void()>(IncrementGumTracker) } }); hotkeyDefs.insert({ "Decrement Gum Tracker", { "Gum Tracker", std::function<void()>(DecrementGumTracker) } });
 		hotkeyDefs.insert({ "Toggle Gum Tracker", { "Gum Tracker", std::function<void()>(ToggleGumTracker) } });
 
-		keybindBuilder = Walnut::JSONBuilder(std::string_view(selfDirectory + "\\bindings.json"));
+		keybindBuilder = Walnut::JSONBuilder::FromFile(selfDirectory + "\\bindings.json");
 
 		LoadKeybinds();
 		keybindBuilder.SaveToFile(selfDirectory + "\\bindings.json");
@@ -238,21 +239,21 @@ namespace BO3PT
 
 	void GodmodeOn()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		godActive = !godActive;
 		NotifyGame({ 0, 11, godActive });
 	}
 	void InfiniteAmmo()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		infAmmoActive = !infAmmoActive;
 		NotifyGame({ 0, 12, infAmmoActive });
 	}
 	void TimescaleIncrease()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		if (timescaleInt < 10)
 			timescaleInt++;
@@ -260,7 +261,7 @@ namespace BO3PT
 	}
 	void TimescaleDecrease()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		if (timescaleInt > 1)
 			timescaleInt--;
@@ -268,73 +269,73 @@ namespace BO3PT
 	}
 	void MaxPoints()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 0, 4194303 });
 	}
 	void ResetPoints()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 0, 500 });
 	}
 	void GiveAllPerks()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 7 });
 	}
 	void TakeAllPerks()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 8 });
 	}
 	void TakeGum()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 4 });
 	}
 	void TakeGumCharge()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 5 });
 	}
 	void ActivateGum()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 0, 6 });
 	}
 	void ZombiesIgnorePlayer()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 1, 0, zombiesIgnore });
 	}
 	void KillHorde()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 1, 1 });
 	}
 	void FreezeZombies()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 1, 2, zombiesFreeze });
 	}
 	void ToggleSpawning()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 1, 3, zombiesSpawn });
 	}
 	void ZombiesWalk()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		zombieSpeedRun = false;
 		zombieSpeedSprint = false;
@@ -345,7 +346,7 @@ namespace BO3PT
 	}
 	void ZombiesRun()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		zombieSpeedWalk = false;
 		zombieSpeedSprint = false;
@@ -356,7 +357,7 @@ namespace BO3PT
 	}
 	void ZombiesSprint()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		zombieSpeedWalk = false;
 		zombieSpeedRun = false;
@@ -367,70 +368,70 @@ namespace BO3PT
 	}
 	void EndRound()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 2, 0 });
 	}
 	void RestartRound()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 2, 1 });
 	}
 	void PickupEveryPart()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 5, 0 });
 	}
 	void OpenAllDoors()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 6, 0 });
 	}
 	void GlobalPowerOn()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 6, 2 });
 	}
 	void OpenAllBarriers()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 6, 5, 0 });
 	}
 	void CloseAllBarriers()
 	{
-		if (appStatus == "Status: Inactive" || currentMap.substr(0, 2) != "zm")
+		if (!GUIState::IsStateSet(Active) || currentMap.substr(0, 2) != "zm")
 			return;
 		NotifyGame({ 6, 5, 1 });
 	}
 
 	void IncrementGumTracker()
 	{
-		if (showGumSelection)
+		if (showBGBSelection)
 			return;
 		if (gumTrackCurrentIndex == 4)
 			gumTrackCurrentIndex = 0;
 		else
 			gumTrackCurrentIndex++;
-		gumTrackContextIndex = gumTrackIndexes[gumTrackCurrentIndex];
+		bgbContext = gumTrackBGBs[gumTrackCurrentIndex];
 	}
 	void DecrementGumTracker()
 	{
-		if (showGumSelection)
+		if (showBGBSelection)
 			return;
 		if (gumTrackCurrentIndex == 0)
 			gumTrackCurrentIndex = 4;
 		else
 			gumTrackCurrentIndex--;
-		gumTrackContextIndex = gumTrackIndexes[gumTrackCurrentIndex];
+		bgbContext = gumTrackBGBs[gumTrackCurrentIndex];
 	}
 	void ToggleGumTracker()
 	{
-		if (showGumSelection)
+		if (showBGBSelection)
 			return;
 		gumTrackChosen[gumTrackCurrentIndex] = !gumTrackChosen[gumTrackCurrentIndex];
 		if (std::all_of(std::begin(gumTrackChosen), std::end(gumTrackChosen), [](bool value) { return value; }))

@@ -1,9 +1,10 @@
 #include "Image.h"
-
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 
 #include "Application.h"
+#include "Logger.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -49,6 +50,7 @@ namespace Walnut {
 
 	}
 
+	std::mutex imgMutex;
 	Image::Image(std::string_view path)
 		: m_Filepath(path), m_Filename(std::filesystem::path(m_Filepath).filename().stem().string())
 	{
@@ -69,8 +71,10 @@ namespace Walnut {
 		m_Width = width;
 		m_Height = height;
 		
+		std::unique_lock<std::mutex> lock(imgMutex);
 		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
 		SetData(data);
+		lock.unlock();
 		stbi_image_free(data);
 	}
 
@@ -231,8 +235,7 @@ namespace Walnut {
 			check_vk_result(err);
 			vkUnmapMemory(device, m_StagingBufferMemory);
 		}
-
-
+		
 		// Copy to Image
 		{
 			VkCommandBuffer command_buffer = Application::GetCommandBuffer(true);

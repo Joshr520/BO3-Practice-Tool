@@ -5,6 +5,14 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Dist|Win32">
+      <Configuration>Dist</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Dist|x64">
+      <Configuration>Dist</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -22,8 +30,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{4d6220c0-d15f-43ce-b040-b23564ba3485}</ProjectGuid>
-    <RootNamespace>BO3PracticeTool</RootNamespace>
+    <RootNamespace>BO3 Practice Tool</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>BO3 Practice Tool</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -33,6 +42,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -52,6 +68,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -63,13 +86,22 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dist|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -83,6 +115,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -115,12 +163,11 @@
       <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /i /y
-XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /i /y
-XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /i /y
-XCOPY "$(ProjectDir)Exported Splits" "$(TargetDir)Exported Splits" /s /i /y
-XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y
-COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y
+      <Command>XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /e /i /y
+XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /e /i /y
+XCOPY "$(ProjectDir)Exported Splits" "$(TargetDir)Exported Splits" /s /e /i /y
+XCOPY "$(SolutionDir)Compiler" "$(TargetDir)Compiler" /s /e /i /y
+XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /e /i /y
 COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
 </Command>
     </PostBuildEvent>
@@ -146,12 +193,46 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
       <AdditionalLibraryDirectories>%VULKAN_SDK%\Lib;SDL\lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /i /y
-XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /i /y
-XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /i /y
-XCOPY "$(ProjectDir)Exported Splits" "$(TargetDir)Exported Splits" /s /i /y
-XCOPY "$(SolutionDir)Compiler\GSC" "$(TargetDir)GSC" /s /i /y
-COPY "$(ProjectDir)Icon.png" "$(TargetDir)Icon.png" /y
+      <Command>XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /e /i /y
+XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /e /i /y
+XCOPY "$(ProjectDir)Exported Splits" "$(TargetDir)Exported Splits" /s /e /i /y
+XCOPY "$(SolutionDir)Compiler" "$(TargetDir)Compiler" /s /e /i /y
+XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /e /i /y
+COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>Default</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>src;imgui;headers;SDL/include;%VULKAN_SDK%\include;.\</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <StringPooling>true</StringPooling>
+      <Optimization>Full</Optimization>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>vulkan-1.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%VULKAN_SDK%\Lib;SDL\lib</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)Settings" "$(TargetDir)Settings" /s /e /i /y
+XCOPY "$(ProjectDir)Resource Images" "$(TargetDir)Resource Images" /s /e /i /y
+XCOPY "$(ProjectDir)Exported Splits" "$(TargetDir)Exported Splits" /s /e /i /y
+XCOPY "$(SolutionDir)Compiler" "$(TargetDir)Compiler" /s /e /i /y
+XCOPY "$(ProjectDir)Fonts" "$(TargetDir)Fonts" /s /e /i /y
 COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
 </Command>
     </PostBuildEvent>
@@ -159,8 +240,12 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
   <ItemGroup>
     <ClInclude Include="Fonts\Icons.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="headers\Docs.h" />
     <ClInclude Include="headers\GlobalData.h" />
+    <ClInclude Include="headers\GUIState.h" />
+    <ClInclude Include="headers\ImGuiHelper.h" />
     <ClInclude Include="headers\Keybinds.h" />
+    <ClInclude Include="headers\ListDefs.h" />
     <ClInclude Include="headers\Memhelp.h" />
     <ClInclude Include="headers\stb_image.h" />
     <ClInclude Include="headers\ToolData.h" />
@@ -198,7 +283,10 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\Docs.cpp" />
     <ClCompile Include="src\GlobalData.cpp" />
+    <ClCompile Include="src\GUIState.cpp" />
+    <ClCompile Include="src\ImGuiHelper.cpp" />
     <ClCompile Include="src\Keybinds.cpp" />
     <ClCompile Include="src\Memhelp.cpp" />
     <ClCompile Include="src\ToolData.cpp" />
@@ -217,6 +305,7 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <Image Include="Icon.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Fonts\DroidSans.embed" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

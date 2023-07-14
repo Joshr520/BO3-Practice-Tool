@@ -47,3 +47,8 @@ WaitHome()
 {
     while(!compiler::waitkey(0x24)) wait 0.05;
 }
+
+WaitPlus()
+{
+    while(!compiler::waitkey(0xbb) && !compiler::waitkey(0x6b)) wait 0.05;
+}

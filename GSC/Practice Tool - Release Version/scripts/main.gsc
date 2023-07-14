@@ -20,14 +20,16 @@ on_player_connect()
 {
     if(!self IsHost()) return;
     self InitVars();
+    self thread RevInGameTimer();
     level flag::wait_till("start_zombie_round_logic");
 
     WaitFadeIn();
 
     message = hud::createserverfontstring("big", 1.1);
-    hud::setpoint("TOP", "MIDDLE", 20, 0);
+    message hud::setpoint("TOP", "TOP", 0, 0);
     message SetText("BO3 Practice Tool Loaded: ^6github.com/Joshr520/BO3-Practice-Tool");
-    wait 3;
+    message SetTypewriterFX(50, 15000, 0);
+    wait 5;
     message FadeOverTime(5);
     message.alpha = 0;
     wait 5;
@@ -92,8 +94,25 @@ InitVars()
 InitCustomFlags()
 {
     level flag::init("round_skip_request");
-    level flag::init("puzzle_practice");
-    level flag::init("tomb_soft_patch");
+    
+    switch(level.script)
+    {
+        case "zm_island":
+        {
+            level flag::init("island_soft_patch");
+            break;
+        }
+        case "zm_stalingrad":
+        {
+            level flag::init("stalingrad_soft_patch");
+        }
+        case "zm_tomb":
+        {
+            level flag::init("puzzle_practice");
+            level flag::init("tomb_soft_patch");
+            break;
+        }
+    }
 }
 
 IsTrue(bool)

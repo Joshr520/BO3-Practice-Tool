@@ -20,6 +20,7 @@
 #include scripts\shared\util_shared;
 #include scripts\shared\hud_util_shared;
 #include scripts\shared\fx_shared;
+#include scripts\shared\aat_shared;
 
 #include scripts\shared\ai\zombie_utility;
 #include scripts\shared\ai\systems\blackboard;

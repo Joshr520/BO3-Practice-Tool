@@ -9,17 +9,11 @@
 
 namespace BO3PT
 {
-	inline bool done = false;
-	inline bool enabled = false;
-	inline std::string appStatus = "Status: Inactive";
-	inline std::string currentMap = "zm_castle";
+	inline std::string currentMap = "";
 	inline std::string bo3Directory;
 	inline std::string selfDirectory;
-	inline std::string downloadURL;
-	inline std::vector<Walnut::Image*> bgbImgList;
-	inline std::vector<Walnut::Image*> codeImgList;
-	inline std::vector<Walnut::Image*> valveSolverImgList;
-	inline std::unordered_map<std::string, Walnut::Image*> iceCodeImgList;
+	inline std::string toolDownloadURL;
+	inline std::string compilerDownloadURL;
 
 	constexpr unsigned long hashstr(const char* str, int h = 0) { return !str[h] ? 55 : (hashstr(str, h + 1) * 33) + (unsigned char)(str[h]); }
 	std::string ParseTimeFromMilli(int milliseconds);

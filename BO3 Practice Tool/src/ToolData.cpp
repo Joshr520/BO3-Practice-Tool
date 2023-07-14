@@ -1,11 +1,12 @@
 #include "ToolData.h"
 #include "GlobalData.h"
 #include "Fonts/Icons.h"
+#include "Walnut/Application.h"
 #include "Walnut/Random.h"
 #include "Walnut/FileFormats/xml.h"
-#include "Walnut/FileFormats/json.h"
 #include "Walnut/Logger.h"
 #include "Keybinds.h"
+#include "GUIState.h"
 
 #define CURL_STATICLIB
 #include <curl/curl.h>
@@ -14,29 +15,29 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <thread>
+#include <set>
 #include <regex>
 
-using namespace BO3PT;
+using WLog = Walnut::Logger;
+using WMT = Walnut::MessageType;
+using WJson = Walnut::JSONBuilder;
 
 DWORD WaitToKillCompiler(PROCESS_INFORMATION processInfo)
 {
     DWORD exitCode = 0;
     DWORD result = WaitForSingleObject(processInfo.hProcess, 3000);
-    if (result == WAIT_TIMEOUT)
-    {
-        Walnut::Logger::Log(Walnut::MessageType::Info, "Killing compiler for timeout");
+    if (result == WAIT_TIMEOUT) {
+        WLog::Log(WMT::Info, "Killing compiler for timeout");
         TerminateProcess(processInfo.hProcess, 0);
     }
-    else if (result == WAIT_OBJECT_0)
-    {
-        if (!GetExitCodeProcess(processInfo.hProcess, &exitCode))
-        {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "GetExitCodeProcess failed with error code: " + std::to_string(GetLastError()));
+    else if (result == WAIT_OBJECT_0) {
+        if (!GetExitCodeProcess(processInfo.hProcess, &exitCode)) {
+            WLog::Log(WMT::Error, "GetExitCodeProcess failed with error code: " + GetLastError());
         }
     }
-    else
-    {
-        Walnut::Logger::Log(Walnut::MessageType::Error, "WaitForSingleObject failed with error code: " + std::to_string(GetLastError()));
+    else {
+        WLog::Log(WMT::Error, "WaitForSingleObject failed with error code: " + GetLastError());
     }
     return exitCode;
 }
@@ -47,143 +48,20 @@ static size_t WriteToFile(char* ptr, size_t size, size_t nmemb, void* f)
     return fwrite(ptr, size, nmemb, file);
 }
 
+static bool bgbLoaded = false;
+static bool codesLoaded = false;
+static bool buildKitsLoaded = false;
+
 namespace BO3PT
 {
-#pragma region Craftables
-    void InitCraftablesList()
-    {
-        std::unordered_map<int, std::vector<std::string>> zodCraftables;
-        zodCraftables.insert({ 0, { "Dolly", "Door", "Clamp" } });
-        zodCraftables.insert({ 1, { "Fuse 1", "Fuse 2", "Fuse 3" } });
-        zodCraftables.insert({ 2, { "Heart", "Tentacle", "Xenomatter" } });
-        zodCraftables.insert({ 3, { "Boxer", "Detective", "Femme", "Magician" } });
-        zodCraftables.insert({ 4, { "Boxer", "Detective", "Femme", "Magician" } });
-
-        std::unordered_map<int, std::string> zodCraftNames;
-        zodCraftNames.insert({ 0, "Shield" });
-        zodCraftNames.insert({ 1, "Civil Protector" });
-        zodCraftNames.insert({ 2, "ID Gun" });
-        zodCraftNames.insert({ 3, "Mementos" });
-        zodCraftNames.insert({ 4, "Gateworms" });
-
-        std::unordered_map<int, int> zodCraftIndexes;
-        zodCraftIndexes.insert({ 0, 0 });
-        zodCraftIndexes.insert({ 1, 0 });
-        zodCraftIndexes.insert({ 2, 0 });
-        zodCraftIndexes.insert({ 3, 0 });
-        zodCraftIndexes.insert({ 4, 0 });
-
-        std::unordered_map<int, std::vector<std::string>> castleCraftables;
-        castleCraftables.insert({ 0, { "Dolly", "Door", "Clamp" } });
-        castleCraftables.insert({ 1, { "Body", "Guards", "Handle" } });
-
-        std::unordered_map<int, std::string> castleCraftNames;
-        castleCraftNames.insert({ 0, "Shield" });
-        castleCraftNames.insert({ 1, "Rags" });
-
-        std::unordered_map<int, int> castleCraftIndexes;
-        castleCraftIndexes.insert({ 0, 0 });
-        castleCraftIndexes.insert({ 1, 0 });
-
-        std::unordered_map<int, std::vector<std::string>> islandCraftables;
-        islandCraftables.insert({ 0, { "Dolly", "Door", "Clamp" } });
-        islandCraftables.insert({ 1, { "Visor", "Filter", "Strap" } });
-
-        std::unordered_map<int, std::string> islandCraftNames;
-        islandCraftNames.insert({ 0, "Shield" });
-        islandCraftNames.insert({ 1, "Gasmask" });
-
-        std::unordered_map<int, int> islandCraftIndexes;
-        islandCraftIndexes.insert({ 0, 0 });
-        islandCraftIndexes.insert({ 1, 0 });
-
-        std::unordered_map<int, std::vector<std::string>> stalingradCraftables;
-        stalingradCraftables.insert({ 0, { "Dolly", "Door", "Clamp" } });
-
-        std::unordered_map<int, std::string> stalingradCraftNames;
-        stalingradCraftNames.insert({ 0, "Shield" });
-
-        std::unordered_map<int, int> stalingradCraftIndexes;
-        stalingradCraftIndexes.insert({ 0, 0 });
-        stalingradCraftIndexes.insert({ 1, 0 });
-
-        std::unordered_map<int, std::vector<std::string>> genesisCraftables;
-        genesisCraftables.insert({ 0, { "Dolly", "Door", "Clamp" } });
-        genesisCraftables.insert({ 1, { "Totem", "Head", "Gem" } });
-
-        std::unordered_map<int, std::string> genesisCraftNames;
-        genesisCraftNames.insert({ 0, "Shield" });
-        genesisCraftNames.insert({ 1, "Keeper" });
-
-        std::unordered_map<int, int> genesisCraftIndexes;
-        genesisCraftIndexes.insert({ 0, 0 });
-        genesisCraftIndexes.insert({ 1, 0 });
-
-        std::unordered_map<int, std::vector<std::string>> tombCraftables;
-        tombCraftables.insert({ 0, { "Dolly", "Door", "Clamp" } });
-        tombCraftables.insert({ 1, { "Body", "Brain", "Engine" } });
-        tombCraftables.insert({ 2, { "Vinyl Player", "Vinyl Master", "Vinyl Wind", "Vinyl Ice", "Vinyl Fire", "Vinyl Lightning" } });
-        tombCraftables.insert({ 3, { "Gem", "Upper Staff", "Middle Staff", "Lower Staff" } });
-        tombCraftables.insert({ 4, { "Gem", "Upper Staff", "Middle Staff", "Lower Staff" } });
-        tombCraftables.insert({ 5, { "Gem", "Upper Staff", "Middle Staff", "Lower Staff" } });
-        tombCraftables.insert({ 6, { "Gem", "Upper Staff", "Middle Staff", "Lower Staff" } });
-
-        std::unordered_map<int, std::string> tombCraftNames;
-        tombCraftNames.insert({ 0, "Shield" });
-        tombCraftNames.insert({ 1, "Maxis Drone" });
-        tombCraftNames.insert({ 2, "Gramophone" });
-        tombCraftNames.insert({ 3, "Wind Staff" });
-        tombCraftNames.insert({ 4, "Fire Staff" });
-        tombCraftNames.insert({ 5, "Lightning Staff" });
-        tombCraftNames.insert({ 6, "Ice Staff" });
-
-        std::unordered_map<int, int> tombCraftIndexes;
-        tombCraftIndexes.insert({ 0, 0 });
-        tombCraftIndexes.insert({ 1, 0 });
-        tombCraftIndexes.insert({ 2, 0 });
-        tombCraftIndexes.insert({ 3, 0 });
-        tombCraftIndexes.insert({ 4, 0 });
-        tombCraftIndexes.insert({ 5, 0 });
-        tombCraftIndexes.insert({ 6, 0 });
-
-        craftList.insert({ "zm_zod", zodCraftables });
-        craftList.insert({ "zm_castle", castleCraftables });
-        craftList.insert({ "zm_island", islandCraftables });
-        craftList.insert({ "zm_stalingrad", stalingradCraftables });
-        craftList.insert({ "zm_genesis", genesisCraftables });
-        craftList.insert({ "zm_tomb", tombCraftables });
-
-        craftNames.insert({ "zm_zod", zodCraftNames });
-        craftNames.insert({ "zm_castle", castleCraftNames });
-        craftNames.insert({ "zm_island", islandCraftNames });
-        craftNames.insert({ "zm_stalingrad", stalingradCraftNames });
-        craftNames.insert({ "zm_genesis", genesisCraftNames });
-        craftNames.insert({ "zm_tomb", tombCraftNames });
-
-        craftComboIndexes.insert({ "zm_zod", zodCraftIndexes });
-        craftComboIndexes.insert({ "zm_castle", castleCraftIndexes });
-        craftComboIndexes.insert({ "zm_island", islandCraftIndexes });
-        craftComboIndexes.insert({ "zm_stalingrad", stalingradCraftIndexes });
-        craftComboIndexes.insert({ "zm_genesis", genesisCraftIndexes });
-        craftComboIndexes.insert({ "zm_tomb", tombCraftIndexes });
-    }
-#pragma endregion
-
 #pragma region GUIFunctions
+
     void InitVariables()
     {
-        InitImages();
         InitHotKeyBinds();
-        InitBGBDescriptions();
-        InitClassicGumsList();
-        InitMegaGumsList();
-        LoadGumProfiles();
-        LoadSplitPresets();
-        InitWeaponsList();
-        InitPerksList();
-        InitPowerupList();
-        InitCraftablesList();
-        InitIceCodePairs();
+        LoadBGBProfiles();
+        LoadAutosplitPresets();
+        LoadWeaponProfiles();
         zombiesForRound = GetZombieCountForRound(1, 1);
         specialZombiesForRound = GetZombieCountForRound(1, 1);
         hordesForRound = zombiesForRound / 24.0f;
@@ -205,192 +83,319 @@ namespace BO3PT
         furyDelay = "Fury Spawn Delay: " + ParseTimeFromMilli(GetSpecialEnemySpawnRate(specialEnemyPlayerCount, "Furys"));
         keeperDelay = "Keeper Spawn Delay: " + ParseTimeFromMilli(GetSpecialEnemySpawnRate(specialEnemyPlayerCount, "Keepers"));
         CalcLockdownTime(1, 1);
-        InitValveSolutions();
         CalcValveProbabilities();
-    }
-
-    void InitImages()
-    {
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Gum Images/Classics"))
-        {
+        // Currently only 1 image is loaded for valves, so I'm not bothering to load and unload it for ram benefits
+        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/GK Valve Solver")) {
             const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
+            if (name.find(".png") == name.npos) {
                 continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            bgbImgList.emplace_back(img);
-        }
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Gum Images/Megas"))
-        {
-            const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
-                continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            bgbImgList.emplace_back(img);
-        }
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Soe Code"))
-        {
-            const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
-                continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            codeImgList.emplace_back(img);
-            soeCodeCombo.emplace_back(img->GetFilename());
-        }
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/GK Valve Solver"))
-        {
-            const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
-                continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            valveSolverImgList.emplace_back(img);
-        }
-        for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "/Resource Images/Ice Code"))
-        {
-            const std::string& name = entry.path().filename().string();
-            if (name.find(".png") == name.npos)
-                continue;
-            Walnut::Image* img = new Walnut::Image(entry.path().string());
-            iceCodeImgList.insert({ img->GetFilename(), img });
+            }
+            valveSolverImgList.emplace_back(std::make_unique<Walnut::Image>(entry.path().string()));
         }
     }
 
-    void HelpMarker(const std::string& text)
+    void LoadImages(RenderWindow window)
     {
-        ImGui::TextDisabled(ICON_FA_CIRCLE_QUESTION);
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextWrapped(text.c_str());
-            ImGui::PopTextWrapPos();
-            ImGui::EndTooltip();
-        }
-    }
-
-    void DummySpace(float x, float y)
-    {
-        ImGui::Dummy(ImVec2(x, y));
-    }
-
-    void SetToggleButtonColor(bool active)
-    {
-        if (!active)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(170, 0, 0, 255));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(170, 0, 0, 255));
-        }
-        else
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 128, 0, 255));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(0, 128, 0, 255));
-        }
-    }
-
-    void FakeButton(const std::string& name, const ImVec2& size, const ImVec4& color)
-    {
-        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(color.x, color.y, color.z, color.w));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(color.x, color.y, color.z, color.w));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(color.x, color.y, color.z, color.w));
-        ImGui::Button(name.c_str(), size);
-        ImGui::PopStyleColor(3);
-    }
-
-    void SwapGumSelection(int newGum, int gumSlot)
-    {
-        for (int i = 0; i < gumPresets[currentGumPreset].presetGums.size(); i++)
-        {
-            if (gumPresets[currentGumPreset].presetGums[i] == newGum)
-            {
-                gumPresets[currentGumPreset].presetGums[i] = gumPresets[currentGumPreset].presetGums[gumSlot];
+        switch (window) {
+        case BGBLoadout:
+        case GumTracker: {
+            if (codesLoaded) {
+                soeCodeImgList.clear();
+                soeCodeCombo.clear();
+                iceCodeImgList.clear();
+                iceCodePairs.clear();
+                randomIceCodePairs.clear();
+                codesLoaded = false;
+            }
+            if (buildKitsLoaded) {
+                buildKitImgList.clear();
+                camosImgList.clear();
+                weaponIconsImgList.clear();
+                opticsImgList.clear();
+                attachmentsImgList.clear();
+                buildKitsLoaded = false;
+            }
+            if (bgbLoaded) {
                 break;
             }
+
+            std::thread classicsThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Gum Images\\Classics")) {
+                    if (entry.path().extension().string() != ".png") {
+                        continue;
+                    }
+                    bgbImgList.insert({ entry.path().stem().string(), std::make_unique<Walnut::Image>(entry.path().string())});
+                }
+                });
+
+            std::thread megasThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Gum Images\\Megas")) {
+                    if (entry.path().extension().string() != ".png") {
+                        continue;
+                    }
+                    bgbImgList.insert({ entry.path().stem().string(), std::make_unique<Walnut::Image>(entry.path().string())});
+                }
+                });
+
+            classicsThread.join();
+            megasThread.join();
+            bgbLoaded = true;
+            break;
         }
-        gumPresets[currentGumPreset].presetGums[gumSlot] = newGum;
-        WriteGumPreset(gumPresets[currentGumPreset].presetGums);
+        case WeaponLoadout: {
+            if (bgbLoaded) {
+                bgbImgList.clear();
+                bgbLoaded = false;
+            }
+            if (codesLoaded) {
+                soeCodeImgList.clear();
+                soeCodeCombo.clear();
+                iceCodeImgList.clear();
+                iceCodePairs.clear();
+                randomIceCodePairs.clear();
+                codesLoaded = false;
+            }
+            if (buildKitsLoaded) {
+                break;
+            }
+
+            std::thread buildKitThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Build Kits")) {
+                    if (entry.path().extension().string() != ".png") {
+                        continue;
+                    }
+                    buildKitImgList.emplace_back(std::make_unique<Walnut::Image>(entry.path().string()));
+                }
+                });
+
+            std::thread camosThread([&]() {
+                for (const auto& directory : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Camos")) {
+                    if (std::filesystem::is_directory(directory.path())) {
+                        WeaponCamoGroup camoGroup;
+                        for (const auto& file : std::filesystem::directory_iterator(directory.path())) {
+                            if (file.path().extension().string() != ".png") {
+                                continue;
+                            }
+                            camoGroup.m_Camos.insert({ file.path().filename().stem().string(), std::make_unique<Walnut::Image>(file.path().string()) });
+                        }
+                        camosImgList.insert({ directory.path().filename().stem().string(), std::move(camoGroup) });
+                    }
+                }
+                });
+
+            std::thread weaponIconsThread([&]() {
+                for (const auto& directory : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Icons")) {
+                    if (std::filesystem::is_directory(directory.path())) {
+                        for (const auto& file : std::filesystem::directory_iterator(directory.path())) {
+                            if (file.path().extension().string() != ".png") {
+                                continue;
+                            }
+                            weaponIconsImgList.insert({ file.path().stem().string(), std::make_unique<Walnut::Image>(file.path().string()) });
+                        }
+                    }
+                }
+                });
+
+            std::thread opticsThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Attachments\\Optics")) {
+                    if (entry.path().extension().string() != ".png") {
+                        continue;
+                    }
+                    opticsImgList.insert({ entry.path().stem().string(), std::make_unique<Walnut::Image>(entry.path().string()) });
+                }
+                });
+
+            std::thread attachmentsThread([&]() {
+                for (const auto& directory : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Weapons\\Attachments")) {
+                    if (std::filesystem::is_directory(directory.path())) {
+                        for (const auto& file : std::filesystem::directory_iterator(directory.path())) {
+                            if (file.path().extension().string() != ".png") {
+                                continue;
+                            }
+                            attachmentsImgList.insert({ file.path().stem().string(), std::make_unique<Walnut::Image>(file.path().string()) });
+                        }
+                    }
+                }
+                });
+
+            buildKitThread.join();
+            camosThread.join();
+            weaponIconsThread.join();
+            opticsThread.join();
+            attachmentsThread.join();
+            buildKitsLoaded = true;
+            break;
+        }
+        case CodeGuides: {
+            if (bgbLoaded) {
+                bgbImgList.clear();
+                bgbLoaded = false;
+            }
+            if (buildKitsLoaded) {
+                buildKitImgList.clear();
+                camosImgList.clear();
+                weaponIconsImgList.clear();
+                opticsImgList.clear();
+                attachmentsImgList.clear();
+                buildKitsLoaded = false;
+            }
+            if (codesLoaded) {
+                break;
+            }
+
+            std::thread soeCodeThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Soe Code")) {
+                    if (entry.path().extension().string() != ".png") {
+                        continue;
+                    }
+                    std::shared_ptr<Walnut::Image> img = std::make_shared<Walnut::Image>(entry.path().string());
+                    soeCodeImgList.emplace_back(img);
+                    soeCodeCombo.emplace_back(img->GetFilename());
+                }
+                });
+
+            std::thread iceCodeThread([&]() {
+                for (const auto& entry : std::filesystem::directory_iterator(selfDirectory + "\\Resource Images\\Ice Code")) {
+                    if (entry.path().extension().string() != ".png") {
+                        continue;
+                    }
+                    std::shared_ptr<Walnut::Image> img = std::make_shared<Walnut::Image>(entry.path().string());
+                    iceCodeImgList.insert({ img->GetFilename(), img });
+                }
+                });
+
+            soeCodeThread.join();
+            iceCodeThread.join();
+            LoadIceCodePairs();
+            codesLoaded = true;
+            break;
+        }
+        default:
+            if (bgbLoaded) {
+                bgbImgList.clear();
+                bgbLoaded = false;
+            }
+            if (codesLoaded) {
+                soeCodeImgList.clear();
+                soeCodeCombo.clear();
+                iceCodeImgList.clear();
+                iceCodePairs.clear();
+                randomIceCodePairs.clear();
+                codesLoaded = false;
+            }
+            if (buildKitsLoaded) {
+                buildKitImgList.clear();
+                camosImgList.clear();
+                weaponIconsImgList.clear();
+                opticsImgList.clear();
+                attachmentsImgList.clear();
+                buildKitsLoaded = false;
+            }
+            break;
+        }
     }
 
-    void VerifyFileStructure()
+    void VerifyInternalFiles()
+    {
+        if (!DoesPathExist(selfDirectory + "\\bindings.json")) {
+            WJson::WriteEmpty(selfDirectory + "\\bindings.json");
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings")) {
+            std::filesystem::create_directory(selfDirectory + "\\Settings");
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Autosplits")) {
+            std::filesystem::create_directory(selfDirectory + "\\Settings\\Autosplits");
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Gum Profiles")) {
+            std::filesystem::create_directory(selfDirectory + "\\Settings\\Gum Profiles");
+        }
+        if (!DoesPathExist(selfDirectory + "\\Settings\\Weapon Loadouts")) {
+            std::filesystem::create_directory(selfDirectory + "\\Settings\\Weapon Loadouts");
+        }
+    }
+
+    void VerifyExternalFiles()
     {
         std::string practiceToolDirectory = bo3Directory + "\\Practice Tool";
-        std::string gscDirectory = practiceToolDirectory + "\\GSC";
+        std::string compilerDirectory = practiceToolDirectory + "\\Compiler";
         std::string settingsFolder = practiceToolDirectory + "\\Settings";
-        if (!DoesPathExist(practiceToolDirectory))
+        if (!DoesPathExist(practiceToolDirectory)) {
             std::filesystem::create_directory(practiceToolDirectory);
-        if (!DoesPathExist(gscDirectory))
-            std::filesystem::create_directory(gscDirectory);
-        if (!DoesPathExist(settingsFolder))
+        }
+        if (!DoesPathExist(compilerDirectory)) {
+            std::filesystem::create_directory(compilerDirectory);
+        }
+        if (!DoesPathExist(settingsFolder)) {
             std::filesystem::create_directory(settingsFolder);
-        if (!DoesPathExist(practiceToolDirectory + "\\Tool-Game Interface.txt"))
-            std::ofstream(practiceToolDirectory + "\\Tool-Game Interface.txt");
-        if (!DoesPathExist(practiceToolDirectory + "\\Game-Tool Interface.txt"))
-            std::ofstream(practiceToolDirectory + "\\Game-Tool Interface.txt");
-        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt"))
-            std::ofstream(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
-        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json"))
+        }
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Active Autosplit Preset.json");
-        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt"))
+        }
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt")) {
+            std::ofstream(practiceToolDirectory + "\\Settings\\Active Gum Preset.txt");
+        }
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Active Weapon Loadout.json")) {
+            std::ofstream(practiceToolDirectory + "\\Settings\\Active Weapon Loadout.json");
+        }
+        if (!DoesPathExist(practiceToolDirectory + "\\Settings\\Practice Presets.txt")) {
             std::ofstream(practiceToolDirectory + "\\Settings\\Practice Presets.txt");
-        if (!DoesPathExist(selfDirectory + "\\bindings.json"))
-            Walnut::JSONBuilder::WriteEmpty(selfDirectory + "\\bindings.json");
-        if (!DoesPathExist(selfDirectory + "\\Settings"))
-            std::filesystem::create_directory(selfDirectory + "\\Settings");
-        if (!DoesPathExist(selfDirectory + "\\Settings\\Autosplits"))
-            std::filesystem::create_directory(selfDirectory + "\\Settings\\Autosplits");
-        if (!DoesPathExist(selfDirectory + "\\Settings\\Gum Profiles"))
-            std::filesystem::create_directory(selfDirectory + "\\Settings\\Gum Profiles");
-        if (DoesPathExist(selfDirectory + "\\GSC"))
-        {
-            std::string startDirectory = selfDirectory + "\\GSC";
+        }
+        if (DoesPathExist(selfDirectory + "\\Compiler")) {
+            std::string startDirectory = selfDirectory + "\\Compiler";
             for (const auto& entry : std::filesystem::directory_iterator(startDirectory))
             {
                 if (entry.is_directory() || entry.path().filename().string() == "." || entry.path().filename().string() == "..")
                     continue;
                 std::string name = entry.path().filename().string();
                 std::string oldFile = entry.path().string();
-                std::string newFile = gscDirectory + "\\" + name;
-                if (!DoesPathExist(oldFile))
+                std::string newFile = compilerDirectory + "\\" + name;
+                if (!DoesPathExist(oldFile)) {
                     continue;
-                try
-                {
+                }
+                try {
                     std::filesystem::rename(oldFile, newFile);
                 }
-                catch (const std::filesystem::filesystem_error& e)
-                {
-                    Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to move file " + oldFile + " to " + newFile + " with error message: " + std::string(e.what()));
+                catch (const std::filesystem::filesystem_error& e) {
+                    WLog::Log(WMT::Error, "Failed to move file " + oldFile + " to " + newFile + " with error message: " + std::string(e.what()));
                     std::filesystem::remove(oldFile);
                 }
             }
-            if (!std::filesystem::remove(startDirectory))
-                Walnut::Logger::Log(Walnut::MessageType::Error, "Couldn't remove GSC directory with error code: " + std::error_code(errno, std::system_category()).message());
+            if (!std::filesystem::remove(startDirectory)) {
+                WLog::Log(WMT::Error, "Couldn't remove Compiler directory with error code: " + std::error_code(errno, std::system_category()).message());
+            }
         }
     }
 
-    void WritePracticePatches(const int patch[9])
+    void WritePracticePatches()
     {
-        std::string outData;
-        for (int i = 0; i < 9; i++)
-        {
-            outData.append(std::to_string(patch[i] - 1) + ",");
+        std::string data;
+        
+        if (GUIState::IsStateSet(Active)) {
+            for (const MapPracticePatch& list : practicePatches.m_PracticePatches) {
+                data.append(std::to_string(list.m_Index - 1) + ",");
+            }
         }
-        outData.replace(outData.size() - 1, 1, "");
-        std::ofstream outFile(bo3Directory + "\\Practice Tool\\Settings\\Practice Presets.txt");
-        outFile << outData;
-        outFile.close();
+        else {
+            for (const MapPracticePatch& list : practicePatches.m_PracticePatches) {
+                data.append("-1,");
+            }
+        }
+        data.replace(data.size() - 1, 1, "");
+        std::ofstream(bo3Directory + "\\Practice Tool\\Settings\\Practice Presets.txt").write(data.c_str(), data.size());
     }
 
     void NotifyGame(const std::vector<int>& passList)
     {
-        if (appStatus == "Status: Inactive")
+        if (!GUIState::IsStateSet(Active)) {
             return;
+        }
         std::string outData;
-        for (int i = 0; i < passList.size(); i++)
-        {
+        for (int i = 0; i < passList.size(); i++) {
             outData.append(std::to_string(passList[i]) + " ");
         }
 
         HANDLE pipe = CreateFileA("\\\\.\\pipe\\t7Compiler", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-        if (!pipe)
-        {
+        if (!pipe) {
             return;
         }
 
@@ -398,47 +403,45 @@ namespace BO3PT
         CloseHandle(pipe);
     }
 
-    void InjectTool(bool enable, bool& injectResponse)
+    void InjectTool(bool enable)
     {
-        std::string gsc = bo3Directory + "/Practice Tool/GSC";
-        std::string compiler = "\"" + gsc + "/DebugCompiler.exe\"";
-        std::string ptPass = compiler + " --inject " + "\"" + gsc + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
-        std::string nmPass = compiler + " --inject " + "\"" + gsc + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
+        std::string compilerDir = bo3Directory + "/Practice Tool/Compiler";
+        std::string compilerEXE = "\"" + compilerDir + "/DebugCompiler.exe\"";
+        std::string ptPass = compilerEXE + " --inject " + "\"" + compilerDir + "\\Practice Tool.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
+        std::string nmPass = compilerEXE + " --inject " + "\"" + compilerDir + "\\No Mods.gsc\" T7 scripts/shared/duplicaterender_mgr.gsc";
         std::unordered_set<std::string_view> wantedFiles = { "DebugCompiler.exe", "DebugCompiler.exe.config", "External.dll", "Ionic.Zip.dll", "Irony.dll", "No Mods.gsc", "Practice Tool.gsc", "System.Buffers.dll", "System.Collections.Immutable.dll", "System.Memory.dll",
             "System.Numerics.Vectors.dll", "System.Reflection.Metadata.dll", "System.Runtime.CompilerServices.Unsafe.dll", "t7cinternal.dll", "T7CompilerLib.dll", "t8cinternal.dll", "T89CompilerLib.dll", "TreyarchCompiler.dll", "xdevkit.dll", "xdrpc.dll" };
-        for (const auto& fileName : wantedFiles)
-        {
-            std::filesystem::path path(std::filesystem::path(gsc) / fileName);
-            if (!std::filesystem::exists(path))
-            {
-                enabled = false;
-                appStatus = "Status: Inactive";
-                injectResponse = true;
+        for (const auto& fileName : wantedFiles) {
+            std::filesystem::path path(std::filesystem::path(compilerDir) / fileName);
+            if (!std::filesystem::exists(path)) {
+                GUIState::UnsetState(Active);
+                ImGuiHelper::PopupWrapper::PrepPopup(ImGuiHelper::InjectFailed);
+                WLog::Log(WMT::Error, "Required files to inject missing");
                 return;
             }
         }
 
         LPSTR args;
-        if (enable)
+        if (enable) {
             args = &ptPass[0];
-        else
+        }
+        else {
             args = &nmPass[0];
+        }
 
         STARTUPINFOA startupInfo = { sizeof(startupInfo) };
         PROCESS_INFORMATION processInfo = { 0 };
-        if (CreateProcessA(NULL, args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
-        {
+        if (CreateProcessA(NULL, args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo)) {
             DWORD exitCode = WaitToKillCompiler(processInfo);
-            if (exitCode != 0)
-                Walnut::Logger::Log(Walnut::MessageType::Error, "Compiler process failed with error code: " + std::to_string(exitCode));
+            if (exitCode != 0) {
+                WLog::Log(WMT::Error, "Compiler process failed with error code: " + std::to_string(exitCode));
+            }
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
         }
-        else
-        {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to inject tool with error code: " + std::to_string(GetLastError()));
-            enabled = false;
-            appStatus = "Status: Inactive";
+        else {
+            WLog::Log(WMT::Error, "Failed to inject tool with error code: " + GetLastError());
+            GUIState::UnsetState(Active);
         }
     }
 
@@ -455,99 +458,12 @@ namespace BO3PT
         timescaleInt = 1;
     }
 
-    bool CreateButton(const std::string& name, const ImVec2& size, bool* value, bool toggle, const ImVec4& color, bool inGame)
-    {
-        if (toggle)
-            SetToggleButtonColor(*value);
-        else
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(color.x, color.y, color.z, color.w));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(color.x, color.y, color.z, color.w));
-        }
-        if (ImGui::Button(name.c_str(), size))
-        {
-            if (!inGame || inGame && appStatus == "Status: Active")
-            {
-                if (toggle)
-                    *value = !*value;
-            }
-            ImGui::PopStyleColor(2);
-            return 1;
-        }
-        if (name == ICON_FA_ARROW_LEFT && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
-        {
-            ImGui::PopStyleColor(2);
-            return 1;
-        }
-        ImGui::PopStyleColor(2);
-        return 0;
-    }
-
-    bool CreateListBox(const std::string& name, const std::vector<std::string>& items, int& currentItem, const ImVec2& size)
-    {
-        int prevItem = currentItem;
-        if (ImGui::ListBoxHeader(name.c_str(), size))
-        {
-            for (int i = 0; i < items.size(); i++)
-            {
-                const bool is_selected = (currentItem == i);
-                if (ImGui::Selectable(items[i].c_str(), is_selected))
-                    currentItem = i;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::ListBoxFooter();
-            if (prevItem != currentItem)
-                return true;
-        }
-        return false;
-    }
-
-    bool CreateGumImages(const std::vector<int>& gumArr, const ImVec2& imgSize, int numOnLine, const std::string& type, const std::function<void(int input)>& funcOnPress, int& outIndex)
-    {
-        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0)); ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(25, 100, 128, 100));
-        float leftPos = ImGui::GetCursorPosX();
-        if (numOnLine < 1)
-            numOnLine = 1;
-        else if (numOnLine > (int)gumArr.size())
-            numOnLine = (int)gumArr.size();
-
-        for (int i = 0; i < gumArr.size(); i++)
-        {
-            if (gumArr[i] < 0)
-            {
-                ImGui::PopStyleColor(2);
-                return 0;
-            }
-            auto it = std::find(bgbImgList.begin(), bgbImgList.end(), bgbImgList[gumArr[i]]);
-            int index = static_cast<int>(std::distance(bgbImgList.begin(), it));
-            if (ImGui::ImageButton(bgbImgList[gumArr[i]]->GetDescriptorSet(), imgSize))
-            {
-                if (type == "Selection")
-                    funcOnPress(i);
-                else
-                    funcOnPress(index);
-                ImGui::PopStyleColor(2);
-                return 1;
-            }
-            if (ImGui::IsItemHovered())
-                outIndex = index;
-            if ((i + 1) % numOnLine != 0)
-                ImGui::SameLine();
-            else
-                ImGui::SetCursorPosX(leftPos);
-        }
-
-        ImGui::PopStyleColor(2);
-        return 0;
-    }
-
-    bool DoesPathExist(const std::string_view& s)
+    bool DoesPathExist(std::string_view s)
     {
         return std::filesystem::exists(s);
     }
 
-    bool CheckVersions(const std::string& newVersion, const std::string& currentVersion)
+    bool CheckVersions(const std::string& newVersion, std::string_view currentVersion)
     {
         std::regex regex("\\d+\\.\\d+\\.\\d+");
         std::vector<int> currentNumbers;
@@ -557,7 +473,7 @@ namespace BO3PT
         if (std::regex_search(newVersion, match, regex)) {
             std::string numericVersion = match.str();
 
-            std::stringstream currentStream(currentVersion);
+            std::stringstream currentStream(currentVersion.data());
             std::stringstream newStream(numericVersion);
 
             std::string segment;
@@ -582,7 +498,7 @@ namespace BO3PT
         return newNumbers.size() > currentNumbers.size();
     }
 
-    bool DownloadAndExtractZip(const std::unordered_set<std::string_view>& wantedFiles)
+    bool DownloadAndExtractZip(std::string_view url, const std::unordered_set<std::string_view>& wantedFiles)
     {
         curl_global_init(CURL_GLOBAL_ALL);
         CURL* curl = curl_easy_init();
@@ -592,24 +508,22 @@ namespace BO3PT
         std::string ptexe;
 
         errno_t err = fopen_s(&file, filename.c_str(), "wb");
-        if (err != 0)
-        {
+        if (err != 0) {
             char errorMsg[256];
             strerror_s(errorMsg, sizeof(errorMsg), err);
-            Walnut::Logger::Log(Walnut::MessageType::Error, "Opening file " + filename + " failed with error code: " + errorMsg);
-            return 0;
+            WLog::Log(WMT::Error, "Opening file " + filename + " failed with error code: " + errorMsg);
+            return false;
         }
-        curl_easy_setopt(curl, CURLOPT_URL, downloadURL.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, url.data());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteToFile);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
         res = curl_easy_perform(curl);
         curl_easy_cleanup(curl);
         curl_global_cleanup();
-        if (res != CURLE_OK)
-        {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "curl download failed with error code: " + res);
-            return 0;
+        if (res != CURLE_OK) {
+            WLog::Log(WMT::Error, "curl download failed with error code: " + std::to_string(res));
+            return false;
         }
 
         fclose(file);
@@ -617,21 +531,18 @@ namespace BO3PT
         std::filesystem::path output_directory("./");
         mz_zip_archive zip_archive;
         mz_zip_zero_struct(&zip_archive);
-        if (!mz_zip_reader_init_file(&zip_archive, filename.c_str(), 0))
-        {
-            Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to open zip file: " + filename);
-            return 0;
+        if (!mz_zip_reader_init_file(&zip_archive, filename.c_str(), 0)) {
+            WLog::Log(WMT::Error, "Failed to open zip file: " + filename);
+            return false;
         }
 
         int num_files = mz_zip_reader_get_num_files(&zip_archive);
-        Walnut::Logger::Log(Walnut::MessageType::Info, "Extracting " + num_files + std::string(" files from ") + filename + " to " + output_directory.string());
+        WLog::Log(WMT::Info, "Extracting " + num_files + std::string(" files from ") + filename + " to " + output_directory.string());
 
-        for (int i = 0; i < num_files; i++)
-        {
+        for (int i = 0; i < num_files; i++) {
             mz_zip_archive_file_stat file_stat;
-            if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat))
-            {
-                Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to get file stat for index " + i);
+            if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat)) {
+                WLog::Log(WMT::Error, "Failed to get file stat for index " + i);
                 continue;
             }
 
@@ -639,661 +550,466 @@ namespace BO3PT
 
             std::string currentFile(file_stat.m_filename);
             bool wantedFileFound = false;
-            for (const std::string_view& wantedFile : wantedFiles)
-            {
-                if (currentFile.find(wantedFile) != currentFile.npos)
-                {
+            for (const std::string_view& wantedFile : wantedFiles) {
+                if (currentFile.find(wantedFile) != currentFile.npos) {
                     wantedFileFound = true;
                     break;
                 }
             }
 
-            if (!wantedFileFound)
+            if (!wantedFileFound) {
                 continue;
+            }
 
-            Walnut::Logger::Log(Walnut::MessageType::Info, "Extracting " + std::string(file_stat.m_filename) + " to " + output_file_path.string());
+            WLog::Log(WMT::Info, "Extracting " + std::string(file_stat.m_filename) + " to " + output_file_path.string());
 
             std::filesystem::create_directories(output_file_path.parent_path());
 
-            if (mz_zip_reader_is_file_a_directory(&zip_archive, i))
+            if (mz_zip_reader_is_file_a_directory(&zip_archive, i)) {
                 std::filesystem::create_directory(output_file_path);
-            else
-            {
-                if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path))
-                {
+            }
+            else {
+                if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path)) {
                     std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.old.exe");
                     ptexe = output_file_path.string();
                 }
-                else if (std::filesystem::exists(output_file_path))
+                else if (std::filesystem::exists(output_file_path)) {
                     std::filesystem::remove(output_file_path);
-                if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0))
-                {
-                    Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to extract file " + std::string(file_stat.m_filename));
-                    return 0;
+                }
+                if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_file_path.generic_string().c_str(), 0)) {
+                    WLog::Log(WMT::Error, "Failed to extract file " + std::string(file_stat.m_filename));
+                    return false;
                 }
             }
         }
-        Walnut::Logger::Log(Walnut::MessageType::Success, "Extraction completed successfully");
+        WLog::Log(WMT::Success, "Extraction completed successfully");
 
         mz_zip_reader_end(&zip_archive);
         std::filesystem::remove(filename);
 
-        if (!ptexe.empty())
-        {
+        if (!ptexe.empty()) {
             STARTUPINFOA startupInfo = { sizeof(startupInfo) };
             PROCESS_INFORMATION processInfo = { 0 };
             LPSTR args = &ptexe[0];
-            if (!CreateProcessA(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo))
-                Walnut::Logger::Log(Walnut::MessageType::Error, "Failed to start new practice tool exe");
+            if (!CreateProcessA(NULL, args, NULL, NULL, TRUE, NULL, NULL, NULL, &startupInfo, &processInfo)) {
+                WLog::Log(WMT::Error, "Failed to start new practice tool exe");
+            }
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
-            done = 1;
+            Walnut::Application::Get().Close();
         }
-        return 1;
+        return true;
     }
 
-    std::vector<int> GumSearch(const std::vector<int>& inGumArr, const std::string& searchText)
-    {
-        if (searchText.empty())
-            return inGumArr;
-
-        std::vector<int> outGumArr = { };
-        outGumArr.reserve(inGumArr.size());
-
-        std::string searchTextLower = searchText;
-        std::transform(searchTextLower.begin(), searchTextLower.end(), searchTextLower.begin(), [](char c) { return std::tolower(c); });
-
-        std::copy_if(inGumArr.begin(), inGumArr.end(), std::back_inserter(outGumArr), [&searchTextLower](int i)
-            {
-                std::string inGum = bgbImgList[i]->GetFilename();
-                std::transform(inGum.begin(), inGum.end(), inGum.begin(), [](char c) { return std::tolower(c); });
-                return inGum.find(searchTextLower) != inGum.npos;
-            });
-
-        return outGumArr;
-    }
-
-    std::vector<int> GetWeaponIndex(const std::string& currentMap, const std::string& weaponSelectName)
-    {
-        std::vector<std::string> weaponTypes = { "_ar", "_smg", "_lmg", "_shotgun", "_sniper", "_pistol", "_launcher", "_melee", "_special", "_equipment", "_hero" };
-        int list = 0;
-        for (const std::string& weaponType : weaponTypes)
-        {
-            int index = 0;
-            for (const std::string& weapon : weaponList[currentMap + weaponType])
-            {
-                if (weaponSelectName == weapon)
-                {
-                    return { list, index };
-                }
-                index++;
-            }
-            list++;
-        }
-        return { 0, 0 };
-    }
-#pragma endregion
-
-#pragma region Weapons
-#pragma region WeaponDefs
-#define SVG "SVG-100"
-#define DRAKON "Drakon"
-#define LOCUS "Locus"
-#define BOOTLEGGER "Bootlegger"
-#define VMP "VMP"
-#define KUDA "Kuda"
-#define VESPER "Vesper"
-#define WEEVIL "Weevil"
-#define PHARO "Pharo"
-#define HG40 "HG 40"
-#define RAZORBACK "Razorback"
-#define PPSH "PPSh-41"
-#define THOMPSON "M1927"
-#define AK74 "AK-74u"
-#define MP40 "MP40"
-#define XM "XM-53"
-#define L4 "L4 Siege"
-#define BRECCI "205 Brecci"
-#define KRM "KRM-262"
-#define ARGUS "Argus"
-#define HAYMAKER "Haymaker 12"
-#define BANSHII "Banshii"
-#define LCAR "L-CAR 9"
-#define RK5 "RK5"
-#define BLOODHOUND "Bloodhound"
-#define MR6 "MR6"
-#define MARSHAL "Marshal 16 Dual-Wield"
-#define RIFT "Rift E9"
-#define M1911 "1911"
-#define MAUSER "Mauser C96"
-#define GORGON "Gorgon"
-#define BRM "BRM"
-#define DREDGE "48 Dredge"
-#define DINGO "Dingo"
-#define RPK "RPK"
-#define MG08 "MG-08/15"
-#define KN "KN-44"
-#define SHIEVA "Shieva"
-#define M8 "M8A7"
-#define MANOWAR "Man-O-War"
-#define HVK "HVK-30"
-#define ICR "ICR-1"
-#define GARAND "MX Garand"
-#define FFAR "FFAR"
-#define PEACEKEEPER "Peacekeeper MK2"
-#define STG "StG-44"
-#define M14 "M14"
-#define M16 "M16"
-#define GALIL "Galil"
-#define SHADOWCLAW "NX ShadowClaw Dual Wield"
-#define APOTHSERVANT "Apothicon Servant"
-#define WAFFE "Wunderwaffe DG-2"
-#define RAYGUN "Ray Gun"
-#define RAYGUNMK2 "Ray Gun Mark II"
-#define RAYGUNMK3 "GKZ-45 Mk3"
-#define TGUN "Thundergun"
-#define BABYGUN "31-79 JGb215"
-#define BOW "Default Bow"
-#define LIGHTNINGBOW "Lightning Bow"
-#define FIREBOW "Fire Bow"
-#define VOIDBOW "Void Bow"
-#define WOLFBOW "Wolf Bow"
-#define KT4 "KT-4"
-#define WAVEGUN "Zap Gun Dual Wield"
-#define ICESTAFF "Staff of Ice"
-#define LIGHTNINGSTAFF "Staff of Lightning"
-#define FIRESTAFF "Staff of Fire"
-#define WINDSTAFF "Staff of Wind"
-#define BOWIEKNIFE "Bowie Knife"
-#define PLUNGER "Plunger"
-#define WRENCH "Wrench"
-#define SWORD "Fury's Song"
-#define AXE "Slash N' Burn"
-#define DAGGER "Malice"
-#define KATANA "Path of Sorrows"
-#define MACE "Skull Splitter"
-#define NUNCHUCKS "Nunchucks"
-#define IMPROVISE "Buzz Cut"
-#define BONEGLASS "Nightbreaker"
-#define SICKLE "Sickle"
-#define GRENADES "Frag Grenades"
-#define ARNIE "Li'l Arnie"
-#define MONKEY "Cymbal Monkey"
-#define DOLLS "Matryoshka Doll"
-#define GERSH "Gersh Device"
-#define QED "Quantum Entanglement Device"
-#define GSTRIKE "G Strikes"
-#define TRIPMINE "Trip Mine"
-#define DSTRIKE "Dragon Strike"
-#define SHIELD "Shield"
-#define GASMASK "P.E.S."
-#define HACKER "Hacker"
-#define GLAIVE "Keeper Sword"
-#define RAGS "Ragnarok DG-4"
-#define SKULL "Skull of Nan Sapwe"
-#define GAUNTLET "Gauntlet of Siegfried"
-#define ANNIHILATOR "Annihilator"
-#pragma endregion
-    void InitWeaponsList()
-    {
-        std::vector<std::string> zodSniper = { LOCUS, DRAKON, SVG }; std::vector<std::string> zodSMG = { PHARO, WEEVIL, VESPER, KUDA, VMP, BOOTLEGGER }; std::vector<std::string> zodLauncher = { XM }; std::vector<std::string> zodShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> zodPistol = { BLOODHOUND, RK5, LCAR }; std::vector<std::string> zodLMG = { DINGO, DREDGE, BRM, GORGON }; std::vector<std::string> zodAR = { ICR, HVK, MANOWAR, M8, SHIEVA, KN }; std::vector<std::string> zodSpecial = { APOTHSERVANT, RAYGUN }; std::vector<std::string> zodMelee = { BOWIEKNIFE }; std::vector<std::string> zodEquipment = { ARNIE, TRIPMINE, GRENADES, SHIELD }; std::vector<std::string> zodHero = { GLAIVE };
-        std::vector<std::string> factorySniper = { LOCUS, DRAKON, SVG }; std::vector<std::string> factorySMG = { PHARO, WEEVIL, VESPER, KUDA, VMP }; std::vector<std::string> factoryLauncher = { XM }; std::vector<std::string> factoryShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> factoryPistol = { MR6, RK5, LCAR }; std::vector<std::string> factoryLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> factoryAR = { ICR, HVK, MANOWAR, M8, SHIEVA, KN }; std::vector<std::string> factorySpecial = { WAFFE, RAYGUN }; std::vector<std::string> factoryMelee = { BOWIEKNIFE }; std::vector<std::string> factoryEquipment = { MONKEY, TRIPMINE, GRENADES }; std::vector<std::string> factoryHero = { ANNIHILATOR };
-        std::vector<std::string> castleSniper = { LOCUS, DRAKON, SVG }; std::vector<std::string> castleSMG = { PHARO, WEEVIL, VESPER, KUDA, VMP }; std::vector<std::string> castleLauncher = { XM }; std::vector<std::string> castleShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> castlePistol = { MR6, RK5, LCAR }; std::vector<std::string> castleLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> castleAR = { ICR, HVK, MANOWAR, M8, SHIEVA, KN }; std::vector<std::string> castleSpecial = { BOW, LIGHTNINGBOW, FIREBOW, VOIDBOW, WOLFBOW, RAYGUN }; std::vector<std::string> castleMelee = { BOWIEKNIFE, PLUNGER }; std::vector<std::string> castleEquipment = { MONKEY, TRIPMINE, GRENADES, SHIELD }; std::vector<std::string> castleHero = { RAGS };
-        std::vector<std::string> islandSniper = { LOCUS, DRAKON, SVG }; std::vector<std::string> islandSMG = { PHARO, WEEVIL, VESPER, RAZORBACK, HG40, KUDA, VMP }; std::vector<std::string> islandLauncher = { XM }; std::vector<std::string> islandShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> islandPistol = { MR6, RK5, LCAR, MARSHAL }; std::vector<std::string> islandLMG = { DINGO, DREDGE, BRM, GORGON }; std::vector<std::string> islandAR = { ICR, HVK, MANOWAR, GARAND, M8, SHIEVA, KN }; std::vector<std::string> islandSpecial = { KT4, RAYGUN }; std::vector<std::string> islandMelee = { BOWIEKNIFE }; std::vector<std::string> islandEquipment = { MONKEY, TRIPMINE, GRENADES, SHIELD }; std::vector<std::string> islandHero = { SKULL };
-        std::vector<std::string> stalingradSniper = { LOCUS, DRAKON, SVG }; std::vector<std::string> stalingradSMG = { PHARO, WEEVIL, VESPER, HG40, PPSH, KUDA, VMP }; std::vector<std::string> stalingradLauncher = { L4, XM }; std::vector<std::string> stalingradShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> stalingradPistol = { MR6, RK5, LCAR }; std::vector<std::string> stalingradLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> stalingradAR = { ICR, HVK, MANOWAR, FFAR, GARAND, M8, SHIEVA, KN }; std::vector<std::string> stalingradSpecial = { RAYGUNMK3, RAYGUN, SHADOWCLAW }; std::vector<std::string> stalingradMelee = { BOWIEKNIFE, DAGGER, AXE, SWORD, WRENCH }; std::vector<std::string> stalingradEquipment = { DSTRIKE, MONKEY, TRIPMINE, GRENADES, SHIELD }; std::vector<std::string> stalingradHero = { GAUNTLET };
-        std::vector<std::string> genesisSniper = { LOCUS, DRAKON, SVG }; std::vector<std::string> genesisSMG = { PHARO, WEEVIL, VESPER, KUDA, THOMPSON, VMP }; std::vector<std::string> genesisLauncher = { XM }; std::vector<std::string> genesisShotgun = { BANSHII, HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> genesisPistol = { MR6, RIFT, RK5, LCAR }; std::vector<std::string> genesisLMG = { DINGO, DREDGE, BRM, GORGON }; std::vector<std::string> genesisAR = { ICR, HVK, MANOWAR, M8, SHIEVA, KN, PEACEKEEPER }; std::vector<std::string> genesisSpecial = { TGUN, APOTHSERVANT, RAYGUN }; std::vector<std::string> genesisMelee = { BOWIEKNIFE, BONEGLASS, IMPROVISE, NUNCHUCKS, MACE, KATANA }; std::vector<std::string> genesisEquipment = { ARNIE, TRIPMINE, GRENADES, SHIELD }; std::vector<std::string> genesisHero = { RAGS };
-        std::vector<std::string> prototypeSniper = { LOCUS, SVG }; std::vector<std::string> prototypeSMG = { PHARO, WEEVIL, VESPER, KUDA, VMP, MP40, BOOTLEGGER, AK74 }; std::vector<std::string> prototypeLauncher = { XM }; std::vector<std::string> prototypeShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> prototypePistol = { MR6, M1911, RK5, LCAR }; std::vector<std::string> prototypeLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> prototypeAR = { ICR, HVK, MANOWAR, M8, SHIEVA, KN, GARAND, STG }; std::vector<std::string> prototypeSpecial = { RAYGUNMK2, RAYGUN }; std::vector<std::string> prototypeMelee = { BOWIEKNIFE }; std::vector<std::string> prototypeEquipment = { MONKEY, TRIPMINE, GRENADES }; std::vector<std::string> prototypeHero = { ANNIHILATOR };
-        std::vector<std::string> asylumSniper = { LOCUS, SVG }; std::vector<std::string> asylumSMG = { PHARO, WEEVIL, VESPER, PPSH, KUDA, BOOTLEGGER, VMP, MP40, AK74 }; std::vector<std::string> asylumLauncher = { XM }; std::vector<std::string> asylumShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> asylumPistol = { MR6, M1911, RK5, LCAR }; std::vector<std::string> asylumLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> asylumAR = { ICR, HVK, MANOWAR, M8, SHIEVA, KN, GARAND, STG }; std::vector<std::string> asylumSpecial = { WAFFE, RAYGUNMK2, RAYGUN }; std::vector<std::string> asylumMelee = { BOWIEKNIFE }; std::vector<std::string> asylumEquipment = { MONKEY, TRIPMINE, GRENADES }; std::vector<std::string> asylumHero = { ANNIHILATOR };
-        std::vector<std::string> sumpfSniper = { LOCUS, SVG }; std::vector<std::string> sumpfSMG = { PHARO, WEEVIL, VESPER, PPSH, KUDA, BOOTLEGGER, VMP, MP40, AK74 }; std::vector<std::string> sumpfLauncher = { XM }; std::vector<std::string> sumpfShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> sumpfPistol = { MR6, M1911, RK5, LCAR }; std::vector<std::string> sumpfLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> sumpfAR = { ICR, HVK, MANOWAR, M8, SHIEVA, KN, GARAND, STG }; std::vector<std::string> sumpfSpecial = { WAFFE, RAYGUNMK2, RAYGUN }; std::vector<std::string> sumpfMelee = { BOWIEKNIFE }; std::vector<std::string> sumpfEquipment = { MONKEY, TRIPMINE, GRENADES }; std::vector<std::string> sumpfHero = { ANNIHILATOR };
-        std::vector<std::string> theaterSniper = { DRAKON, SVG }; std::vector<std::string> theaterSMG = { PHARO, WEEVIL, VESPER, KUDA, VMP, MP40, AK74 }; std::vector<std::string> theaterLauncher = { XM }; std::vector<std::string> theaterShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> theaterPistol = { MR6, M1911, RK5, LCAR }; std::vector<std::string> theaterLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> theaterAR = { ICR, HVK, MANOWAR, FFAR, GALIL, M8, M16, SHIEVA, KN, M14 }; std::vector<std::string> theaterSpecial = { TGUN, RAYGUNMK2, RAYGUN }; std::vector<std::string> theaterMelee = { BOWIEKNIFE }; std::vector<std::string> theaterEquipment = { MONKEY, TRIPMINE, GRENADES }; std::vector<std::string> theaterHero = { ANNIHILATOR };
-        std::vector<std::string> cosmodromeSniper = { LOCUS, DRAKON, SVG }; std::vector<std::string> cosmodromeSMG = { PHARO, WEEVIL, VESPER, KUDA, VMP, AK74 }; std::vector<std::string> cosmodromeLauncher = { L4, XM }; std::vector<std::string> cosmodromeShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> cosmodromePistol = { MR6, M1911, RK5, LCAR }; std::vector<std::string> cosmodromeLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> cosmodromeAR = { ICR, HVK, MANOWAR, FFAR, GALIL, M8, M16, SHIEVA, KN, M14 }; std::vector<std::string> cosmodromeSpecial = { TGUN, RAYGUNMK2, RAYGUN }; std::vector<std::string> cosmodromeMelee = { SICKLE }; std::vector<std::string> cosmodromeEquipment = { GERSH, DOLLS, TRIPMINE, GRENADES }; std::vector<std::string> cosmodromeHero = { ANNIHILATOR };
-        std::vector<std::string> templeSniper = { LOCUS, DRAKON, SVG }; std::vector<std::string> templeSMG = { PHARO, WEEVIL, VESPER, KUDA, VMP, AK74 }; std::vector<std::string> templeLauncher = { L4, XM }; std::vector<std::string> templeShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> templePistol = { MR6, M1911, RK5, LCAR }; std::vector<std::string> templeLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> templeAR = { ICR, HVK, MANOWAR, FFAR, GALIL, M8, M16, SHIEVA, KN, M14 }; std::vector<std::string> templeSpecial = { BABYGUN, RAYGUNMK2, RAYGUN }; std::vector<std::string> templeMelee = { BOWIEKNIFE }; std::vector<std::string> templeEquipment = { MONKEY, TRIPMINE, GRENADES }; std::vector<std::string> templeHero = { ANNIHILATOR };
-        std::vector<std::string> moonSniper = { LOCUS, DRAKON }; std::vector<std::string> moonSMG = { PHARO, WEEVIL, VESPER, KUDA, VMP, AK74 }; std::vector<std::string> moonLauncher = { L4, XM }; std::vector<std::string> moonShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> moonPistol = { MR6, M1911, RK5, LCAR }; std::vector<std::string> moonLMG = { DINGO, DREDGE, BRM, GORGON, RPK }; std::vector<std::string> moonAR = { ICR, HVK, MANOWAR, FFAR, GALIL, M8, M16, SHIEVA, KN, M14 }; std::vector<std::string> moonSpecial = { WAVEGUN, RAYGUNMK2, RAYGUN }; std::vector<std::string> moonMelee = { BOWIEKNIFE }; std::vector<std::string> moonEquipment = { GASMASK, HACKER, GERSH, QED, TRIPMINE, GRENADES }; std::vector<std::string> moonHero = { ANNIHILATOR };
-        std::vector<std::string> tombSniper = { LOCUS, DRAKON }; std::vector<std::string> tombSMG = { PHARO, WEEVIL, VESPER, MP40, KUDA, THOMPSON, VMP, AK74 }; std::vector<std::string> tombLauncher = { L4, XM }; std::vector<std::string> tombShotgun = { HAYMAKER, ARGUS, KRM, BRECCI }; std::vector<std::string> tombPistol = { RK5, MAUSER, LCAR }; std::vector<std::string> tombLMG = { DINGO, DREDGE, BRM, MG08, GORGON, RPK }; std::vector<std::string> tombAR = { ICR, HVK, MANOWAR, M8, SHIEVA, KN, STG, M14 }; std::vector<std::string> tombSpecial = { ICESTAFF, LIGHTNINGSTAFF, FIRESTAFF, WINDSTAFF, RAYGUNMK2, RAYGUN }; std::vector<std::string> tombMelee = { BOWIEKNIFE }; std::vector<std::string> tombEquipment = { MONKEY, GSTRIKE, TRIPMINE, GRENADES, SHIELD }; std::vector<std::string> tombHero = { ANNIHILATOR };
-        weaponList.insert({ "zm_zod_sniper", zodSniper }); weaponList.insert({ "zm_zod_smg", zodSMG }); weaponList.insert({ "zm_zod_launcher", zodLauncher }); weaponList.insert({ "zm_zod_shotgun", zodShotgun }); weaponList.insert({ "zm_zod_pistol", zodPistol }); weaponList.insert({ "zm_zod_lmg", zodLMG }); weaponList.insert({ "zm_zod_ar", zodAR }); weaponList.insert({ "zm_zod_special", zodSpecial }); weaponList.insert({ "zm_zod_melee", zodMelee }); weaponList.insert({ "zm_zod_equipment", zodEquipment }); weaponList.insert({ "zm_zod_hero", zodHero });
-        weaponList.insert({ "zm_factory_sniper", factorySniper }); weaponList.insert({ "zm_factory_smg", factorySMG }); weaponList.insert({ "zm_factory_launcher", factoryLauncher }); weaponList.insert({ "zm_factory_shotgun", factoryShotgun }); weaponList.insert({ "zm_factory_pistol", factoryPistol }); weaponList.insert({ "zm_factory_lmg", factoryLMG }); weaponList.insert({ "zm_factory_ar", factoryAR }); weaponList.insert({ "zm_factory_special", factorySpecial }); weaponList.insert({ "zm_factory_melee", factoryMelee }); weaponList.insert({ "zm_factory_equipment", factoryEquipment }); weaponList.insert({ "zm_factory_hero", factoryHero });
-        weaponList.insert({ "zm_castle_sniper", castleSniper }); weaponList.insert({ "zm_castle_smg", castleSMG }); weaponList.insert({ "zm_castle_launcher", castleLauncher }); weaponList.insert({ "zm_castle_shotgun", castleShotgun }); weaponList.insert({ "zm_castle_pistol", castlePistol }); weaponList.insert({ "zm_castle_lmg", castleLMG }); weaponList.insert({ "zm_castle_ar", castleAR }); weaponList.insert({ "zm_castle_special", castleSpecial }); weaponList.insert({ "zm_castle_melee", castleMelee }); weaponList.insert({ "zm_castle_equipment", castleEquipment }); weaponList.insert({ "zm_castle_hero", castleHero });
-        weaponList.insert({ "zm_island_sniper", islandSniper }); weaponList.insert({ "zm_island_smg", islandSMG }); weaponList.insert({ "zm_island_launcher", islandLauncher }); weaponList.insert({ "zm_island_shotgun", islandShotgun }); weaponList.insert({ "zm_island_pistol", islandPistol }); weaponList.insert({ "zm_island_lmg", islandLMG }); weaponList.insert({ "zm_island_ar", islandAR }); weaponList.insert({ "zm_island_special", islandSpecial }); weaponList.insert({ "zm_island_melee", islandMelee }); weaponList.insert({ "zm_island_equipment", islandEquipment }); weaponList.insert({ "zm_island_hero", islandHero });
-        weaponList.insert({ "zm_stalingrad_sniper", stalingradSniper }); weaponList.insert({ "zm_stalingrad_smg", stalingradSMG }); weaponList.insert({ "zm_stalingrad_launcher", stalingradLauncher }); weaponList.insert({ "zm_stalingrad_shotgun", stalingradShotgun }); weaponList.insert({ "zm_stalingrad_pistol", stalingradPistol }); weaponList.insert({ "zm_stalingrad_lmg", stalingradLMG }); weaponList.insert({ "zm_stalingrad_ar", stalingradAR }); weaponList.insert({ "zm_stalingrad_special", stalingradSpecial }); weaponList.insert({ "zm_stalingrad_melee", stalingradMelee }); weaponList.insert({ "zm_stalingrad_equipment", stalingradEquipment }); weaponList.insert({ "zm_stalingrad_hero", stalingradHero });
-        weaponList.insert({ "zm_genesis_sniper", genesisSniper }); weaponList.insert({ "zm_genesis_smg", genesisSMG }); weaponList.insert({ "zm_genesis_launcher", genesisLauncher }); weaponList.insert({ "zm_genesis_shotgun", genesisShotgun }); weaponList.insert({ "zm_genesis_pistol", genesisPistol }); weaponList.insert({ "zm_genesis_lmg", genesisLMG }); weaponList.insert({ "zm_genesis_ar", genesisAR }); weaponList.insert({ "zm_genesis_special", genesisSpecial }); weaponList.insert({ "zm_genesis_melee", genesisMelee }); weaponList.insert({ "zm_genesis_equipment", genesisEquipment }); weaponList.insert({ "zm_genesis_hero", genesisHero });
-        weaponList.insert({ "zm_prototype_sniper", prototypeSniper }); weaponList.insert({ "zm_prototype_smg", prototypeSMG }); weaponList.insert({ "zm_prototype_launcher", prototypeLauncher }); weaponList.insert({ "zm_prototype_shotgun", prototypeShotgun }); weaponList.insert({ "zm_prototype_pistol", prototypePistol }); weaponList.insert({ "zm_prototype_lmg", prototypeLMG }); weaponList.insert({ "zm_prototype_ar", prototypeAR }); weaponList.insert({ "zm_prototype_special", prototypeSpecial }); weaponList.insert({ "zm_prototype_melee", prototypeMelee }); weaponList.insert({ "zm_prototype_equipment", prototypeEquipment }); weaponList.insert({ "zm_prototype_hero", prototypeHero });
-        weaponList.insert({ "zm_asylum_sniper", asylumSniper }); weaponList.insert({ "zm_asylum_smg", asylumSMG }); weaponList.insert({ "zm_asylum_launcher", asylumLauncher }); weaponList.insert({ "zm_asylum_shotgun", asylumShotgun }); weaponList.insert({ "zm_asylum_pistol", asylumPistol }); weaponList.insert({ "zm_asylum_lmg", asylumLMG }); weaponList.insert({ "zm_asylum_ar", asylumAR }); weaponList.insert({ "zm_asylum_special", asylumSpecial }); weaponList.insert({ "zm_asylum_melee", asylumMelee }); weaponList.insert({ "zm_asylum_equipment", asylumEquipment }); weaponList.insert({ "zm_asylum_hero", asylumHero });
-        weaponList.insert({ "zm_sumpf_sniper", sumpfSniper }); weaponList.insert({ "zm_sumpf_smg", sumpfSMG }); weaponList.insert({ "zm_sumpf_launcher", sumpfLauncher }); weaponList.insert({ "zm_sumpf_shotgun", sumpfShotgun }); weaponList.insert({ "zm_sumpf_pistol", sumpfPistol }); weaponList.insert({ "zm_sumpf_lmg", sumpfLMG }); weaponList.insert({ "zm_sumpf_ar", sumpfAR }); weaponList.insert({ "zm_sumpf_special", sumpfSpecial }); weaponList.insert({ "zm_sumpf_melee", sumpfMelee }); weaponList.insert({ "zm_sumpf_equipment", sumpfEquipment }); weaponList.insert({ "zm_sumpf_hero", sumpfHero });
-        weaponList.insert({ "zm_theater_sniper", theaterSniper }); weaponList.insert({ "zm_theater_smg", theaterSMG }); weaponList.insert({ "zm_theater_launcher", theaterLauncher }); weaponList.insert({ "zm_theater_shotgun", theaterShotgun }); weaponList.insert({ "zm_theater_pistol", theaterPistol }); weaponList.insert({ "zm_theater_lmg", theaterLMG }); weaponList.insert({ "zm_theater_ar", theaterAR }); weaponList.insert({ "zm_theater_special", theaterSpecial }); weaponList.insert({ "zm_theater_melee", theaterMelee }); weaponList.insert({ "zm_theater_equipment", theaterEquipment }); weaponList.insert({ "zm_theater_hero", theaterHero });
-        weaponList.insert({ "zm_cosmodrome_sniper", cosmodromeSniper }); weaponList.insert({ "zm_cosmodrome_smg", cosmodromeSMG }); weaponList.insert({ "zm_cosmodrome_launcher", cosmodromeLauncher }); weaponList.insert({ "zm_cosmodrome_shotgun", cosmodromeShotgun }); weaponList.insert({ "zm_cosmodrome_pistol", cosmodromePistol }); weaponList.insert({ "zm_cosmodrome_lmg", cosmodromeLMG }); weaponList.insert({ "zm_cosmodrome_ar", cosmodromeAR }); weaponList.insert({ "zm_cosmodrome_special", cosmodromeSpecial }); weaponList.insert({ "zm_cosmodrome_melee", cosmodromeMelee }); weaponList.insert({ "zm_cosmodrome_equipment", cosmodromeEquipment }); weaponList.insert({ "zm_cosmodrome_hero", cosmodromeHero });
-        weaponList.insert({ "zm_temple_sniper", templeSniper }); weaponList.insert({ "zm_temple_smg", templeSMG }); weaponList.insert({ "zm_temple_launcher", templeLauncher }); weaponList.insert({ "zm_temple_shotgun", templeShotgun }); weaponList.insert({ "zm_temple_pistol", templePistol }); weaponList.insert({ "zm_temple_lmg", templeLMG }); weaponList.insert({ "zm_temple_ar", templeAR }); weaponList.insert({ "zm_temple_special", templeSpecial }); weaponList.insert({ "zm_temple_melee", templeMelee }); weaponList.insert({ "zm_temple_equipment", templeEquipment }); weaponList.insert({ "zm_temple_hero", templeHero });
-        weaponList.insert({ "zm_moon_sniper", moonSniper }); weaponList.insert({ "zm_moon_smg", moonSMG }); weaponList.insert({ "zm_moon_launcher", moonLauncher }); weaponList.insert({ "zm_moon_shotgun", moonShotgun }); weaponList.insert({ "zm_moon_pistol", moonPistol }); weaponList.insert({ "zm_moon_lmg", moonLMG }); weaponList.insert({ "zm_moon_ar", moonAR }); weaponList.insert({ "zm_moon_special", moonSpecial }); weaponList.insert({ "zm_moon_melee", moonMelee }); weaponList.insert({ "zm_moon_equipment", moonEquipment }); weaponList.insert({ "zm_moon_hero", moonHero });
-        weaponList.insert({ "zm_tomb_sniper", tombSniper }); weaponList.insert({ "zm_tomb_smg", tombSMG }); weaponList.insert({ "zm_tomb_launcher", tombLauncher }); weaponList.insert({ "zm_tomb_shotgun", tombShotgun }); weaponList.insert({ "zm_tomb_pistol", tombPistol }); weaponList.insert({ "zm_tomb_lmg", tombLMG }); weaponList.insert({ "zm_tomb_ar", tombAR }); weaponList.insert({ "zm_tomb_special", tombSpecial }); weaponList.insert({ "zm_tomb_melee", tombMelee }); weaponList.insert({ "zm_tomb_equipment", tombEquipment }); weaponList.insert({ "zm_tomb_hero", tombHero });
-    }
 #pragma endregion
 
 #pragma region BGB
-#define PRESET_FILE "/Settings/Gum Profiles/GumPresets.csv"
+#define BGB_PRESETS_FILE "\\Settings\\Gum Profiles\\bgbPresets.csv"
+#define ACTIVE_BGB_PRESET_FILE "\\Practice Tool\\Settings\\Active Gum Preset.txt"
 
-    void InitBGBDescriptions()
+    void LoadBGBProfiles()
     {
-        gumDescriptions.reserve(63);
-        gumDescriptions.emplace_back("Activated (2x Activations, 60 seconds each)\nEvery 10 points is instead awarded 1 ammo in the stock of the current weapon.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 3 full rounds)\nWalk faster while aiming. Raise and lower your weapon to aim more quickly.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nInstantly teleport to a random location. A concussive blast knocks away any nearby zombies, keeping you safe.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 3 full rounds)\nSwitch weapons and recover from performing melee attacks faster. Reload and use items more quickly.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts until next respawn)\nRespawn with the guns you had when you bled out.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 10 minutes)\nCharge your special weapon faster.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 20 minutes)\nLonger bleedout time.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 3 full rounds)\nZero explosive damage.");
-        gumDescriptions.emplace_back("Activated (4x Activations)\nOverrides the colors you see.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 3 full rounds)\nCan fire while sprinting.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts until bleedout)\nRespawn near the end of the current round instead of at the start of the next round.");
-        gumDescriptions.emplace_back("Activated (2x Activations, 10 seconds each)\nYou are ignored by zombies for 10 seconds.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 1 full round)\nImproves your chances of activating an Alternate Ammo Type.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 25 minutes)\nZombies killed fall straight up.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nAll zombies will chase you for 10 seconds.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 5 full rounds)\nZombies you kill with grenades and large projectiles vomit uncontrollably.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 3 minutes)\nAmmo is taken from your stockpile instead of your weapon's magazine.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 2.5 minutes)\nMelee attacks deal zombies 5x as much damage.");
-        gumDescriptions.emplace_back("Auto-activates when killing a zombie (25x Activations)\nSilly sounds play when zombies are killed.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 3 full rounds)\nKeep all perks after being revived.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 5 full rounds)\nRepairing a board immediately repairs all boards at that window.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts for 5 minutes)\nRepairing a board will kill all nearby zombies.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nRe-Pack your current Pack-a-Punched gun(if supported).");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts two hits)\nThe next time you take melee damage, nearby zombies burst into fire.");
-        gumDescriptions.emplace_back("Activated (1x Activation)\nSpawns a max ammo power up.");
-        gumDescriptions.emplace_back("Auto-activates next time you take a gun from the magic box\nThe next gun taken from the magic box comes Pack-a-Punched.");
-        gumDescriptions.emplace_back("Activated (5x Activations)\nAll nearby zombies become crawlers.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nSpawns a nuke power up.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts for 5 minutes)\nGives a random gun every 10 seconds.");
-        gumDescriptions.emplace_back("Activated (2x Activations, 60 seconds each)\nTurns the weapon in your hands into Pack-a-Punched weapon.");
-        gumDescriptions.emplace_back("Activated (4x Activations)\nSpawns a personal 1250 point power up.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nSpawn a Death Machine power up.");
-        gumDescriptions.emplace_back("Activated (1x Activation, 2 minutes)\nZombies seen by players will not move.");
-        gumDescriptions.emplace_back("Activates Immediately (2x Activations)\nTransforms into a random Mega GobbleGum not in your Pack.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts for the remainder of the round)\nAny bullet which hits a zombie will damage its head.");
-        gumDescriptions.emplace_back("Activated (3x Activations, 30 seconds each)\nAll zombies will ignore all players.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nSpawn a random power up.");
-        gumDescriptions.emplace_back("Activated (3x Activations)\nSpawns a fire sale power up.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nSpawns an Instakill power up.");
-        gumDescriptions.emplace_back("Activated (1x Activation)\nAll zombies freeze in place for 20 seconds.If they are shot, they will be annihilated when the time is up.");
-        gumDescriptions.emplace_back("Activated (3x Activations)\nSpawns a Carpenter power up.");
-        gumDescriptions.emplace_back("Activated (3x Activations)\nGib the heads of all zombies you can see, killing them.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 3 full rounds)\nRevive, or be revived, simply by being near other players. Revived players keep all of their perks.");
-        gumDescriptions.emplace_back("Activated (1x Activation)\nSpawns a free perk power up.");
-        gumDescriptions.emplace_back("Activates Immediately\nGives you all perks in the map.");
-        gumDescriptions.emplace_back("Activated (1x Activation)\nRevives all teammates. Teammates keep all of their perks.");
-        gumDescriptions.emplace_back("Auto-activates when melee attacking zombies (5x Activations)\nMelee attacks trigger an electrostatic discharge, electrocuting nearby zombies.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts for 4 full rounds)\nMore power ups can drop each round.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 10 minutes)\nPoints you earn are also received by nearby players, and vice versa.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nSpawns one of each of the nine core power ups.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nRe-spins the weapons in a magic box after it has been activated.");
-        gumDescriptions.emplace_back("Activated (1x Activation)\nEnds the current round. All players gain 1600 points.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 10 minutes)\nAny gun wall-buy can be used to buy ammo for any gun.");
-        gumDescriptions.emplace_back("Auto-activates by getting a kill in last stand (3x Activations)\nAuto revive yourself. Keep all of your perks.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 1 minute)\nAll purchases are free.");
-        gumDescriptions.emplace_back("Auto-activates when sliding (6x Activations)\nCreate 2 lethal explosions by sliding.");
-        gumDescriptions.emplace_back("Auto-activates when you buy a perk (5x Activations)\nCan buy an extra perk. Gives you a free perk after you buy one.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 1 full round)\nPower ups last longer.");
-        gumDescriptions.emplace_back("Auto-activates when a teddy bear appears in the magic box.\nMagic box re-spins automatically. Magic box will not move for several uses.");
-        gumDescriptions.emplace_back("Activates Immediately (Lasts 4 minutes)\nSlow down all zombies to shambling speed.");
-        gumDescriptions.emplace_back("Auto-activates when you have maximum perks.\nCan buy an extra perk.");
-        gumDescriptions.emplace_back("Auto-activates on your next wall-buy gun purchase\nThe next gun bought off a wall comes Pack-a-Punched.");
-        gumDescriptions.emplace_back("Activated (2x Activations)\nSpawns a double points power up.");
-    }
-
-    void InitClassicGumsList()
-    {
-        classicList.emplace_back("Alchemical Antithesis");
-        classicList.emplace_back("Always Done Swiftly");
-        classicList.emplace_back("Anywhere But Here!");
-        classicList.emplace_back("Armamental Accomplishment");
-        classicList.emplace_back("Arms Grace");
-        classicList.emplace_back("Arsenal Accelerator");
-        classicList.emplace_back("Coagulant");
-        classicList.emplace_back("Danger Closest");
-        classicList.emplace_back("Eye Candy");
-        classicList.emplace_back("Firing On All Cylinders");
-        classicList.emplace_back("Impatient");
-        classicList.emplace_back("In Plain Sight");
-        classicList.emplace_back("Lucky Crit");
-        classicList.emplace_back("Newtonian Negation");
-        classicList.emplace_back("Now You See Me");
-        classicList.emplace_back("Projectile Vomiting");
-        classicList.emplace_back("Stock Option");
-        classicList.emplace_back("Sword Flay");
-        classicList.emplace_back("Tone Death");
-    }
-
-    void InitMegaGumsList()
-    {
-        megaList.emplace_back("Aftertaste");
-        megaList.emplace_back("Board Games");
-        megaList.emplace_back("Board To Death");
-        megaList.emplace_back("Bullet Boost");
-        megaList.emplace_back("Burned Out");
-        megaList.emplace_back("Cache Back");
-        megaList.emplace_back("Crate Power");
-        megaList.emplace_back("Crawl Space");
-        megaList.emplace_back("Dead Of Nuclear Winter");
-        megaList.emplace_back("Disorderly Combat");
-        megaList.emplace_back("Ephemeral Enhancement");
-        megaList.emplace_back("Extra Credit");
-        megaList.emplace_back("Fatal Contraption");
-        megaList.emplace_back("Fear In Headlights");
-        megaList.emplace_back("Flavor Hexed");
-        megaList.emplace_back("Head Drama");
-        megaList.emplace_back("Idle Eyes");
-        megaList.emplace_back("I'm Feelin' Lucky");
-        megaList.emplace_back("Immolation Liquidation");
-        megaList.emplace_back("Kill Joy");
-        megaList.emplace_back("Killing Time");
-        megaList.emplace_back("Licensed Contractor");
-        megaList.emplace_back("Mind Blown");
-        megaList.emplace_back("Near Death Experience");
-        megaList.emplace_back("On The House");
-        megaList.emplace_back("Perkaholic");
-        megaList.emplace_back("Phoenix Up");
-        megaList.emplace_back("Pop Shocks");
-        megaList.emplace_back("Power Vacuum");
-        megaList.emplace_back("Profit Sharing");
-        megaList.emplace_back("Reign Drops");
-        megaList.emplace_back("Respin Cycle");
-        megaList.emplace_back("Round Robbin'");
-        megaList.emplace_back("Secret Shopper");
-        megaList.emplace_back("Self Medication");
-        megaList.emplace_back("Shopping Free");
-        megaList.emplace_back("Slaughter Slide");
-        megaList.emplace_back("Soda Fountain");
-        megaList.emplace_back("Temporal Gift");
-        megaList.emplace_back("Unbearable");
-        megaList.emplace_back("Undead Man Walking");
-        megaList.emplace_back("Unquenchable");
-        megaList.emplace_back("Wall Power");
-        megaList.emplace_back("Who's Keeping Score");
-    }
-
-    void LoadGumProfiles()
-    {
-        gumPresets.clear();
+        bgbPresets.clear();
 
         std::string line;
-        std::ifstream file(selfDirectory + PRESET_FILE);
+        std::ifstream file(selfDirectory + BGB_PRESETS_FILE);
 
-        while (getline(file, line))
-        {
+        while (getline(file, line)) {
             BGBPreset loadedPreset;
             std::stringstream sstream(line);
             std::string substr;
             getline(sstream, substr, ',');
-            loadedPreset.presetName = substr;
-            for (int i = 1; i < 6; i++)
-            {
+            loadedPreset.m_Name = substr;
+            for (int i = 0; i < 5; i++) {
                 getline(sstream, substr, ',');
-                loadedPreset.presetGums[i - 1] = atoi(substr.c_str());
+                int index = atoi(substr.c_str());
+                index > 18 ? loadedPreset.m_BGBs.emplace_back(bgbs.m_Megas[index - 19]) : loadedPreset.m_BGBs.emplace_back(bgbs.m_Classics[index]);
             }
-            gumPresets.emplace_back(loadedPreset);
+            bgbPresets.emplace_back(loadedPreset);
         }
         file.close();
 
-        if (gumPresets.size())
-            gumContextIndex = gumPresets[currentGumPreset].presetGums[0];
-        else
-            gumPresets.emplace_back(inactiveGumPreset);
+        if (bgbPresets.size()) {
+            bgbContext = bgbPresets[currentBGBPreset].m_BGBs[0];
+        }
     }
 
-    void DeleteGumPreset(const std::string& presetName)
+    void CreateBGBPreset(std::string_view presetName)
+    {
+        BGBPreset newPreset;
+        newPreset.m_Name = presetName;
+        
+        for (int i = 0; i < 5; i++) {
+            newPreset.m_BGBs.emplace_back(bgbs.m_Classics[i]);
+        }
+
+        bgbPresets.emplace_back(newPreset);
+        currentBGBPreset = static_cast<int>(bgbPresets.size()) - 1;
+        SaveBGBPresets();
+    }
+
+    void DeleteBGBPreset(const BGBPreset& preset)
     {
         std::string line;
-        std::string outData;
-        std::ifstream inFile(selfDirectory + PRESET_FILE);
+        std::string presetData;
+        std::ifstream inFile(selfDirectory + BGB_PRESETS_FILE);
 
-        while (getline(inFile, line))
-        {
+        while (getline(inFile, line)) {
             std::stringstream sstream(line);
             std::string name;
             getline(sstream, name, ',');
-            if (name != presetName)
-                outData.append(line + "\n");
+            if (name != preset.m_Name) {
+                presetData.append(line + "\n");
+            }
         }
         inFile.close();
 
-        std::ofstream outFile(selfDirectory + PRESET_FILE);
-        outFile << outData;
-        outFile.close();
-        if (currentGumPreset > 0) currentGumPreset--;
-        LoadGumProfiles();
-    }
-
-    void CreateNewGumPreset(const std::string& presetName)
-    {
-        std::string line;
-        std::ifstream checkFile(selfDirectory + PRESET_FILE);
-        while (getline(checkFile, line));
-
-        std::ofstream file(selfDirectory + PRESET_FILE, std::ios::app);
-        if (line != "")
-            file << "\n";
-        checkFile.close();
-        file << presetName << ",0,1,2,3,4\n";
-        file.close();
-        LoadGumProfiles();
-        currentGumPreset = (int)gumPresets.size() - 1;
-    }
-
-    void WriteGumPreset(const std::vector<int>& gumPreset)
-    {
-        std::string line;
-        std::string outData;
-        std::ifstream inFile(selfDirectory + PRESET_FILE);
-
-        while (getline(inFile, line))
-        {
-            std::stringstream sstream(line);
-            std::string name;
-            getline(sstream, name, ',');
-            std::string preset(GetCurrentPresetName());
-            if (name != preset)
-            {
-                outData.append(line + "\n");
-                continue;
-            }
-            outData.append(preset + ",");
-            for (const int& gum : gumPreset)
-            {
-                outData.append(std::to_string(gum) + ",");
-            }
-            outData.replace(outData.size() - 1, 1, "\n");
+        std::ofstream(selfDirectory + BGB_PRESETS_FILE).write(presetData.c_str(), presetData.size());
+        bgbPresets.erase(std::find(bgbPresets.begin(), bgbPresets.end(), preset));
+        if (currentBGBPreset > 0) {
+            currentBGBPreset--;
         }
-        inFile.close();
-
-        std::ofstream outFile(selfDirectory + PRESET_FILE);
-        outFile << outData;
-        outFile.close();
-
-        LoadGumProfiles();
-    }
-
-    void WritePresetToGame(BGBPreset& gumPreset, const std::string& file)
-    {
-        std::string outData;
-        for (const int& gum : gumPreset.presetGums)
-        {
-            outData.append(std::to_string(gum) + ",");
+        if (!bgbPresets.size() || !writeBGBs || !GUIState::IsStateSet(Active)) {
+            std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write("-1,-1,-1,-1,-1", 14);
         }
-        outData.replace(outData.size() - 1, 1, "");
-        std::ofstream outFile(file);
-        outFile << outData;
-        outFile.close();
+        else {
+            std::string activeData;
+            for (const BGB& gum : preset.m_BGBs) {
+                activeData.append(gum.m_Index + ",");
+            }
+            activeData.replace(activeData.size() - 1, 1, "");
+            std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write(activeData.c_str(), activeData.size());
+        }
+        WriteBGBPresetToGame();
     }
 
-    bool CheckPresetExists(const std::string& inPreset)
+    void SaveBGBPresets()
     {
-        for (const BGBPreset& preset : gumPresets)
-        {
-            if (preset.presetName == inPreset)
+        if (!bgbPresets.size()) {
+            std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write("-1,-1,-1,-1,-1", 14);
+            return;
+        }
+
+        std::string presetData;
+        
+        for (const BGBPreset& preset : bgbPresets) {
+            presetData.append(preset.m_Name + ",");
+            for (const BGB& gum : preset.m_BGBs) {
+                presetData.append(gum.m_Index + ",");
+            }
+            presetData.replace(presetData.size() - 1, 1, "\n");
+        }
+
+        std::ofstream(selfDirectory + BGB_PRESETS_FILE).write(presetData.c_str(), presetData.size());
+        WriteBGBPresetToGame();
+    }
+
+    void WriteBGBPresetToGame()
+    {
+        if (!bgbPresets.size() || !GUIState::IsStateSet(Active) || !writeBGBs) {
+            std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write("-1,-1,-1,-1,-1", 14);
+            return;
+        }
+        const BGBPreset& preset = bgbPresets[currentBGBPreset];
+        std::string activeData;
+        for (const BGB& gum : preset.m_BGBs) {
+            activeData.append(gum.m_Index + ",");
+        }
+        activeData.replace(activeData.size() - 1, 1, "");
+        std::ofstream(bo3Directory + ACTIVE_BGB_PRESET_FILE).write(activeData.c_str(), activeData.size());
+    }
+
+    void SwapBGBPreset(BGB bgbOld, BGB bgbNew)
+    {
+        for (BGB& bgb : bgbPresets[currentBGBPreset].m_BGBs) {
+            if (bgb.m_Index == bgbNew.m_Index) {
+                bgb = bgbOld;
+            }
+            else if (bgb.m_Index == bgbOld.m_Index) {
+                bgb = bgbNew;
+            }
+        }
+
+        SaveBGBPresets();
+    }
+
+    void SwapBGBTrack(BGB bgbOld, BGB bgbNew)
+    {
+        for (BGB& bgb : gumTrackBGBs) {
+            if (bgb.m_Index == bgbNew.m_Index) {
+                bgb = bgbOld;
+            }
+            else if (bgb.m_Index == bgbOld.m_Index) {
+                bgb = bgbNew;
+            }
+        }
+    }
+
+    bool BGBPresetExists(std::string_view presetName)
+    {
+        for (const BGBPreset& preset : bgbPresets) {
+            if (preset.m_Name == presetName) {
                 return true;
+            }
         }
         return false;
     }
 
-    std::string GetCurrentPresetName()
+    std::vector<BGB> BGBSearch(int type, std::string_view searchText)
     {
-        return gumPresets[currentGumPreset].presetName;
+        if (searchText.empty()) {
+            if (type) {
+                return bgbs.m_Megas;
+            }
+            return bgbs.m_Classics;
+        }
+
+        const std::vector<BGB>* bgbCompare;
+        type ? bgbCompare = &bgbs.m_Megas : bgbCompare = &bgbs.m_Classics;
+
+        std::vector<BGB> bgbsOut = { };
+
+        std::string searchTextLower = searchText.data();
+        std::transform(searchTextLower.begin(), searchTextLower.end(), searchTextLower.begin(), [](char c) { return std::tolower(c); });
+
+        std::copy_if(bgbCompare->begin(), bgbCompare->end(), std::back_inserter(bgbsOut), [&searchTextLower, &bgbCompare](const BGB& bgb)
+            {
+                std::string inGum = bgbImgList[bgb.m_Name]->GetFilename();
+                std::transform(inGum.begin(), inGum.end(), inGum.begin(), [](char c) { return std::tolower(c); });
+                return inGum.find(searchTextLower) != inGum.npos;
+            });
+
+        return bgbsOut;
     }
+
 #pragma endregion
 
-#pragma region Perks
-#pragma region PerkDefs
-#define JUG "Juggernog"
-#define SPEED "Speed Cola"
-#define DTAP "Double Tap"
-#define QR "Quick Revive"
-#define STAM "Stamin-Up"
-#define MULEKICK "Mule Kick"
-#define DEADSHOT "Deadshot Daiquiri"
-#define WIDOWS "Widow's Wine"
-#define CHERRY "Electric Cherry"
-#pragma endregion
-    void InitPerksList()
-    {
-        std::vector<std::string> zodPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, WIDOWS };
-        std::vector<std::string> factoryPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT };
-        std::vector<std::string> castlePerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS, CHERRY };
-        std::vector<std::string> islandPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS, CHERRY };
-        std::vector<std::string> stalingradPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS, CHERRY };
-        std::vector<std::string> genesisPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS, CHERRY };
-        std::vector<std::string> prototypePerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS };
-        std::vector<std::string> asylumPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS };
-        std::vector<std::string> sumpfPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS };
-        std::vector<std::string> theaterPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS };
-        std::vector<std::string> cosmodromePerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS };
-        std::vector<std::string> templePerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS };
-        std::vector<std::string> moonPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS };
-        std::vector<std::string> tombPerks = { JUG, SPEED, DTAP, QR, STAM, MULEKICK, DEADSHOT, WIDOWS, CHERRY };
-        perksList.insert({ "zm_zod",  zodPerks });
-        perksList.insert({ "zm_factory",  factoryPerks });
-        perksList.insert({ "zm_castle",  castlePerks });
-        perksList.insert({ "zm_island",  islandPerks });
-        perksList.insert({ "zm_stalingrad",  stalingradPerks });
-        perksList.insert({ "zm_genesis",  genesisPerks });
-        perksList.insert({ "zm_prototype",  prototypePerks });
-        perksList.insert({ "zm_asylum",  asylumPerks });
-        perksList.insert({ "zm_sumpf",  sumpfPerks });
-        perksList.insert({ "zm_theater",  theaterPerks });
-        perksList.insert({ "zm_cosmodrome",  cosmodromePerks });
-        perksList.insert({ "zm_temple",  templePerks });
-        perksList.insert({ "zm_moon",  moonPerks });
-        perksList.insert({ "zm_tomb",  tombPerks });
-    }
-#pragma endregion
+#pragma region WeaponLoadouts
+#define ACTIVE_WEAPON_LOADOUT_FILE "\\Practice Tool\\Settings\\Active Weapon Loadout.json"
+#define ACTIVE_WEAPON_LOADOUT_DIR "\\Settings\\Weapon Loadouts\\"
 
-#pragma region PowerupOptions
-#pragma region PowerupDefs
-#define POINTS_PLAYER "Bonus Points Player"
-#define POINTS_TEAM "Bonus Points Team"
-#define CARPENTER "Carpenter"
-#define DOUBLE_POINTS "Double Points"
-#define FIRE_SALE "Fire Sale"
-#define EMPTY_PERK "Perk Slot"
-#define FREE_PERK "Free Perk"
-#define MAX "Max Ammo"
-#define INSTA "Insta Kill"
-#define MINIGUN "Death Machine"
-#define NUKE "Nuke"
-#define SHIELDCHARGE "Shield Charge"
-#define WW_GRENADE "Widows Grenade"
-#define TRAM "Tram Token"
-#define RUNE_LOR "Void Symbol Tears"
-#define RUNE_MAR "Void Symbol Ribbon"
-#define RUNE_OTH "Void Symbol Claw"
-#define RUNE_UJA "Void Symbol Triangles"
-#define RUNE_ULLA "Void Symbol Rib"
-#define RUNE_ZOR "Void Symbol Tear"
-#define SEED "Seed"
-#define CYLINDER_RED "Tank Cylinder"
-#define CYLINDER_YELLOW "Supply Cylinder"
-#define CYLINDER_BLUE "DC Cylinder"
-#define GENESIS_WEAPON "Random Weapon"
-#define ZOMBIE_BLOOD "Zombie Blood"
-#pragma endregion
-    void InitPowerupList()
+    void LoadWeaponProfiles()
     {
-        std::vector<std::string> zodPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, POINTS_TEAM, WW_GRENADE, SHIELDCHARGE };
-        std::vector<std::string> factoryPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER };
-        std::vector<std::string> castlePowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, POINTS_TEAM, WW_GRENADE, SHIELDCHARGE, TRAM, RUNE_LOR, RUNE_ULLA, RUNE_UJA, RUNE_OTH, RUNE_ZOR, RUNE_MAR };
-        std::vector<std::string> islandPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, POINTS_TEAM, WW_GRENADE, SHIELDCHARGE, EMPTY_PERK, SEED };
-        std::vector<std::string> stalingradPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE, SHIELDCHARGE, CYLINDER_RED, CYLINDER_YELLOW, CYLINDER_BLUE };
-        std::vector<std::string> genesisPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE, SHIELDCHARGE, GENESIS_WEAPON };
-        std::vector<std::string> prototypePowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE };
-        std::vector<std::string> asylumPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE };
-        std::vector<std::string> sumpfPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE };
-        std::vector<std::string> theaterPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE };
-        std::vector<std::string> cosmodromePowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE };
-        std::vector<std::string> templePowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE };
-        std::vector<std::string> moonPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE };
-        std::vector<std::string> tombPowerups = { MAX, DOUBLE_POINTS, INSTA, NUKE, MINIGUN, CARPENTER, FIRE_SALE, FREE_PERK, POINTS_PLAYER, WW_GRENADE, SHIELDCHARGE, ZOMBIE_BLOOD };
-        powerupList.insert({ "zm_zod",  zodPowerups });
-        powerupList.insert({ "zm_factory",  factoryPowerups });
-        powerupList.insert({ "zm_castle",  castlePowerups });
-        powerupList.insert({ "zm_island",  islandPowerups });
-        powerupList.insert({ "zm_stalingrad",  stalingradPowerups });
-        powerupList.insert({ "zm_genesis",  genesisPowerups });
-        powerupList.insert({ "zm_prototype",  prototypePowerups });
-        powerupList.insert({ "zm_asylum",  asylumPowerups });
-        powerupList.insert({ "zm_sumpf",  sumpfPowerups });
-        powerupList.insert({ "zm_theater",  theaterPowerups });
-        powerupList.insert({ "zm_cosmodrome",  cosmodromePowerups });
-        powerupList.insert({ "zm_temple",  templePowerups });
-        powerupList.insert({ "zm_moon",  moonPowerups });
-        powerupList.insert({ "zm_tomb",  tombPowerups });
+        weaponPresets.clear();
+        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Weapon Loadouts")) {
+            if (std::filesystem::is_regular_file(file) && file.path().extension().string() == ".json") {
+                MenuWeaponPreset preset = ParseWeaponLoadout(file.path().string());
+                preset.m_Name = file.path().stem().string();
+                weaponPresets.emplace_back(preset);
+            }
+        }
     }
+
+    void CreateWeaponPreset(std::string_view presetName, bool duplicatePreset)
+    {
+        std::string filename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + presetName.data() + ".json";
+
+        if (duplicatePreset) {
+            std::string oldFilename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + weaponPresets[currentWeaponPreset].m_Name + ".json";
+            MenuWeaponPreset newPreset = weaponPresets[currentWeaponPreset];
+            newPreset.m_Name = presetName;
+            weaponPresets.emplace_back(newPreset);
+
+            std::filesystem::copy_file(oldFilename, filename);
+        }
+        else {
+            WJson builder;
+            MenuWeaponPreset newPreset;
+            newPreset.m_Name = presetName;
+
+            for (int i = 0; i < static_cast<int>(menuWeaponLists.m_WeaponTypes.size()); i++) {
+                rapidjson::Value& weaponGroup = builder.AddObject(builder.GetDocument(), menuWeaponLists.m_WeaponTypes[i]);
+                std::vector<MenuWeaponPresetItem> typeList;
+                for (const MenuWeapon& weapon : menuWeaponLists.m_Weapons[i]) {
+                    rapidjson::Value& weaponObject = builder.AddObject(weaponGroup, weapon.m_Name);
+                    weaponObject.AddMember("Optic", -1, builder.GetAllocator());
+                    builder.AddArray(weaponObject, "Attachments");
+                    weaponObject.AddMember("Camo", 0, builder.GetAllocator());
+
+                    MenuWeaponPresetItem weaponItem;
+                    weaponItem.m_EquippedOptic = -1;
+                    weaponItem.m_EquippedAttachments = { };
+                    weaponItem.m_Camo = { "", "" };
+                    typeList.emplace_back(weaponItem);
+                }
+                newPreset.m_PresetItems.insert({ menuWeaponLists.m_WeaponTypes[i], typeList });
+            }
+
+            weaponPresets.emplace_back(newPreset);
+            builder.SaveToFile(filename);
+            WriteWeaponLoadoutToGame(&builder);
+        }
+        
+        currentWeaponPreset = static_cast<int>(weaponPresets.size()) - 1;
+    }
+
+    void DeleteWeaponPreset(const MenuWeaponPreset& preset)
+    {
+        if (std::filesystem::exists(selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json")) {
+            std::filesystem::remove(selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json");
+        }
+        if (currentWeaponPreset > 0) {
+            currentWeaponPreset--;
+        }
+        weaponPresets.erase(std::find(weaponPresets.begin(), weaponPresets.end(), preset));
+        WriteWeaponLoadoutToGame();
+    }
+
+    void SaveWeaponLoadout(const MenuWeaponPreset& preset)
+    {
+        const std::string filename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json";
+        WJson builder;
+
+        for (int i = 0; i < static_cast<int>(menuWeaponLists.m_WeaponTypes.size()); i++) {
+            const std::string& weaponType = menuWeaponLists.m_WeaponTypes[i];
+            rapidjson::Value& weaponGroup = builder.AddObject(builder.GetDocument(), weaponType);
+            for (int j = 0; j < static_cast<int>(menuWeaponLists.m_Weapons[i].size()); j++) {
+                const MenuWeapon& weapon = menuWeaponLists.m_Weapons[i][j];
+                rapidjson::Value& weaponObject = builder.AddObject(weaponGroup, weapon.m_Name);
+                weaponObject.AddMember("Optic", preset.m_PresetItems.find(weaponType)->second[j].m_EquippedOptic, builder.GetAllocator());
+                rapidjson::Value& attachmentsArray = builder.AddArray(weaponObject, "Attachments");
+                for (const int& attachment : preset.m_PresetItems.find(weaponType)->second[j].m_EquippedAttachments) {
+                    attachmentsArray.PushBack(attachment, builder.GetAllocator());
+                }
+                weaponObject.AddMember("Camo", camoNameToIndex[preset.m_PresetItems.find(weaponType)->second[j].m_Camo.second], builder.GetAllocator());
+            }
+        }
+
+        builder.SaveToFile(filename);
+        WriteWeaponLoadoutToGame(&builder);
+    }
+
+    void WriteWeaponLoadoutToGame(Walnut::JSONBuilder* json)
+    {
+        if (!weaponPresets.size() || !GUIState::IsStateSet(Active) || !writeWeaponPresets) {
+            WJson::WriteEmpty(std::string_view(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE));
+        }
+        else {
+            if (json) {
+                json->SaveToFile(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE);
+            }
+            else {
+                const MenuWeaponPreset& preset = weaponPresets[currentWeaponPreset];
+                const std::string filename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + preset.m_Name + ".json";
+                WJson builder = WJson::FromFile(filename);
+                builder.SaveToFile(bo3Directory + ACTIVE_WEAPON_LOADOUT_FILE);
+            }
+        }
+    }
+
+    MenuWeaponPreset ParseWeaponLoadout(std::string_view filename)
+    {
+        MenuWeaponPreset returnPreset;
+        WJson builder = WJson::FromFile(filename);
+
+        for (const std::string& weaponType : menuWeaponLists.m_WeaponTypes) {
+            std::vector<MenuWeaponPresetItem> presetEntry;
+            if (builder.GetDocument().HasMember(weaponType.c_str()) && builder.GetDocument()[weaponType.c_str()].IsObject()) {
+                const rapidjson::Value& typeObject = builder.GetDocument()[weaponType.c_str()];
+
+                for (rapidjson::Value::ConstMemberIterator it = typeObject.MemberBegin(); it != typeObject.MemberEnd(); it++) {
+                    const std::string& name = it->name.GetString();
+                    const rapidjson::Value& value = it->value;
+                    MenuWeaponPresetItem weaponEntry;
+
+                    if (value.HasMember("Optic") && value["Optic"].IsInt()) {
+                        weaponEntry.m_EquippedOptic = value["Optic"].GetInt();
+                    }
+
+                    if (value.HasMember("Attachments") && value["Attachments"].IsArray()) {
+                        const rapidjson::Value& attachments = value["Attachments"];
+
+                        for (rapidjson::SizeType i = 0; i < attachments.Size(); i++) {
+                            if (attachments[i].IsInt()) {
+                                weaponEntry.m_EquippedAttachments.emplace_back(attachments[i].GetInt());
+                            }
+                        }
+                    }
+
+                    if (value.HasMember("Camo") && value["Camo"].IsInt()) {
+                        const rapidjson::Value& camo = value["Camo"];
+
+                        weaponEntry.m_Camo.second = camoIndexToName[camo.GetInt()];
+                        for (int i = 0; i < static_cast<int>(camosOrder.m_Camos.size()); i++) {
+                            if (std::find(camosOrder.m_Camos[i].begin(), camosOrder.m_Camos[i].end(), weaponEntry.m_Camo.second) != camosOrder.m_Camos[i].end()) {
+                                weaponEntry.m_Camo.first = camosOrder.m_Types[i];
+                            }
+                        }
+                    }
+
+                    presetEntry.emplace_back(weaponEntry);
+                }
+                returnPreset.m_PresetItems.insert({ weaponType.c_str(), presetEntry });
+            }
+        }
+
+        return returnPreset;
+    }
+
 #pragma endregion
 
 #pragma region ZombieCalc
+
     int GetZombieCountForRound(int round, int playerCount)
     {
         int maxZombies = 24;
-        float multiplier = round / 5.f;
-        if (multiplier < 1)
-            multiplier = 1;
-        if (round >= 10)
+        float multiplier = std::max(1.0f, round / 5.0f);
+        if (round >= 10) {
             multiplier *= (round * 0.15f);
-        if (playerCount == 1)
+        }
+        if (playerCount == 1) {
             maxZombies += static_cast<int>(3 * multiplier);
-        else
+        }
+        else {
             maxZombies += static_cast<int>(((playerCount - 1) * 6) * multiplier);
+        }
         return MaxZombieFunc(maxZombies, round);
     }
 
     int MaxZombieFunc(int maxZombies, int round)
     {
-        if (round < 2)
+        if (round < 2) {
             return static_cast<int>(maxZombies * 0.25);
-        if (round < 3)
+        }
+        if (round < 3) {
             return static_cast<int>(maxZombies * 0.3);
-        if (round < 4)
+        }
+        if (round < 4) {
             return static_cast<int>(maxZombies * 0.5);
-        if (round < 5)
+        }
+        if (round < 5) {
             return static_cast<int>(maxZombies * 0.7);
-        if (round < 6)
+        }
+        if (round < 6) {
             return static_cast<int>(maxZombies * 0.9);
+        }
         return static_cast<int>(maxZombies);
     }
 
     int GetZombiesUpToRound(int round, int playerCount)
     {
-        if (round == 1)
+        if (round == 1) {
             return 0;
+        }
         return GetZombieCountForRound(round - 1, playerCount) + GetZombiesUpToRound(round - 1, playerCount);
     }
 
     int GetZombieHealthForRound(int round)
     {
-        if (round > 162) return INT_MAX;
+        if (round > 162) {
+            return INT_MAX;
+        }
         int zombieHealth = 150;
-        if (round < 10) zombieHealth += 100 * (round - 1);
-        else zombieHealth += 100 * (9 - 1);
-        if (round < 10)
+        if (round < 10) {
+            zombieHealth += 100 * (round - 1);
+        }
+        else {
+            zombieHealth += 100 * (9 - 1);
+        }
+        if (round < 10) {
             return zombieHealth;
-        for (int i = 10; i <= round; i++)
-        {
+        }
+        for (int i = 10; i <= round; i++) {
             zombieHealth += static_cast<int>(zombieHealth * 0.1);
         }
         return zombieHealth;
@@ -1301,55 +1017,61 @@ namespace BO3PT
 
     int GetZombieSpawnRateForRound(int round, int playerCount)
     {
-        if (round == 1)
+        if (round == 1) {
             return 2100;
+        }
         float startDelay = 2.0f;
-        if (playerCount == 2)
+        if (playerCount == 2) {
             startDelay = 1.5f;
-        else if (playerCount == 3)
+        }
+        else if (playerCount == 3) {
             startDelay = 0.89f;
-        else if (playerCount == 4)
+        }
+        else if (playerCount == 4) {
             startDelay = 0.67f;
-        float calcSpawnRate = startDelay * static_cast<float>(pow(0.95f, round - 1)) + 0.1f;
-        if (calcSpawnRate < 0.2f)
-            calcSpawnRate = 0.2f;
+        }
+        float calcSpawnRate = std::max(0.2f, startDelay * static_cast<float>(pow(0.95f, round - 1)) + 0.1f);
         int calcRoundedTime = static_cast<int>(calcSpawnRate * 1000);
         return RoundTimeNearest50(calcRoundedTime);
     }
 
     float RawSpawnRateForRound(int round, int playerCount)
     {
-        if (round == 1)
+        if (round == 1) {
             return 2.1f;
+        }
         float startDelay = 2.0f;
-        if (playerCount == 2)
+        if (playerCount == 2) {
             startDelay = 1.5f;
-        else if (playerCount == 3)
+        }
+        else if (playerCount == 3) {
             startDelay = 0.89f;
-        else if (playerCount == 4)
+        }
+        else if (playerCount == 4) {
             startDelay = 0.67f;
+        }
         return startDelay * static_cast<float>(pow(0.95f, round - 1));
     }
 
     int RoundTimeNearest50(int time)
     {
         int newTime = time % 50;
-        if (newTime < 25)
+        if (newTime < 25) {
             newTime = time - newTime;
-        else
+        }
+        else {
             newTime = time + (50 - newTime);
+        }
         return newTime;
     }
 
     int GetSpecialEnemySpawnRate(int playerCount, const std::string& specialEnemy)
     {
-        switch (hashstr(specialEnemy.c_str()))
-        {
+        switch (hashstr(specialEnemy.c_str())) {
         case hashstr("Meatballs"):
         case hashstr("Manglers"):
         case hashstr("Valks"):
-            switch (playerCount)
-            {
+            switch (playerCount) {
             case 1:
                 return 2350;
             case 2:
@@ -1361,8 +1083,7 @@ namespace BO3PT
             }
             break;
         case hashstr("Dogs"):
-            switch (numDogRounds)
-            {
+            switch (numDogRounds) {
             case 1:
                 return 2100;
             case 2:
@@ -1374,8 +1095,7 @@ namespace BO3PT
             }
             break;
         case hashstr("Spiders"):
-            switch (playerCount)
-            {
+            switch (playerCount) {
             case 1:
                 return 2350;
             case 2:
@@ -1397,42 +1117,51 @@ namespace BO3PT
     std::string CalcRoundTime(int round, int playerCount, int corpseDelay, bool specialEnemies)
     {
         int roundIntermission = 12600;
-        if (round == 1)
+        if (round == 1) {
             roundIntermission = 8150;
+        }
         int zombieCount = GetZombieCountForRound(round, playerCount);
         int specialEnemiesSpawnTime = 0;
-        if (specialEnemies)
-        {
+        if (specialEnemies) {
             zombieCount -= specialEnemyCount_1 + specialEnemyCount_2 + specialEnemyCount_3;
-            if (specialEnemyCount_1)
+            if (specialEnemyCount_1) {
                 specialEnemiesSpawnTime += GetSpecialEnemySpawnRate(playerCount, specialEnemy_1) * specialEnemyCount_1;
-            if (specialEnemyCount_2)
+            }
+            if (specialEnemyCount_2) {
                 specialEnemiesSpawnTime += GetSpecialEnemySpawnRate(playerCount, specialEnemy_2) * specialEnemyCount_2;
-            if (specialEnemyCount_3)
+            }
+            if (specialEnemyCount_3) {
                 specialEnemiesSpawnTime += GetSpecialEnemySpawnRate(playerCount, specialEnemy_3) * specialEnemyCount_3;
+            }
         }
         int zombieSpawnsTime = GetZombieSpawnRateForRound(round, playerCount) * (zombieCount - 1) + specialEnemiesSpawnTime + roundIntermission;
-        if (corpseDelay) zombieSpawnsTime += 100 * corpseDelay;
+        if (corpseDelay) {
+            zombieSpawnsTime += 100 * corpseDelay;
+        }
         return ParseTimeFromMilli(zombieSpawnsTime);
     }
 
     std::string SpecialRoundTime(int round, int playerCount, int corpseDelay, bool soe)
     {
         int roundIntermission = 12600;
-        if (round == 1)
+        if (round == 1) {
             roundIntermission = 8150;
+        }
         int zombieCount = GetZombieCountForRound(round, playerCount);
         int zombieSpawnsTime;
-        if (soe)
+        if (soe) {
             zombieSpawnsTime = 2100 * (zombieCount - 1);
-        else
-        {
-            if (moonRoundSkip)
+        }
+        else {
+            if (moonRoundSkip) {
                 zombieCount = 25;
+            }
             zombieSpawnsTime = GetZombieSpawnRateForRound(round + (moonEarthTravels * 2 - moonRoundSkips) + 1, 1) * (zombieCount - 1);
         }
         zombieSpawnsTime += +roundIntermission;
-        if (corpseDelay) zombieSpawnsTime += 100 * corpseDelay;
+        if (corpseDelay) {
+            zombieSpawnsTime += 100 * corpseDelay;
+        }
         return ParseTimeFromMilli(zombieSpawnsTime);
     }
 
@@ -1444,18 +1173,10 @@ namespace BO3PT
 
     void CalcLockdownTime(int round, int playerCount)
     {
-        float rawSpawnRate_1 = RawSpawnRateForRound(round, playerCount);
-        if (rawSpawnRate_1 < 0.1f)
-            rawSpawnRate_1 = 0.1f;
-        float rawSpawnRate_2 = rawSpawnRate_1 - playerCount * 0.1f;
-        if (rawSpawnRate_2 < 0.1f)
-            rawSpawnRate_2 = 0.1f;
-        float rawSpawnRate_3 = rawSpawnRate_2 - playerCount * 0.1f;
-        if (rawSpawnRate_3 < 0.1f)
-            rawSpawnRate_3 = 0.1f;
-        float rawSpawnRate_4 = rawSpawnRate_3 - playerCount * 0.1f;
-        if (rawSpawnRate_4 < 0.1f)
-            rawSpawnRate_4 = 0.1f;
+        float rawSpawnRate_1 = std::max(0.1f, RawSpawnRateForRound(round, playerCount));
+        float rawSpawnRate_2 = std::max(0.1f, rawSpawnRate_1 - playerCount * 0.1f);
+        float rawSpawnRate_3 = std::max(0.1f, rawSpawnRate_2 - playerCount * 0.1f);
+        float rawSpawnRate_4 = std::max(0.1f, rawSpawnRate_3 - playerCount * 0.1f);
 
         int spawnRate_1 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_1 * 1000)) + 50;
         int spawnRate_2 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_2 * 1000)) + 50;
@@ -1477,180 +1198,83 @@ namespace BO3PT
         waveTime_3 = ParseTimeFromMilli(spawnRate_3 * waveCount_3 + waveIntermission_3 + 500);
         waveTime_4 = ParseTimeFromMilli(spawnRate_4 * waveCount_4 + waveIntermission_4 + 500);
     }
+
 #pragma endregion
 
 #pragma region GKValveSolver
-    void InitValveSolutions()
-    {
-        std::unordered_map<std::string, std::vector<std::string>> departmentSolutions;
-        std::unordered_map<std::string, std::vector<std::string>> dragonSolutions;
-        std::unordered_map<std::string, std::vector<std::string>> armorySolutions;
-        std::unordered_map<std::string, std::vector<std::string>> supplySolutions;
-        std::unordered_map<std::string, std::vector<std::string>> infirmarySolutions;
-        std::unordered_map<std::string, std::vector<std::string>> tankSolutions;
-
-        departmentSolutions.insert({ "Dragon Command", { "P", "1", "2", "2", "1", "1" } });
-        departmentSolutions.insert({ "Armory", { "P", "2", "1", "3", "3", "1" } });
-        departmentSolutions.insert({ "Supply", { "P", "3", "3", "1", "2", "3" } });
-        departmentSolutions.insert({ "Infirmary", { "P", "2", "1", "1", "2", "3" } });
-        departmentSolutions.insert({ "Tank", { "P", "1", "3", "2", "3", "1" } });
-
-        dragonSolutions.insert({ "Department", { "1", "P", "1", "3", "3", "1" } });
-        dragonSolutions.insert({ "Armory", { "3", "P", "1", "3", "1", "1" } });
-        dragonSolutions.insert({ "Supply", { "3", "P", "2", "2", "1", "1" } });
-        dragonSolutions.insert({ "Infirmary", { "1", "P", "2", "1", "1", "2" } });
-        dragonSolutions.insert({ "Tank", { "1", "P", "1", "1", "1", "1" } });
-
-        armorySolutions.insert({ "Department", { "2", "1", "P", "3", "3", "3" } });
-        armorySolutions.insert({ "Dragon Command", { "1", "1", "P", "3", "1", "1" } });
-        armorySolutions.insert({ "Supply", { "2", "2", "P", "1", "2", "3" } });
-        armorySolutions.insert({ "Infirmary", { "3", "1", "P", "3", "1", "3" } });
-        armorySolutions.insert({ "Tank", { "3", "1", "P", "2", "1", "1" } });
-
-        supplySolutions.insert({ "Department", { "1", "1", "2", "P", "3", "1" } });
-        supplySolutions.insert({ "Dragon Command", { "2", "2", "1", "P", "2", "3" } });
-        supplySolutions.insert({ "Armory", { "3", "1", "2", "P", "1", "1" } });
-        supplySolutions.insert({ "Infirmary", { "3", "1", "3", "P", "2", "3" } });
-        supplySolutions.insert({ "Tank", { "1", "2", "1", "P", "3", "1" } });
-
-        infirmarySolutions.insert({ "Department", { "1", "3", "2", "1", "P", "2" } });
-        infirmarySolutions.insert({ "Dragon Command", { "2", "1", "3", "3", "P", "3" } });
-        infirmarySolutions.insert({ "Armory", { "2", "2", "2", "1", "P", "2" } });
-        infirmarySolutions.insert({ "Supply", { "1", "2", "2", "1", "P", "1" } });
-        infirmarySolutions.insert({ "Tank", { "3", "3", "3", "2", "P", "2" } });
-
-        tankSolutions.insert({ "Department", { "1", "3", "1", "1", "2", "P" } });
-        tankSolutions.insert({ "Dragon Command", { "2", "1", "3", "2", "2", "P" } });
-        tankSolutions.insert({ "Armory", { "2", "2", "1", "1", "2", "P" } });
-        tankSolutions.insert({ "Supply", { "1", "3", "2", "1", "1", "P" } });
-        tankSolutions.insert({ "Infirmary", { "3", "1", "2", "2", "1", "P" } });
-
-        valveSolutions_1.insert({ "Department", departmentSolutions });
-        valveSolutions_1.insert({ "Dragon Command", dragonSolutions });
-        valveSolutions_1.insert({ "Armory", armorySolutions });
-        valveSolutions_1.insert({ "Supply", supplySolutions });
-        valveSolutions_1.insert({ "Infirmary", infirmarySolutions });
-        valveSolutions_1.insert({ "Tank", tankSolutions });
-
-        departmentSolutions = { };
-        dragonSolutions = { };
-        armorySolutions = { };
-        supplySolutions = { };
-        infirmarySolutions = { };
-        tankSolutions = { };
-
-        departmentSolutions.insert({ "Dragon Command", { "P", "3", "3", "2", "2", "2" } });
-        departmentSolutions.insert({ "Armory", { "P", "3", "2", "1", "1", "2" } });
-        departmentSolutions.insert({ "Supply", { "P", "2", "2", "2", "3", "1" } });
-        departmentSolutions.insert({ "Infirmary", { "P", "1", "3", "3", "3", "3" } });
-        departmentSolutions.insert({ "Tank", { "P", "3", "1", "1", "1", "3" } });
-
-        dragonSolutions.insert({ "Department", { "2", "P", "1", "1", "2", "3" } });
-        dragonSolutions.insert({ "Armory", { "2", "P", "3", "1", "2", "2" } });
-        dragonSolutions.insert({ "Supply", { "2", "P", "3", "3", "3", "3" } });
-        dragonSolutions.insert({ "Infirmary", { "3", "P", "3", "2", "2", "2" } });
-        dragonSolutions.insert({ "Tank", { "2", "P", "3", "2", "3", "2" } });
-
-        armorySolutions.insert({ "Department", { "3", "3", "P", "2", "2", "2" } });
-        armorySolutions.insert({ "Dragon Command", { "2", "2", "P", "2", "2", "2" } });
-        armorySolutions.insert({ "Supply", { "1", "2", "P", "3", "3", "1" } });
-        armorySolutions.insert({ "Infirmary", { "1", "2", "P", "1", "2", "2" } });
-        armorySolutions.insert({ "Tank", { "1", "3", "P", "1", "1", "2" } });
-
-        supplySolutions.insert({ "Department", { "3", "3", "1", "P", "2", "3" } });
-        supplySolutions.insert({ "Dragon Command", { "1", "3", "2", "P", "1", "2" } });
-        supplySolutions.insert({ "Armory", { "3", "3", "3", "P", "2", "2" } });
-        supplySolutions.insert({ "Infirmary", { "1", "2", "2", "P", "3", "2" } });
-        supplySolutions.insert({ "Tank", { "2", "1", "3", "P", "3", "3" } });
-
-        infirmarySolutions.insert({ "Department", { "3", "1", "2", "2", "P", "1" } });
-        infirmarySolutions.insert({ "Dragon Command", { "1", "2", "1", "3", "P", "1" } });
-        infirmarySolutions.insert({ "Armory", { "3", "1", "3", "3", "P", "1" } });
-        infirmarySolutions.insert({ "Supply", { "3", "3", "3", "3", "P", "3" } });
-        infirmarySolutions.insert({ "Tank", { "2", "2", "1", "1", "P", "3" } });
-
-        tankSolutions.insert({ "Department", { "2", "1", "2", "2", "3", "P" } });
-        tankSolutions.insert({ "Dragon Command", { "1", "3", "1", "3", "1", "P" } });
-        tankSolutions.insert({ "Armory", { "2", "1", "3", "3", "3", "P" } });
-        tankSolutions.insert({ "Supply", { "3", "3", "3", "2", "2", "P" } });
-        tankSolutions.insert({ "Infirmary", { "1", "2", "1", "3", "3", "P" } });
-
-        valveSolutions_2.insert({ "Department", departmentSolutions });
-        valveSolutions_2.insert({ "Dragon Command", dragonSolutions });
-        valveSolutions_2.insert({ "Armory", armorySolutions });
-        valveSolutions_2.insert({ "Supply", supplySolutions });
-        valveSolutions_2.insert({ "Infirmary", infirmarySolutions });
-        valveSolutions_2.insert({ "Tank", tankSolutions });
-    }
 
     void CalcValveProbabilities()
     {
         valveDirectionCounts_1 = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
         valveDirectionCounts_2 = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
-        for (std::string& solutions : valveLocations)
-        {
-            if (passwordChosen && passwordLocation != solutions)
+        for (int i = 0; i < static_cast<int>(valves.m_ValveLocations.size()); i++) {
+            const std::string& location = valves.m_ValveLocations[i];
+            if (passwordChosen && passwordLocation != location) {
                 continue;
+            }
             int checked = -1;
-            for (std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_1[solutions])
-            {
+            for (const std::pair<std::string, std::vector<std::string>>& solution : valves.m_ValveSolutions1[i].m_Positions) {
                 checked++;
-                if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end())
+                if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end()) {
                     continue;
-                if (greenChosen && solution.first != greenLocation)
+                }
+                if (greenChosen && solution.first != greenLocation) {
                     continue;
+                }
                 int num = locationToInt[solution.first];
-                if (checkedGreenArray[locationToInt[solution.first]])
+                if (checkedGreenArray[locationToInt[solution.first]]) {
                     continue;
+                }
                 int index = -1;
-                for (std::string& direction : solution.second)
-                {
+                for (const std::string& direction : solution.second) {
                     index++;
-                    if (direction == "P")
+                    if (direction == "P") {
                         continue;
+                    }
                     int number = atoi(direction.c_str()) - 1;
                     valveDirectionCounts_1[index][number]++;
                 }
             }
         }
-        for (std::string& solutions : valveLocations)
-        {
-            if (passwordLocation != "" && passwordLocation != solutions)
+        for (int i = 0; i < static_cast<int>(valves.m_ValveLocations.size()); i++) {
+            const std::string& location = valves.m_ValveLocations[i];
+            if (passwordLocation != "" && passwordLocation != location) {
                 continue;
+            }
             int checked = -1;
-            for (std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_2[solutions])
-            {
+            for (const std::pair<std::string, std::vector<std::string>>& solution : valves.m_ValveSolutions2[i].m_Positions) {
                 checked++;
-                if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end())
+                if (std::find(excludedValves.begin(), excludedValves.end(), solution.second) != excludedValves.end()) {
                     continue;
-                if (greenChosen && solution.first != greenLocation)
+                }
+                if (greenChosen && solution.first != greenLocation) {
                     continue;
+                }
                 int num = locationToInt[solution.first];
-                if (checkedGreenArray[locationToInt[solution.first]])
+                if (checkedGreenArray[locationToInt[solution.first]]) {
                     continue;
+                }
                 int index = -1;
-                for (std::string& direction : solution.second)
-                {
+                for (const std::string& direction : solution.second) {
                     index++;
-                    if (direction == "P")
+                    if (direction == "P") {
                         continue;
+                    }
                     int number = atoi(direction.c_str()) - 1;
                     valveDirectionCounts_2[index][number]++;
                 }
             }
         }
         int odds = 0;
-        for (std::vector<int>& counts : valveDirectionCounts_1)
-        {
+        for (const std::vector<int>& counts : valveDirectionCounts_1) {
             int index = -1;
-            for (int& count : counts)
-            {
+            for (const int& count : counts) {
                 index++;
                 int divideBy = valveDirectionCounts_1[odds][0] + valveDirectionCounts_1[odds][1] + valveDirectionCounts_1[odds][2];
-                if (!divideBy)
+                if (!divideBy) {
                     valveDirectionOdds_1[odds][index] = "P";
-                else
-                {
+                }
+                else {
                     float percentage = count * 100.0f / divideBy;
                     char buf[8];
                     sprintf_s(buf, "%.2f", percentage);
@@ -1662,17 +1286,15 @@ namespace BO3PT
             odds++;
         }
         odds = 0;
-        for (std::vector<int>& counts : valveDirectionCounts_2)
-        {
+        for (const std::vector<int>& counts : valveDirectionCounts_2) {
             int index = -1;
-            for (int& count : counts)
-            {
+            for (const int& count : counts) {
                 index++;
                 int divideBy = valveDirectionCounts_2[odds][0] + valveDirectionCounts_2[odds][1] + valveDirectionCounts_2[odds][2];
-                if (!divideBy)
+                if (!divideBy) {
                     valveDirectionOdds_2[odds][index] = "P";
-                else
-                {
+                }
+                else {
                     float percentage = count * 100.0f / divideBy;
                     char buf[8];
                     sprintf_s(buf, "%.2f", percentage);
@@ -1692,21 +1314,23 @@ namespace BO3PT
         std::string turnToGreen = "";
         int compareAgainst = (passwordChosen) ? 1 : 0;
         noGreenChoice = false;
-        for (int i = 0; i < 6; i++)
-        {
-            if (checkedGreenArray[i])
-            {
-                if (passwordChosen && passwordLocation == valveLocations[i])
+        for (int i = 0; i < 6; i++) {
+            if (checkedGreenArray[i]) {
+                if (passwordChosen && passwordLocation == valves.m_ValveLocations[i]) {
                     continue;
+                }
                 notGreen++;
             }
-            else
-                turnToGreen = valveLocations[i];
-            if (i - notGreen > compareAgainst)
+            else {
+                turnToGreen = valves.m_ValveLocations[i];
+            }
+            if (i - notGreen > compareAgainst) {
                 return;
+            }
         }
-        if (notGreen >= 6)
+        if (notGreen >= 6) {
             return;
+        }
         noGreenChoice = true;
         greenLocation = turnToGreen;
         valveGreen[locationToInt[greenLocation]] = true;
@@ -1715,66 +1339,88 @@ namespace BO3PT
 
     void CalcExcludedValves()
     {
-        std::vector<std::vector<std::string>> results;
         std::vector<std::string> result;
         excludedValves = { };
         possibleValves_1 = { };
         possibleValves_2 = { };
-        for (int valve = 0; valve < 6; valve++)
-        {
-            for (int direction = 0; direction < 3; direction++)
-            {
-                if (passwordLocation == valveLocations[valve])
-                {
+        for (int valve = 0; valve < 6; valve++) {
+            for (int direction = 0; direction < 3; direction++) {
+                if (passwordLocation == valves.m_ValveLocations[valve]) {
                     result.emplace_back("P");
                     break;
                 }
-                if (valveDirections[valve][direction])
-                {
+                if (valveDirections[valve][direction]) {
                     result.emplace_back(std::to_string(direction + 1));
                     break;
                 }
-                if (direction == 2)
+                if (direction == 2) {
                     result.emplace_back("0");
+                }
             }
         }
-        if (result.size() != 6)
-        {
+        if (result.size() != 6) {
             valveComboSet = false;
             return;
         }
-        if (passwordChosen)
+        if (passwordChosen) {
             valveComboSet = true;
-        for (std::string& solutions : valveLocations)
-        {
-            for (std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_1[solutions])
-            {
-                if (result == solution.second)
-                {
+        }
+        for (int i = 0; i < static_cast<int>(valves.m_ValveLocations.size()); i++) {
+            const std::string& location = valves.m_ValveLocations[i];
+            if (passwordLocation != location) {
+                continue;
+            }
+            for (const std::pair<std::string, std::vector<std::string>>& solution : valves.m_ValveSolutions1[i].m_Positions) {
+                if (result == solution.second) {
                     excludedValves.emplace_back(result);
                 }
-                else if (passwordLocation == solutions)
-                {
+                else if (passwordLocation == location) {
                     possibleValves_1.insert({ solution.first, solution.second });
                 }
             }
-            for (std::pair<const std::string, std::vector<std::string>>& solution : valveSolutions_2[solutions])
-            {
-                if (result == solution.second)
-                {
+            for (const std::pair<std::string, std::vector<std::string>>& solution : valves.m_ValveSolutions2[i].m_Positions) {
+                if (result == solution.second) {
                     excludedValves.emplace_back(result);
                 }
-                else if (passwordLocation == solutions)
-                {
+                else if (passwordLocation == location) {
                     possibleValves_2.insert({ solution.first, solution.second });
                 }
             }
+            break;
         }
     }
+
+    std::pair<std::vector<std::string>, std::vector<std::string>> SolveValves(std::string_view password, std::string_view green)
+    {
+        std::vector<std::string> solution1;
+        std::vector<std::string> solution2;
+
+        for (int i = 0; i < static_cast<int>(valves.m_ValveLocations.size()); i++) {
+            const std::string& location = valves.m_ValveLocations[i];
+            if (password != location) {
+                continue;
+            }
+            int index = 0;
+            for (int j = 0; j < static_cast<int>(valves.m_ValveSolutions1.size()); j++) {
+                const std::pair<std::string, std::vector<std::string>>& solution = valves.m_ValveSolutions1[i].m_Positions[j];
+                if (green == solution.first) {
+                    solution1 = solution.second;
+                    index = j;
+                    break;
+                }
+            }
+            solution2 = valves.m_ValveSolutions2[i].m_Positions[index].second;
+            break;
+        }
+
+        return { solution1, solution2 };
+    }
+
 #pragma endregion
 
 #pragma region IceCodeGuide
-    void InitIceCodePairs()
+
+    void LoadIceCodePairs()
     {
         iceCodePairs.emplace_back(IceCodePair({ iceCodeImgList["dot-digit"], iceCodeImgList["dot-symbol"] }));
         iceCodePairs.emplace_back(IceCodePair({ iceCodeImgList["i-digit"], iceCodeImgList["i-symbol"] }));
@@ -1806,18 +1452,16 @@ namespace BO3PT
 
     void ProgressGame(bool success, int numCode)
     {
-        if (!gameStarted)
-        {
+        if (!gameStarted) {
             gameStarted = true;
             gameTimer.Reset();
         }
-        if (success)
-        {
+        if (success) {
             gameProgress++;
-            for (bool& checked : gameChecked)
+            for (bool& checked : gameChecked) {
                 checked = false;
-            if (gameProgress >= 12)
-            {
+            }
+            if (gameProgress >= 12) {
                 gameTime = "Time: " + ParseTimeFromMilli(gameTimer.Elapsed());
                 std::stringstream ss;
                 ss.precision(4);
@@ -1834,8 +1478,7 @@ namespace BO3PT
             Walnut::Random::Init();
             std::shuffle(randomIceCodePairs.begin(), randomIceCodePairs.end(), std::default_random_engine(Walnut::Random::UInt()));
         }
-        else if (!gameChecked[numCode])
-        {
+        else if (!gameChecked[numCode]) {
             gameChecked[numCode] = true;
             timesMissed++;
         }
@@ -1846,89 +1489,123 @@ namespace BO3PT
         ss << "Accuracy: " << percentage << "%%";
         accuracy = "Accuracy: " + ss.str();
     }
+
 #pragma endregion
 
 #pragma region Autosplits
-#define PRESET_DIRECTORY "/Settings/Autosplits"
-    void LoadSplitPresets()
+#define AUTOSPLIT_PRESET_DIR "\\Settings\\Autosplits\\"
+#define ACTIVE_AUTOSPLIT_PRESET_FILE "\\Practice Tool\\Settings\\Active Autosplit Preset.json"
+
+    void LoadAutosplitPresets()
     {
-        splitPresets.clear();
-        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Autosplits"))
-        {
-            if (std::filesystem::is_regular_file(file) && file.path().extension().string() == ".json")
-            {
-                SplitPreset preset = ParseSplitJson(file.path().string());
-                preset.presetName = file.path().stem().string();
-                splitPresets.emplace_back(preset);
+        autosplitPresets.clear();
+        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(selfDirectory) / "Settings\\Autosplits")) {
+            if (std::filesystem::is_regular_file(file) && file.path().extension().string() == ".json") {
+                AutosplitPreset preset = ParseSplitJson(file.path().string());
+                preset.m_Name = file.path().stem().string();
+                autosplitPresets.emplace_back(preset);
             }
         }
-
-        if (!splitPresets.size())
-            splitPresets.emplace_back(inactiveSplitPreset);
     }
 
-    void WriteAutosplitPreset(const SplitPreset& preset)
+    void CreateAutosplitPreset(std::string_view presetName, bool duplicatePreset)
     {
-        std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + preset.presetName + ".json";
+        std::string filename = selfDirectory + AUTOSPLIT_PRESET_DIR + presetName.data() + ".json";
+       
+        if (duplicatePreset) {
+            std::string oldFilename = selfDirectory + AUTOSPLIT_PRESET_DIR + autosplitPresets[currentAutosplitPreset].m_Name + ".json";
+            AutosplitPreset newPreset = autosplitPresets[currentAutosplitPreset];
+            newPreset.m_Name = presetName;
+            autosplitPresets.emplace_back(newPreset);
 
-        Walnut::JSONBuilder builder;
+            std::filesystem::copy_file(oldFilename, filename);
+        }
+        else {
+            WJson builder;
+            AutosplitPreset newPreset;
+            newPreset.m_Name = presetName;
+
+            rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
+            settings.AddMember("In Game Timer", false, builder.GetAllocator());
+            settings.AddMember("In Game Round Timer", false, builder.GetAllocator());
+            settings.AddMember("Amount of Splits", 0, builder.GetAllocator());
+            settings.AddMember("Map Index", 0, builder.GetAllocator());
+            settings.AddMember("Split Type", 0, builder.GetAllocator());
+
+            newPreset.m_IGT = false;
+            newPreset.m_IGRT = false;
+            newPreset.m_NumSplits = 0;
+            newPreset.m_Map = 0;
+            newPreset.m_SplitType = 0;
+
+            rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
+
+            autosplitPresets.emplace_back(newPreset);
+            builder.SaveToFile(filename);
+            WriteAutosplitPresetToGame(&builder);
+        }
+
+        currentAutosplitPreset = static_cast<int>(autosplitPresets.size()) - 1;
+    }
+
+    void DeleteAutosplitPreset(const AutosplitPreset& preset)
+    {
+        if (std::filesystem::exists(selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json")) {
+            std::filesystem::remove(selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json");
+        }
+        if (currentAutosplitPreset > 0) {
+            currentAutosplitPreset--;
+        }
+        autosplitPresets.erase(std::find(autosplitPresets.begin(), autosplitPresets.end(), preset));
+        WriteAutosplitPresetToGame();
+    }
+
+    void SaveAutosplitPreset(const AutosplitPreset& preset)
+    {
+        const std::string filename = selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json";
+
+        WJson builder;
 
         rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
-        settings.AddMember("In Game Timer", preset.igt, builder.GetAllocator());
-        settings.AddMember("In Game Round Timer", preset.igrt, builder.GetAllocator());
-        settings.AddMember("Amount of Splits", preset.numSplits, builder.GetAllocator());
-        settings.AddMember("Map Index", preset.map, builder.GetAllocator());
-        settings.AddMember("Split Type", preset.splitType, builder.GetAllocator());
+        settings.AddMember("In Game Timer", preset.m_IGT, builder.GetAllocator());
+        settings.AddMember("In Game Round Timer", preset.m_IGRT, builder.GetAllocator());
+        settings.AddMember("Amount of Splits", preset.m_NumSplits, builder.GetAllocator());
+        settings.AddMember("Map Index", preset.m_Map, builder.GetAllocator());
+        settings.AddMember("Split Type", preset.m_SplitType, builder.GetAllocator());
 
         rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
-        for (std::pair<std::string, int> pair : preset.splits)
-        {
+        for (std::pair<std::string, int> pair : preset.m_Splits) {
             rapidjson::Value key(rapidjson::StringRef(pair.first.c_str()), builder.GetAllocator());
             rapidjson::Value value(pair.second);
             splitData.AddMember(key, value, builder.GetAllocator());
         }
 
-        if (preset.presetName != inactiveSplitPreset.presetName)
-            builder.SaveToFile(filename);
-        if (preset.presetName != inactiveSplitPreset.presetName && (!writeSplits || appStatus == "Status: Inactive"))
-            WriteAutosplitPreset(inactiveSplitPreset);
-        else
-            builder.SaveToFile(bo3Directory + "\\Practice Tool\\Settings\\Active Autosplit Preset.json");
-    }
-
-    void CreateNewAutosplitPreset(const std::string& presetName)
-    {
-        std::string filename = selfDirectory + PRESET_DIRECTORY + "/" + presetName + ".json";
-       
-        Walnut::JSONBuilder builder;
-
-        rapidjson::Value& settings = builder.AddObject(builder.GetDocument(), "Settings");
-        settings.AddMember("In Game Timer", false, builder.GetAllocator());
-        settings.AddMember("In Game Round Timer", false, builder.GetAllocator());
-        settings.AddMember("Amount of Splits", 0, builder.GetAllocator());
-        settings.AddMember("Map Index", 0, builder.GetAllocator());
-        settings.AddMember("Split Type", 0, builder.GetAllocator());
-
-        rapidjson::Value& splitData = builder.AddObject(builder.GetDocument(), "Split Data");
-
         builder.SaveToFile(filename);
-        LoadSplitPresets();
+        WriteAutosplitPresetToGame(&builder);
     }
 
-    void DeleteAutosplitPreset(const std::string& preset)
+    void WriteAutosplitPresetToGame(Walnut::JSONBuilder* json)
     {
-        std::string file = PRESET_DIRECTORY;
-        file += "/" + preset + ".json";
-        if (std::filesystem::exists(selfDirectory + file))
-            std::filesystem::remove(selfDirectory + file);
-        if (currentSplitPreset > 0) currentSplitPreset--;
-        LoadSplitPresets();
+        if (!autosplitPresets.size() || !GUIState::IsStateSet(Active) || !writeSplits) {
+            WJson::WriteEmpty(std::string_view(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE));
+        }
+        else {
+            if (json) {
+                json->SaveToFile(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE);
+            }
+            else {
+                const AutosplitPreset& preset = autosplitPresets[currentAutosplitPreset];
+                const std::string filename = selfDirectory + AUTOSPLIT_PRESET_DIR + preset.m_Name + ".json";
+                WJson builder = WJson::FromFile(filename);
+                builder.SaveToFile(bo3Directory + ACTIVE_AUTOSPLIT_PRESET_FILE);
+            }
+        }
     }
 
-    void WriteSplitXML(const std::string& preset, const std::vector<std::pair<std::string, int>>& splits)
+    void WriteSplitXML(std::string_view preset, const std::vector<std::pair<std::string, int>>& splits)
     {
-        if (!DoesPathExist(selfDirectory + "/Exported Splits"))
-            std::filesystem::create_directory(selfDirectory + "/Exported Splits");
+        if (!DoesPathExist(selfDirectory + "\\Exported Splits"))
+            std::filesystem::create_directory(selfDirectory + "\\Exported Splits");
 
         Walnut::XMLBuilder builder("1.0", "Run");
 
@@ -1938,7 +1615,7 @@ namespace BO3PT
         rapidxml::xml_node<>* gameIconNode = builder.AddNode(builder.GetRootNode(), "GameIcon");
 
         builder.AddNode(builder.GetRootNode(), "GameName", "Black Ops 3");
-        builder.AddNode(builder.GetRootNode(), "CategoryName", preset);
+        builder.AddNode(builder.GetRootNode(), "CategoryName", preset.data());
         builder.AddNode(builder.GetRootNode(), "LayoutPath");
 
         rapidxml::xml_node<>* metadataNode = builder.AddNode(builder.GetRootNode(), "Metadata");
@@ -1955,8 +1632,7 @@ namespace BO3PT
 
         rapidxml::xml_node<>* segmentsNode = builder.AddNode(builder.GetRootNode(), "Segments");
 
-        for (auto split : splits)
-        {
+        for (const std::pair<std::string, int>& split : splits) {
             rapidxml::xml_node<>* segmentNode = builder.AddNode(segmentsNode, "Segment");
 
             builder.AddNode(segmentNode, "Name", split.first.c_str());
@@ -1982,13 +1658,13 @@ namespace BO3PT
 
         builder.AddNode(builder.GetRootNode(), "AutoSplitterSettings");
 
-        builder.SaveToFile(selfDirectory + "/Exported Splits/" + preset + ".lss");
+        builder.SaveToFile(selfDirectory + "\\Exported Splits\\" + preset.data() + ".lss");
     }
 
-    void WriteLayoutXML(const std::string& preset, int numSplits)
+    void WriteLayoutXML(std::string_view preset, int numSplits)
     {
-        if (!DoesPathExist(selfDirectory + "/Exported Splits"))
-            std::filesystem::create_directory(selfDirectory + "/Exported Splits");
+        if (!DoesPathExist(selfDirectory + "\\Exported Splits"))
+            std::filesystem::create_directory(selfDirectory + "\\Exported Splits");
 
         Walnut::XMLBuilder builder("1.0", "Layout");
 
@@ -2071,12 +1747,12 @@ namespace BO3PT
         builder.AddNode(titleSettings, "TextAlignment", "0");
 
         rapidxml::xml_node<>* splitsComponent = builder.AddNode(componentsNode, "Component");
-        builder.AddNode(splitsComponent, "Path", "LiveSplit.Splits.dll");
+        builder.AddNode(splitsComponent, "Path", "LiveSplit.m_Splits.dll");
         rapidxml::xml_node<>* splitsSettings = builder.AddNode(splitsComponent, "Settings");
         builder.AddNode(splitsSettings, "Version", "1.6");
         builder.AddNode(splitsSettings, "CurrentSplitTopColor", "FF3373F4");
         builder.AddNode(splitsSettings, "CurrentSplitBottomColor", "FF153574");
-        builder.AddNode(splitsSettings, "VisualSplitCount", std::to_string(min(numSplits, 6)));
+        builder.AddNode(splitsSettings, "VisualSplitCount", std::to_string(std::min(numSplits, 6)));
         builder.AddNode(splitsSettings, "SplitPreviewCount", "0");
         builder.AddNode(splitsSettings, "DisplayIcons", "True");
         builder.AddNode(splitsSettings, "ShowThinSeparators", "True");
@@ -2214,64 +1890,67 @@ namespace BO3PT
         builder.AddNode(detailedTimerSettings, "DecimalsSize", "35");
         builder.AddNode(detailedTimerSettings, "SegmentTimerDecimalsSize", "35");
 
-        builder.SaveToFile(selfDirectory + "/Exported Splits/" + preset + ".lsl");
+        builder.SaveToFile(selfDirectory + "\\Exported Splits\\" + preset.data() + ".lsl");
     }
 
-    SplitPreset ParseSplitJson(std::string_view filename)
+    AutosplitPreset ParseSplitJson(std::string_view filename)
     {
-        SplitPreset returnPreset;
-        Walnut::JSONBuilder builder(filename);
+        AutosplitPreset returnPreset;
+        WJson builder = WJson::FromFile(filename);
 
-        if (builder.GetDocument().HasMember("Settings") && builder.GetDocument()["Settings"].IsObject())
-        {
+        if (builder.GetDocument().HasMember("Settings") && builder.GetDocument()["Settings"].IsObject()) {
             const rapidjson::Value& settings = builder.GetDocument()["Settings"];
 
-            for (rapidjson::Value::ConstMemberIterator it = settings.MemberBegin(); it != settings.MemberEnd(); it++)
-            {
+            for (rapidjson::Value::ConstMemberIterator it = settings.MemberBegin(); it != settings.MemberEnd(); it++) {
                 const std::string& key = it->name.GetString();
                 const rapidjson::Value& value = it->value;
 
-                switch (hashstr(key.c_str()))
-                {
+                switch (hashstr(key.c_str())) {
                 case hashstr("In Game Timer"):
-                    if (value.IsBool())
-                        returnPreset.igt = value.GetBool();
+                    if (value.IsBool()) {
+                        returnPreset.m_IGT = value.GetBool();
+                    }
                     break;
                 case hashstr("In Game Round Timer"):
-                    if (value.IsBool())
-                        returnPreset.igrt = value.GetBool();
+                    if (value.IsBool()) {
+                        returnPreset.m_IGRT = value.GetBool();
+                    }
                     break;
                 case hashstr("Amount of Splits"):
-                    if (value.IsInt())
-                        returnPreset.numSplits = value.GetInt();
+                    if (value.IsInt()) {
+                        returnPreset.m_NumSplits = value.GetInt();
+                    }
                     break;
                 case hashstr("Map Index"):
-                    if (value.IsInt())
-                        returnPreset.map = value.GetInt();
+                    if (value.IsInt()) {
+                        returnPreset.m_Map = value.GetInt();
+                    }
                     break;
                 case hashstr("Split Type"):
-                    if (value.IsInt())
-                        returnPreset.splitType = value.GetInt();
+                    if (value.IsInt()) {
+                        returnPreset.m_SplitType = value.GetInt();
+                    }
                     break;
                 default:
                     break;
                 }
             }
         }
-        if (builder.GetDocument().HasMember("Split Data") && builder.GetDocument()["Split Data"].IsObject())
-        {
+        if (builder.GetDocument().HasMember("Split Data") && builder.GetDocument()["Split Data"].IsObject()) {
             const rapidjson::Value& splitData = builder.GetDocument()["Split Data"];
 
-            for (rapidjson::Value::ConstMemberIterator it = splitData.MemberBegin(); it != splitData.MemberEnd(); it++)
-            {
-                if (it->name.IsString() && it->value.IsInt())
-                    returnPreset.splits.push_back({ it->name.GetString(), it->value.GetInt() });
-                else
-                    Walnut::Logger::Log(Walnut::MessageType::Error, "Autosplits json error: Incorrect typings found at key " + std::string(it->name.GetString()));
+            for (rapidjson::Value::ConstMemberIterator it = splitData.MemberBegin(); it != splitData.MemberEnd(); it++) {
+                if (it->name.IsString() && it->value.IsInt()) {
+                    returnPreset.m_Splits.push_back({ it->name.GetString(), it->value.GetInt() });
+                }
+                else {
+                    WLog::Log(WMT::Error, "Autosplits json error: Incorrect typings found at key " + std::string(it->name.GetString()));
+                }
             }
         }
 
         return returnPreset;
     }
+
 #pragma endregion
 }
