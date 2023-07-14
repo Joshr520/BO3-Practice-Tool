@@ -75,7 +75,7 @@ static MSSelection sidebarSelections({ {{ "Gobblegum Loadouts", "Weapon Loadouts
 static MSSelection weaponSelections;
 static std::vector<MSSelection> autosplitSelections;
 
-static std::string internalVersion = "0.5.0";
+static std::string internalVersion = "0.5.1";
 static Walnut::Image* discordIcon;
 static Walnut::Image* weaponWarning;
 
@@ -102,6 +102,9 @@ static int mapError = 0;
 
 extern Walnut::Application* Walnut::CreateApplication(int argc, char** argv);
 bool g_ApplicationRunning = true;
+
+bool duplicatePreset = false;
+char presetInput[64];
 
 std::mutex asyncSearchLock;
 
@@ -158,7 +161,7 @@ public:
         ImGui::PushFont(titleFont);
         ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.2f, 0.2f, 0.2f, 1.f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-        ImGui::Begin("##BO3PracticeTool", NULL, flags);
+        ImGui::Begin("##BO3 Practice Tool", NULL, flags);
         ImGui::PopStyleVar();
         ImGui::PopStyleColor();
         // Setup dockspace
@@ -196,7 +199,7 @@ public:
         switch (Popup::GetPrepState()) {
         case PopupStates::Update: {
             ImGui::OpenPopup("Update Available");
-            Popup::OpenPopup(PopupStates::Update); ImGui::OpenPopup("Download Compiler Files");
+            Popup::OpenPopup(PopupStates::Update);
             break;
         }
         case PopupStates::UpdateFailed: {
@@ -273,7 +276,7 @@ public:
                 ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 30.0f);
                 float width = ImGui::GetContentRegionAvail().x / 2.0f - 5;
                 if (ImGui::Button("OK", ImVec2(width, 25))) {
-                    if (!DownloadAndExtractZip(compilerDownloadURL, { "Compiler" }) || !DownloadAndExtractZip(toolDownloadURL, { "BO3PracticeTool", "Resource Images" })) {
+                    if (!DownloadAndExtractZip(compilerDownloadURL, { "Compiler" }) || !DownloadAndExtractZip(toolDownloadURL, { "BO3 Practice Tool", "Resource Images" })) {
                         Popup::PrepPopup(PopupStates::UpdateFailed);
                     }
                     ImGui::CloseCurrentPopup();
@@ -387,8 +390,6 @@ public:
         }
         case PopupStates::GumPresetCreation: {
             if (ImGui::BeginPopup("New Gum Preset")) {
-                ImGui::SetKeyboardFocusHere();
-                char presetInput[32] = "";
                 ImGui::SetNextItemWidth(200);
                 if (ImGui::InputText("New Preset Name", presetInput, IM_ARRAYSIZE(presetInput), ImGuiInputTextFlags_EnterReturnsTrue)) {
                     if (std::string(presetInput).empty() || BGBPresetExists(presetInput)) {
@@ -397,6 +398,7 @@ public:
                     else {
                         CreateBGBPreset(presetInput);
                     }
+                    strcpy_s(presetInput, "");
                     ImGui::CloseCurrentPopup();
                     Popup::ClosePopup();
                 }
@@ -421,18 +423,21 @@ public:
         }
         case PopupStates::WeaponLoadoutCreation: {
             if (ImGui::BeginPopup("New Weapon Loadout")) {
-                ImGui::SetKeyboardFocusHere();
-                char presetInput[32] = "";
                 ImGui::SetNextItemWidth(200);
                 if (ImGui::InputText("New Preset Name", presetInput, IM_ARRAYSIZE(presetInput), ImGuiInputTextFlags_EnterReturnsTrue)) {
                     if (std::string(presetInput).empty() || DoesPathExist(selfDirectory + "\\Settings\\Weapon Loadouts\\" + presetInput + ".json")) {
                         Popup::PrepPopup(PopupStates::WeaponLoadoutError);
                     }
                     else {
-                        CreateWeaponPreset(presetInput);
+                        CreateWeaponPreset(presetInput, duplicatePreset);
                     }
+                    duplicatePreset = false;
+                    strcpy_s(presetInput, "");
                     ImGui::CloseCurrentPopup();
                     Popup::ClosePopup();
+                }
+                if (weaponPresets.size()) {
+                    ImGui::Checkbox("Duplicate Current Preset", &duplicatePreset);
                 }
                 ImGui::EndPopup();
             }
@@ -455,8 +460,6 @@ public:
         }
         case PopupStates::AutosplitPresetCreation: {
             if (ImGui::BeginPopup("New Autosplits Preset")) {
-                ImGui::SetKeyboardFocusHere();
-                char presetInput[32] = "";
                 ImGui::SetNextItemWidth(200);
                 if (ImGui::InputText("New Preset Name", presetInput, IM_ARRAYSIZE(presetInput), ImGuiInputTextFlags_EnterReturnsTrue)) {
                     if (std::string(presetInput).empty() || DoesPathExist(selfDirectory + "\\Settings\\Autosplits\\" + presetInput + ".json")) {
@@ -465,8 +468,13 @@ public:
                     else {
                         CreateAutosplitPreset(presetInput);
                     }
+                    duplicatePreset = false;
+                    strcpy_s(presetInput, "");
                     ImGui::CloseCurrentPopup();
                     Popup::ClosePopup();
+                }
+                if (autosplitPresets.size()) {
+                    ImGui::Checkbox("Duplicate Current Preset", &duplicatePreset);
                 }
                 ImGui::EndPopup();
             }
@@ -511,6 +519,11 @@ public:
         }
         default:
             break;
+        }
+
+        if (Popup::GetOpenState() != PopupStates::None && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
+            Popup::ClosePopup();
+            strcpy_s(presetInput, "");
         }
 
         if (!GUIState::IsStateSet(SteamFound)) {
@@ -591,7 +604,7 @@ public:
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	Walnut::ApplicationSpecification spec;
-	spec.Name = "BO3PracticeTool";
+	spec.Name = "BO3 Practice Tool";
     spec.Width = 1280;
     spec.Height = 720;
 
@@ -718,8 +731,8 @@ void SearchForGame()
 
 bool CheckUpdate()
 {
-    if (DoesPathExist(selfDirectory + "/BO3PracticeTool.old.exe")) {
-        if (std::filesystem::remove(selfDirectory + "/BO3PracticeTool.old.exe")) {
+    if (DoesPathExist(selfDirectory + "/BO3 Practice Tool.old.exe")) {
+        if (std::filesystem::remove(selfDirectory + "/BO3 Practice Tool.old.exe")) {
             WLog::Log(WMT::Info, "Deleting old exe");
         }
         else {
@@ -758,7 +771,7 @@ bool CheckUpdate()
 
                 if (asset.HasMember("name") && asset["name"].IsString() && asset.HasMember("browser_download_url") && asset["browser_download_url"].IsString()) {
                     std::string name = asset["name"].GetString();
-                    if (name.find("BO3PracticeTool") != std::string::npos) {
+                    if (name.find("BO3") != std::string::npos && name.find("Practice") != std::string::npos && name.find("Tool") != std::string::npos) {
                         toolDownloadURL = asset["browser_download_url"].GetString();
                     }
                     else if (name.find("Compiler") != std::string::npos) {

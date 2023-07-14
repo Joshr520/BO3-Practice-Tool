@@ -1,6 +1,7 @@
 #include "ToolData.h"
 #include "GlobalData.h"
 #include "Fonts/Icons.h"
+#include "Walnut/Application.h"
 #include "Walnut/Random.h"
 #include "Walnut/FileFormats/xml.h"
 #include "Walnut/Logger.h"
@@ -503,7 +504,7 @@ namespace BO3PT
         CURL* curl = curl_easy_init();
         CURLcode res;
         FILE* file;
-        std::string filename = "BO3PracticeTool.zip";
+        std::string filename = "BO3 Practice Tool.zip";
         std::string ptexe;
 
         errno_t err = fopen_s(&file, filename.c_str(), "wb");
@@ -568,8 +569,8 @@ namespace BO3PT
                 std::filesystem::create_directory(output_file_path);
             }
             else {
-                if (currentFile == "BO3PracticeTool.exe" && std::filesystem::exists(output_file_path)) {
-                    std::filesystem::rename(output_file_path, output_directory / "BO3PracticeTool.old.exe");
+                if (currentFile == "BO3 Practice Tool.exe" && std::filesystem::exists(output_file_path)) {
+                    std::filesystem::rename(output_file_path, output_directory / "BO3 Practice Tool.old.exe");
                     ptexe = output_file_path.string();
                 }
                 else if (std::filesystem::exists(output_file_path)) {
@@ -595,7 +596,7 @@ namespace BO3PT
             }
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
-            done = 1;
+            Walnut::Application::Get().Close();
         }
         return true;
     }
@@ -799,36 +800,47 @@ namespace BO3PT
         }
     }
 
-    void CreateWeaponPreset(std::string_view presetName)
+    void CreateWeaponPreset(std::string_view presetName, bool duplicatePreset)
     {
         std::string filename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + presetName.data() + ".json";
 
-        WJson builder;
-        MenuWeaponPreset newPreset;
-        newPreset.m_Name = presetName;
+        if (duplicatePreset) {
+            std::string oldFilename = selfDirectory + ACTIVE_WEAPON_LOADOUT_DIR + weaponPresets[currentWeaponPreset].m_Name + ".json";
+            MenuWeaponPreset newPreset = weaponPresets[currentWeaponPreset];
+            newPreset.m_Name = presetName;
+            weaponPresets.emplace_back(newPreset);
 
-        for (int i = 0; i < static_cast<int>(menuWeaponLists.m_WeaponTypes.size()); i++) {
-            rapidjson::Value& weaponGroup = builder.AddObject(builder.GetDocument(), menuWeaponLists.m_WeaponTypes[i]);
-            std::vector<MenuWeaponPresetItem> typeList;
-            for (const MenuWeapon& weapon : menuWeaponLists.m_Weapons[i]) {
-                rapidjson::Value& weaponObject = builder.AddObject(weaponGroup, weapon.m_Name);
-                weaponObject.AddMember("Optic", -1, builder.GetAllocator());
-                builder.AddArray(weaponObject, "Attachments");
-                weaponObject.AddMember("Camo", 0, builder.GetAllocator());
-
-                MenuWeaponPresetItem weaponItem;
-                weaponItem.m_EquippedOptic = -1;
-                weaponItem.m_EquippedAttachments = { };
-                weaponItem.m_Camo = { "", "" };
-                typeList.emplace_back(weaponItem);
-            }
-            newPreset.m_PresetItems.insert({ menuWeaponLists.m_WeaponTypes[i], typeList });
+            std::filesystem::copy_file(oldFilename, filename);
         }
+        else {
+            WJson builder;
+            MenuWeaponPreset newPreset;
+            newPreset.m_Name = presetName;
 
-        weaponPresets.emplace_back(newPreset);
-        builder.SaveToFile(filename);
+            for (int i = 0; i < static_cast<int>(menuWeaponLists.m_WeaponTypes.size()); i++) {
+                rapidjson::Value& weaponGroup = builder.AddObject(builder.GetDocument(), menuWeaponLists.m_WeaponTypes[i]);
+                std::vector<MenuWeaponPresetItem> typeList;
+                for (const MenuWeapon& weapon : menuWeaponLists.m_Weapons[i]) {
+                    rapidjson::Value& weaponObject = builder.AddObject(weaponGroup, weapon.m_Name);
+                    weaponObject.AddMember("Optic", -1, builder.GetAllocator());
+                    builder.AddArray(weaponObject, "Attachments");
+                    weaponObject.AddMember("Camo", 0, builder.GetAllocator());
+
+                    MenuWeaponPresetItem weaponItem;
+                    weaponItem.m_EquippedOptic = -1;
+                    weaponItem.m_EquippedAttachments = { };
+                    weaponItem.m_Camo = { "", "" };
+                    typeList.emplace_back(weaponItem);
+                }
+                newPreset.m_PresetItems.insert({ menuWeaponLists.m_WeaponTypes[i], typeList });
+            }
+
+            weaponPresets.emplace_back(newPreset);
+            builder.SaveToFile(filename);
+            WriteWeaponLoadoutToGame(&builder);
+        }
+        
         currentWeaponPreset = static_cast<int>(weaponPresets.size()) - 1;
-        WriteWeaponLoadoutToGame(&builder);
     }
 
     void DeleteWeaponPreset(const MenuWeaponPreset& preset)
@@ -936,13 +948,12 @@ namespace BO3PT
 
 #pragma endregion
 
-
 #pragma region ZombieCalc
 
     int GetZombieCountForRound(int round, int playerCount)
     {
         int maxZombies = 24;
-        float multiplier = max(1.0f, round / 5.0f);
+        float multiplier = std::max(1.0f, round / 5.0f);
         if (round >= 10) {
             multiplier *= (round * 0.15f);
         }
@@ -1019,7 +1030,7 @@ namespace BO3PT
         else if (playerCount == 4) {
             startDelay = 0.67f;
         }
-        float calcSpawnRate = max(0.2f, startDelay * static_cast<float>(pow(0.95f, round - 1)) + 0.1f);
+        float calcSpawnRate = std::max(0.2f, startDelay * static_cast<float>(pow(0.95f, round - 1)) + 0.1f);
         int calcRoundedTime = static_cast<int>(calcSpawnRate * 1000);
         return RoundTimeNearest50(calcRoundedTime);
     }
@@ -1162,10 +1173,10 @@ namespace BO3PT
 
     void CalcLockdownTime(int round, int playerCount)
     {
-        float rawSpawnRate_1 = max(0.1f, RawSpawnRateForRound(round, playerCount));
-        float rawSpawnRate_2 = max(0.1f, rawSpawnRate_1 - playerCount * 0.1f);
-        float rawSpawnRate_3 = max(0.1f, rawSpawnRate_2 - playerCount * 0.1f);
-        float rawSpawnRate_4 = max(0.1f, rawSpawnRate_3 - playerCount * 0.1f);
+        float rawSpawnRate_1 = std::max(0.1f, RawSpawnRateForRound(round, playerCount));
+        float rawSpawnRate_2 = std::max(0.1f, rawSpawnRate_1 - playerCount * 0.1f);
+        float rawSpawnRate_3 = std::max(0.1f, rawSpawnRate_2 - playerCount * 0.1f);
+        float rawSpawnRate_4 = std::max(0.1f, rawSpawnRate_3 - playerCount * 0.1f);
 
         int spawnRate_1 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_1 * 1000)) + 50;
         int spawnRate_2 = RoundTimeNearest50(static_cast<int>(rawSpawnRate_2 * 1000)) + 50;
@@ -1730,7 +1741,7 @@ namespace BO3PT
         builder.AddNode(splitsSettings, "Version", "1.6");
         builder.AddNode(splitsSettings, "CurrentSplitTopColor", "FF3373F4");
         builder.AddNode(splitsSettings, "CurrentSplitBottomColor", "FF153574");
-        builder.AddNode(splitsSettings, "VisualSplitCount", std::to_string(min(numSplits, 6)));
+        builder.AddNode(splitsSettings, "VisualSplitCount", std::to_string(std::min(numSplits, 6)));
         builder.AddNode(splitsSettings, "SplitPreviewCount", "0");
         builder.AddNode(splitsSettings, "DisplayIcons", "True");
         builder.AddNode(splitsSettings, "ShowThinSeparators", "True");

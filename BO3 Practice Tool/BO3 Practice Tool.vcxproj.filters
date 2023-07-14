@@ -116,7 +116,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BO3PracticeTool.cpp">
+    <ClCompile Include="BO3 Practice Tool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="imgui\fonts\binary_to_compressed_c.cpp">
@@ -190,7 +190,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="BO3PracticeTool.rc">
+    <ResourceCompile Include="BO3 Practice Tool.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

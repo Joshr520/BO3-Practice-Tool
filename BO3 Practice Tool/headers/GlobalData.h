@@ -9,7 +9,6 @@
 
 namespace BO3PT
 {
-	inline bool done = false;
 	inline std::string currentMap = "";
 	inline std::string bo3Directory;
 	inline std::string selfDirectory;

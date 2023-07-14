@@ -25,6 +25,7 @@ namespace BO3PT
 		Autosplits,
 		PracticePatches,
 		Settings,
+		Documentation,
 		PlayerOptions,
 		ZombieOptions,
 		RoundOptions,
@@ -160,7 +161,7 @@ namespace BO3PT
 	inline std::unordered_map<std::string, WeaponCamoGroup> camosImgList;
 
 	void LoadWeaponProfiles();
-	void CreateWeaponPreset(std::string_view presetName);
+	void CreateWeaponPreset(std::string_view presetName, bool duplicatePreset = false);
 	void DeleteWeaponPreset(const MenuWeaponPreset& preset);
 	void SaveWeaponLoadout(const MenuWeaponPreset& preset);
 	void WriteWeaponLoadoutToGame(Walnut::JSONBuilder* json = nullptr);

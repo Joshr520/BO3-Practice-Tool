@@ -30,9 +30,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{4d6220c0-d15f-43ce-b040-b23564ba3485}</ProjectGuid>
-    <RootNamespace>BO3PracticeTool</RootNamespace>
+    <RootNamespace>BO3 Practice Tool</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>BO3PracticeTool</ProjectName>
+    <ProjectName>BO3 Practice Tool</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -273,7 +273,7 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClInclude Include="Walnut\FileFormats\xml.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BO3PracticeTool.cpp" />
+    <ClCompile Include="BO3 Practice Tool.cpp" />
     <ClCompile Include="imgui\fonts\binary_to_compressed_c.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
@@ -299,7 +299,7 @@ COPY "$(ProjectDir)SDL\lib\SDL2.dll" "$(TargetDir)SDL2.dll" /y
     <ClCompile Include="Walnut\FileFormats\xml.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="BO3PracticeTool.rc" />
+    <ResourceCompile Include="BO3 Practice Tool.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Icon.ico" />
