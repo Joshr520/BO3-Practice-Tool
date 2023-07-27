@@ -20,5 +20,9 @@ Toggle the Practice Tool on
 
 Your antivirus may be interfering with the compiler located in the GSC folder. Check to make sure all of the files are there, and if not, disable your antivirus or make an exception for it.![image](https://user-images.githubusercontent.com/46543060/236297123-382e4d01-5590-45c4-b1bc-3667f99be64e.png)
 
+Antivirus may also interfere with downloading the compiler files. You can toggle off the Block downloads setting here to stop it.![image](https://github.com/Joshr520/BO3-Practice-Tool/assets/46543060/b63014af-6c01-4ec9-bc08-824740a49670)  
+(Not sure if there is a better way to do this)
+
+
 
 You may also need to run the program as administrator if it won't let you toggle it on.
