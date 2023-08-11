@@ -1,1 +1,8 @@
 
+[submodule "Walnut"]
+	path = Walnut
+	url = https://github.com/Joshr520/Walnut.git
+	branch = dev
+[submodule "vendor/rapidjson"]
+	path = vendor/rapidjson
+	url = https://github.com/Tencent/rapidjson.git
