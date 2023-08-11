@@ -2,6 +2,7 @@
 A tool for the Steam version of Black Ops 3, useful for practicing speedrunning and testing strats.
 
 ## Building (Supports windows only for build scripts)  
+Download the Vulkan SDK  https://vulkan.lunarg.com/#new_tab  
 Recursively clone repository with your preferred method  
 Run Setup.bat located in the scripts folder  
 Project files should be generated and you can open them with Visual Studio  
