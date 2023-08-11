@@ -4,7 +4,9 @@ A tool for the Steam version of Black Ops 3, useful for practicing speedrunning 
 ## Building (Supports windows only for build scripts)  
 Recursively clone repository with your preferred method  
 Run Setup.bat located in the scripts folder  
-Project files should be generated and you can open them with Visual Studio
+Project files should be generated and you can open them with Visual Studio  
+[Optional] Delete the Walnut-Modules folder as this is currently not being used  
+
  ## Credit
 Serious for his compiler: https://github.com/shiversoftdev/t7-compiler  
 TheCherno for Walnut library: https://github.com/StudioCherno/Walnut/tree/master
