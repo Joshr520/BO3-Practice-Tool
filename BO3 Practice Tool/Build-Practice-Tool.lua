@@ -10,7 +10,8 @@ project "PracticeTool"
       "src/**.h",
       "src/**.cpp",
 
-      "../vendor/natsort/*.c"
+      "../vendor/natsort/*.c",
+      "PracticeTool.rc"
    }
 
    includedirs
