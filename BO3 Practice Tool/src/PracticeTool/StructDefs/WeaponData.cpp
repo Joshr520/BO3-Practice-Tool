@@ -168,7 +168,7 @@ namespace BO3PracticeTool
 						if (file.path().extension().string() != ".png") {
 							continue;
 						}
-						camosImgList.emplace_back(Camo{ file.path().filename().string(), std::make_unique<Walnut::Image>(file.path().string())});
+						camosImgList.insert({ file.path().filename().stem().string(), std::make_unique<Walnut::Image>(file.path().string())});
 					}
 				}
 			}

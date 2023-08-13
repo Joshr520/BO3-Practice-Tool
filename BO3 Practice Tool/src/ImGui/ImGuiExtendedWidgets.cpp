@@ -456,7 +456,7 @@ namespace ImGui
 
 
 
-	ImageSelectionResponse ImageSelection::Render(size_t index, ImTextureID textureID, const ImVec2& size, bool toggle)
+	ImageSelectionResponse ImageSelection::Render(int8_t index, ImTextureID textureID, const ImVec2& size, bool toggle)
 	{
 		ImGuiContext& g = *GImGui;
 		ImGuiWindow* window = GetCurrentWindow();
@@ -552,4 +552,59 @@ namespace ImGui
 
 		return { hovered, pressed };
 	}
+
+	void ImageMultiSelection::Deselect(size_t value)
+	{
+		auto it = std::find(m_SelectedItems.begin(), m_SelectedItems.end(), value);
+		if (it != m_SelectedItems.end()) {
+			m_SelectedItems.erase(it);
+		}
+	}
+}
+
+void ImGui::TextBackground(const ImVec2& start, std::string_view text)
+{
+	ImGuiContext& g = *GImGui;
+	ImGuiWindow* window = GetCurrentWindow();
+	if (window->SkipItems) {
+		return;
+	}
+
+	ImVec2 textSize = CalcTextSize(text.data());
+	ImVec2 end(start + textSize + ImVec2(5.0f, 5.0f));
+
+	window->DrawList->AddRectFilled(start, end, IM_COL32(25, 25, 25, 200));
+	window->DrawList->AddText(start + ImVec2(3.0f, 2.5f), Walnut::UI::Colors::Theme::text, text.data());
+}
+
+void ImGui::HelpMarker(std::string_view text)
+{
+	TextDisabled(FONT_QUESTION);
+	if (IsItemHovered()) {
+		BeginTooltip();
+		PushTextWrapPos(GetFontSize() * 35.0f);
+		TextWrapped(text.data());
+		PopTextWrapPos();
+		EndTooltip();
+	}
+}
+
+bool ImGui::Splitter(const char* label, bool split_vertically, float thickness, float* size1, float* size2, float min_size1, float min_size2, float splitter_long_axis_size)
+{
+	using namespace ImGui;
+	ImGuiContext& g = *GImGui;
+	ImGuiWindow* window = g.CurrentWindow;
+	ImGuiID id = window->GetID(label);
+	ImRect bb;
+	bb.Min = window->DC.CursorPos + (split_vertically ? ImVec2(*size1, 0.0f) : ImVec2(0.0f, *size1));
+	bb.Max = bb.Min + CalcItemSize(split_vertically ? ImVec2(thickness, splitter_long_axis_size) : ImVec2(splitter_long_axis_size, thickness), 0.0f, 0.0f);
+	return SplitterBehavior(bb, id, split_vertically ? ImGuiAxis_X : ImGuiAxis_Y, size1, size2, min_size1, min_size2, 0.0f);
+}
+
+bool ImGui::BackButton()
+{
+	if (Button(FONT_ARROW_LEFT)) {
+		return true;
+	}
+	return IsKeyPressed(ImGuiKey_Escape, false);
 }

@@ -15,6 +15,7 @@
 
 #include "PracticeTool/StructDefs/BGBData.h"
 #include "PracticeTool/StructDefs/WeaponData.h"
+#include "PracticeTool/UI/KeyboardIcons.h"
 
 namespace BO3PracticeTool
 {
@@ -97,7 +98,7 @@ namespace BO3PracticeTool
             for (size_t i = 0; i < 5; i++) {
                 const BGB* bgb = bgbPresets[bgbPresetsIndex].GetBGB(i);
                 const ImTextureID& image = bgbCombinedImages[bgbNameToIndex[bgb->Name]]->Image->GetDescriptorSet();
-                if (bgbMainGums.Render(i, image, imageSize).Hovered) {
+                if (bgbMainGums.Render(static_cast<int8_t>(i), image, imageSize).Hovered) {
                     bgbContextGum = bgbNameToIndex[bgb->Name];
                 }
             }
@@ -227,6 +228,56 @@ namespace BO3PracticeTool
         ImGui::SameLine();
         Walnut::UI::ShiftCursor(30.0f, -40.0f);
 
+        if (weaponCamoSelection) {
+            ImGui::BeginGroup();
+
+            if (ImGui::BackButton()) {
+                weaponCamoSelection = false;
+            }
+            ImGui::SameLine();
+
+            if (ImGui::BeginTabBar("Camo Selection Menu")) {
+                for (size_t i = 0; i < camoList.Types.size(); i++) {
+                    const std::string& type = camoList.Types[i];
+                    if (ImGui::TabItemButton(type.c_str())) {
+                        weaponCamoMenu = i;
+                    }
+                }
+                ImGui::EndTabBar();
+            }
+
+            float widthAvail = ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ScrollbarSize;
+            float imageWidth = std::min(widthAvail / 7 - itemSpacing.x, 192.0f) - ImGui::GetStyle().FramePadding.x * 2;
+            ImVec2 imageSize(imageWidth, imageWidth);
+            int numItems = static_cast<int>(widthAvail / (imageSize.x + ImGui::GetStyle().FramePadding.x * 2));
+
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+            ImGui::BeginChild("Scrollable Camo Selection", ImVec2(-1, ImGui::GetContentRegionAvail().y));
+
+            for (size_t i = 0; i < camoList.Camos[weaponCamoMenu].size(); i++) {
+                const std::string& name = camoList.Camos[weaponCamoMenu][i];
+                size_t index = camoNameToIndex[name];
+                const ImTextureID& camo = camosImgList[name]->GetDescriptorSet();
+
+                if (ImGui::ImageButton(camo, imageSize)) {
+                    weaponCamoSelection = false;
+                    WeaponItem& item = weaponPresets[weaponPresetsIndex].GetWeaponItem(weaponList.Types[weaponPresetsMenu], weaponBeingEdited);
+                    item.Camo = static_cast<int16_t>(index);
+                    weaponPresets[weaponPresetsIndex].SavePreset();
+                }
+                ImVec2 last(ImGui::GetItemRectMin().x + 10, ImGui::GetItemRectMax().y - 15);
+                last.y -= ImGui::CalcTextSize(name.c_str()).y;
+                ImGui::TextBackground(last, name);
+                if ((i + 1) % numItems || !i) {
+                    ImGui::SameLine();
+                }
+            }
+
+            ImGui::EndChild();
+            ImGui::PopStyleColor();
+            return ImGui::EndGroup();
+        }
+
         ImGui::BeginGroup();
 
         ImGui::PushFont(Walnut::Application::GetFont("Bold"));
@@ -247,8 +298,10 @@ namespace BO3PracticeTool
             ImGui::EndTabBar();
         }
 
+        bool removePressed = ImGui::IsKeyPressed(ImGuiKey_R, false);
+
         const std::string& type = weaponList.Types[weaponPresetsMenu];
-        const WeaponItem& item = weaponPresets[weaponPresetsIndex].GetWeaponItem(type, weaponBeingEdited);
+        WeaponItem& item = weaponPresets[weaponPresetsIndex].GetWeaponItem(type, weaponBeingEdited);
         const Weapon& weapon = weaponList.Weapons[weaponPresetsMenu][weaponBeingEdited];
         const std::string& name = weapon.Name;
         const size_t& numAttachments = weapon.NumAttachments;
@@ -257,11 +310,23 @@ namespace BO3PracticeTool
 
         float widthAvail = ImGui::GetContentRegionAvail().x;
         float imageWidth = std::min(widthAvail / 7 - itemSpacing.x, 192.0f);
+        float heightAvail = ImGui::GetContentRegionAvail().y - 50.0f;
+        if (heightAvail / 4 < imageWidth) {
+            imageWidth = heightAvail / 4;
+        }
         ImVec2 imageSize(imageWidth, imageWidth);
         for (size_t i = 0; i < optics.size(); i++) {
             const ImTextureID& image = opticsImgList[optics[i]]->GetDescriptorSet();
             const std::string opticName = optics[i];
-            weaponOpticSelection.Render(i, image, imageSize, true);
+            if (weaponOpticSelection.Render(static_cast<int8_t>(i), image, imageSize, true).Pressed) {
+                item.Optic = weaponOpticSelection.GetSelected();
+                weaponPresets[weaponPresetsIndex].SavePreset();
+            }
+            if (ImGui::IsItemHovered() && removePressed && weaponOpticSelection.GetSelected() == i) {
+                weaponOpticSelection.Deselect();
+                item.Optic = -1;
+                weaponPresets[weaponPresetsIndex].SavePreset();
+            }
             ImVec2 last(ImGui::GetItemRectMin().x + 5, ImGui::GetItemRectMax().y - 10);
             last.y -= ImGui::CalcTextSize(opticName.c_str()).y;
             ImGui::TextBackground(last, opticName);
@@ -272,7 +337,15 @@ namespace BO3PracticeTool
         for (size_t i = 0; i < attachments.size(); i++) {
             const ImTextureID& attachment = BO3PracticeTool::attachmentsImgList[std::format("{}_{}", name, attachments[i])]->GetDescriptorSet();
             const std::string attachmentName = attachments[i];
-            weaponAttachmentsSelection.Render(i, attachment, imageSize);
+            if (weaponAttachmentsSelection.Render(i, attachment, imageSize).Pressed) {
+                item.Attachments = weaponAttachmentsSelection.GetSelected();
+                weaponPresets[weaponPresetsIndex].SavePreset();
+            }
+            if (ImGui::IsItemHovered() && removePressed && std::find(item.Attachments.begin(), item.Attachments.end(), i) != item.Attachments.end()) {
+                weaponAttachmentsSelection.Deselect(i);
+                item.Attachments = weaponAttachmentsSelection.GetSelected();
+                weaponPresets[weaponPresetsIndex].SavePreset();
+            }
             ImVec2 last(ImGui::GetItemRectMin().x + 5, ImGui::GetItemRectMax().y - 10);
             last.y -= ImGui::CalcTextSize(attachmentName.c_str()).y;
             ImGui::TextBackground(last, attachmentName);
@@ -281,24 +354,34 @@ namespace BO3PracticeTool
             }
         }
 
-        if (item.Camo >= 0) {
-            if (ImGui::ImageButton(camosImgList[item.Camo].Image->GetDescriptorSet(), imageSize, ImVec2(0, 0), ImVec2(1, 1), 0)) {
-
+        if (item.Camo != -1) {
+            const std::string& name = camoIndexToName[item.Camo];
+            if (ImGui::ImageButton(camosImgList[name]->GetDescriptorSet(), imageSize - ImVec2(ImGui::GetStyle().FramePadding.x * 2, 0))) {
+                weaponCamoSelection = true;
             }
-            ImVec2 last(ImGui::GetItemRectMin().x + 5, ImGui::GetItemRectMax().y - 10);
-            last.y -= ImGui::CalcTextSize(camosImgList[item.Camo].Name.c_str()).y;
-            ImGui::TextBackground(last, camosImgList[item.Camo].Name.c_str());
+            if (ImGui::IsItemHovered() && removePressed && item.Camo != -1) {
+                item.Camo = -1;
+                weaponPresets[weaponPresetsIndex].SavePreset();
+            }
+            ImVec2 last(ImGui::GetItemRectMin().x + 10, ImGui::GetItemRectMax().y - 15);
+            last.y -= ImGui::CalcTextSize(name.c_str()).y;
+            ImGui::TextBackground(last, name.c_str());
         }
         else {
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
             if (ImGui::Button("##CamoButton", imageSize)) {
-
+                weaponCamoSelection = true;
             }
             ImVec2 last(ImGui::GetItemRectMin().x + 5, ImGui::GetItemRectMax().y - 10);
             last.y -= ImGui::CalcTextSize("Choose Camo").y;
             ImGui::TextBackground(last, "Choose Camo");
             ImGui::PopStyleVar();
         }
+
+        ImGui::Image(keyboardIcons["R"]->GetDescriptorSet(), ImVec2(30, 30));
+        ImGui::SameLine();
+        Walnut::UI::ShiftCursorY(5.0f);
+        ImGui::Text("Remove");
 
         Walnut::UI::ShiftCursorY(ImGui::GetContentRegionAvail().y - imageSize.y);
 
@@ -307,7 +390,7 @@ namespace BO3PracticeTool
         for (size_t i = 0; i < weapons.size(); i++) {
             const ImTextureID& weapon = weaponIconsImgList[weapons[i].Name]->GetDescriptorSet();
             const std::string weapontName = weapons[i].Name;
-            if (weaponMainWeapons.Render(i, weapon, imageSize).Pressed) {
+            if (weaponMainWeapons.Render(static_cast<int8_t>(i), weapon, imageSize).Pressed) {
                 weaponBeingEdited = i;
             }
             ImVec2 last(ImGui::GetItemRectMin().x + 5, ImGui::GetItemRectMax().y - 10);

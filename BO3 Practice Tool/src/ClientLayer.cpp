@@ -15,7 +15,9 @@
 #include "PracticeTool/UI/WindowLogic.h"
 #include "PracticeTool/UI/LogUI.h"
 #include "PracticeTool/UI/Notifications.h"
+#include "PracticeTool/UI/KeyboardIcons.h"
 #include "PracticeTool/Core/Log.h"
+
 #include "ImGui/ImGuiUtils.h"
 
 #include "Embed/Icons.embed"
@@ -34,6 +36,7 @@ void ClientLayer::OnAttach()
 	void* data = Walnut::Image::Decode(g_DiscordIcon.data(), g_DiscordIcon.size(), w, h);
 	g_DiscordIconImage = std::make_unique<Walnut::Image>(w, h, Walnut::ImageFormat::RGBA, data);
 
+	BO3PracticeTool::LoadKeyboardIcons();
 	BO3PracticeTool::ManageImageLifetimes("Gobblegum Presets");
 	BO3PracticeTool::LoadBGBPresets();
 	BO3PracticeTool::LoadWeaponPresets();
@@ -48,8 +51,8 @@ void ClientLayer::OnDetach()
 {
 	BO3PracticeTool::Log::Shutdown();
 	BO3PracticeTool::ManageImageLifetimes("");
+	BO3PracticeTool::UnloadKeyboardIcons();
 	g_DiscordIconImage.reset();
-	BO3PracticeTool::UnloadBGBImages();
 }
 
 void ClientLayer::OnUIRender()

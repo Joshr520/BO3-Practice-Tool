@@ -69,14 +69,15 @@ namespace ImGui
 	class ImageSelection {
 	public:
 		ImageSelection() { }
-		ImageSelection(size_t selected) : m_Selected(selected) { }
+		ImageSelection(int8_t selected) : m_Selected(selected) { }
 
-		ImageSelectionResponse Render(size_t index, ImTextureID textureID, const ImVec2& size, bool toggle = false);
+		ImageSelectionResponse Render(int8_t index, ImTextureID textureID, const ImVec2& size, bool toggle = false);
 
-		size_t GetSelected() const { return m_Selected; }
-		void SetSelected(size_t selected) { m_Selected = selected; }
+		int8_t GetSelected() const { return m_Selected; }
+		void SetSelected(int8_t selected) { m_Selected = selected; }
+		void Deselect() { m_Selected = -1; }
 	private:
-		size_t m_Selected = 0;
+		int8_t m_Selected = 0;
 	};
 
 	class ImageMultiSelection {
@@ -87,47 +88,14 @@ namespace ImGui
 		void SetMaxSelections(size_t maxSelections) { m_MaxSelections = maxSelections; }
 
 		const std::vector<size_t>& GetSelected() const { return m_SelectedItems; }
+		void Deselect(size_t value);
 	private:
 		size_t m_MaxSelections = 5;
 		std::vector<size_t> m_SelectedItems = { };
 	};
 
-	inline void TextBackground(const ImVec2& start, std::string_view text)
-	{
-		ImGuiContext& g = *GImGui;
-		ImGuiWindow* window = GetCurrentWindow();
-		if (window->SkipItems) {
-			return;
-		}
-
-		ImVec2 textSize = CalcTextSize(text.data());
-		ImVec2 end(start + textSize + ImVec2(5.0f, 5.0f));
-
-		window->DrawList->AddRectFilled(start, end, IM_COL32(25, 25, 25, 100));
-		window->DrawList->AddText(start + ImVec2(3.0f, 2.5f), Walnut::UI::Colors::Theme::text, text.data());
-	}
-
-	inline void HelpMarker(std::string_view text)
-	{
-		TextDisabled(FONT_QUESTION);
-		if (IsItemHovered()) {
-			BeginTooltip();
-			PushTextWrapPos(GetFontSize() * 35.0f);
-			TextWrapped(text.data());
-			PopTextWrapPos();
-			EndTooltip();
-		}
-	}
-
-	inline bool Splitter(const char* label, bool split_vertically, float thickness, float* size1, float* size2, float min_size1, float min_size2, float splitter_long_axis_size = -1.0f)
-	{
-		using namespace ImGui;
-		ImGuiContext& g = *GImGui;
-		ImGuiWindow* window = g.CurrentWindow;
-		ImGuiID id = window->GetID(label);
-		ImRect bb;
-		bb.Min = window->DC.CursorPos + (split_vertically ? ImVec2(*size1, 0.0f) : ImVec2(0.0f, *size1));
-		bb.Max = bb.Min + CalcItemSize(split_vertically ? ImVec2(thickness, splitter_long_axis_size) : ImVec2(splitter_long_axis_size, thickness), 0.0f, 0.0f);
-		return SplitterBehavior(bb, id, split_vertically ? ImGuiAxis_X : ImGuiAxis_Y, size1, size2, min_size1, min_size2, 0.0f);
-	}
+	void TextBackground(const ImVec2& start, std::string_view text);
+	void HelpMarker(std::string_view text);
+	bool Splitter(const char* label, bool split_vertically, float thickness, float* size1, float* size2, float min_size1, float min_size2, float splitter_long_axis_size = -1.0f);
+	bool BackButton();
 }
