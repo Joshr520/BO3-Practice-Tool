@@ -17,7 +17,7 @@ namespace BO3PracticeTool
 		bool operator<(const ImGuiLog& log) const
 		{
 			if (TimePoint == log.TimePoint) {
-				return Level <= log.Level;
+				return Level < log.Level;
 			}
 			return TimePoint < log.TimePoint; 
 		}

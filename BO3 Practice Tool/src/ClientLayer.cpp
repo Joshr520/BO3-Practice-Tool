@@ -36,6 +36,7 @@ void ClientLayer::OnAttach()
 
 	BO3PracticeTool::ManageImageLifetimes("Gobblegum Presets");
 	BO3PracticeTool::LoadBGBPresets();
+	BO3PracticeTool::LoadWeaponPresets();
 
 	ImGui::GetStyle().Colors[ImGuiCol_HeaderHovered] = ImColor(70, 70, 70, 255);
 	ImGui::GetStyle().Colors[ImGuiCol_PopupBg] = ImColor(30, 30, 30, 255);

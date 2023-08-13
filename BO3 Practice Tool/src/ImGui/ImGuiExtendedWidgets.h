@@ -2,6 +2,7 @@
 
 #include "ImGuiUtils.h"
 #include "Embed/IcoMoon.h"
+#include "Walnut/ImGui/ImGuiTheme.h"
 
 #include "imgui_internal.h"
 
@@ -19,7 +20,7 @@ namespace ImGui
 		FileEditor(std::string_view id, const std::vector<TextEditSelectable>& files) : m_Files(files), m_PrefixID(id) {}
 		FileEditor(std::string_view id, const std::vector<std::string>& files);
 
-		void RenderFiles();
+		void Render();
 		
 		void ClearSelections();
 
@@ -67,12 +68,44 @@ namespace ImGui
 
 	class ImageSelection {
 	public:
-		ImageSelectionResponse RenderImageSelection(size_t index, ImTextureID textureID, const ImVec2& size);
+		ImageSelection() { }
+		ImageSelection(size_t selected) : m_Selected(selected) { }
+
+		ImageSelectionResponse Render(size_t index, ImTextureID textureID, const ImVec2& size, bool toggle = false);
 
 		size_t GetSelected() const { return m_Selected; }
+		void SetSelected(size_t selected) { m_Selected = selected; }
 	private:
 		size_t m_Selected = 0;
 	};
+
+	class ImageMultiSelection {
+	public:
+
+		ImageSelectionResponse Render(size_t index, ImTextureID textureID, const ImVec2& size);
+
+		void SetMaxSelections(size_t maxSelections) { m_MaxSelections = maxSelections; }
+
+		const std::vector<size_t>& GetSelected() const { return m_SelectedItems; }
+	private:
+		size_t m_MaxSelections = 5;
+		std::vector<size_t> m_SelectedItems = { };
+	};
+
+	inline void TextBackground(const ImVec2& start, std::string_view text)
+	{
+		ImGuiContext& g = *GImGui;
+		ImGuiWindow* window = GetCurrentWindow();
+		if (window->SkipItems) {
+			return;
+		}
+
+		ImVec2 textSize = CalcTextSize(text.data());
+		ImVec2 end(start + textSize + ImVec2(5.0f, 5.0f));
+
+		window->DrawList->AddRectFilled(start, end, IM_COL32(25, 25, 25, 100));
+		window->DrawList->AddText(start + ImVec2(3.0f, 2.5f), Walnut::UI::Colors::Theme::text, text.data());
+	}
 
 	inline void HelpMarker(std::string_view text)
 	{

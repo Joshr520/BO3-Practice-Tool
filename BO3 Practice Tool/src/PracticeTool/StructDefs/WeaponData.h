@@ -89,14 +89,15 @@ namespace BO3PracticeTool
 		}
 	};
 
-	struct CamoGroup {
-		std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> Camos;
+	struct Camo {
+		std::string Name;
+		std::unique_ptr<Walnut::Image> Image;
 	};
 
 	struct WeaponItem {
-		size_t Optic;
+		int8_t Optic;
 		std::vector<size_t> Attachments;
-		size_t Camo;
+		int8_t Camo;
 	};
 
 	class WeaponPreset {
@@ -104,6 +105,7 @@ namespace BO3PracticeTool
 		WeaponPreset(std::string_view name) : m_Name(name) { }
 
 		std::string GetPresetName() const { return m_Name; }
+		WeaponItem GetWeaponItem(std::string_view type, size_t gun) { return m_Items[type.data()][gun]; }
 
 		void AddWeapons(std::string_view type, std::vector<WeaponItem> items) { m_Items.insert({ type.data(), items}); }
 		void SetPresetName(std::string_view name) { m_Name = name; }
@@ -124,12 +126,13 @@ namespace BO3PracticeTool
 
 	inline ImGui::FileEditor weaponFiles(ImGui::FileEditor{ "Weapon Preset", std::vector<ImGui::TextEditSelectable>{  } });
 	inline ImGui::ImageSelection weaponMainWeapons;
+	inline ImGui::ImageSelection weaponOpticSelection(-1);
+	inline ImGui::ImageMultiSelection weaponAttachmentsSelection;
 
-	inline std::vector<std::unique_ptr<Walnut::Image>> buildKitImgList;
 	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> weaponIconsImgList;
 	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> opticsImgList;
 	inline std::unordered_map<std::string, std::unique_ptr<Walnut::Image>> attachmentsImgList;
-	inline std::unordered_map<std::string, CamoGroup> camosImgList;
+	inline std::vector<Camo> camosImgList;
 
 	void LoadWeaponPresets();
 	void AddWeaponPreset(std::string_view name);
@@ -138,7 +141,7 @@ namespace BO3PracticeTool
 	void EditedWeaponPreset(std::string_view oldName, std::string_view newName);
 
 	void LoadWeaponImages();
-	static void UnloadWeaponImages() { buildKitImgList.clear(); weaponIconsImgList.clear(); opticsImgList.clear(); attachmentsImgList.clear(); camosImgList.clear(); }
+	static void UnloadWeaponImages() { weaponIconsImgList.clear(); opticsImgList.clear(); attachmentsImgList.clear(); camosImgList.clear(); }
 
 	inline void SafeEraseWeaponPreset(std::vector<WeaponPreset>& presets, std::string_view presetName)
 	{

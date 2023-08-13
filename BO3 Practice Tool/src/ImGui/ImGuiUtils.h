@@ -52,7 +52,7 @@ namespace ImGui
 
 	class TextURL {
 	public:
-		static void RenderTextURL(std::string_view text, std::string_view url, bool continueBefore = 1, bool continueAfter = 1);
+		static void Render(std::string_view text, std::string_view url, bool continueBefore = 1, bool continueAfter = 1);
 	private:
 		static void UnderlineText(ImColor color);
 	};
@@ -64,7 +64,7 @@ namespace ImGui
 
 	class Selection {
 	public:
-		static bool RenderSelection(const std::vector<std::string>& items, int& index);
+		static bool Render(const std::vector<std::string>& items, int& index);
 	};
 
 	class TextEditSelectable {
@@ -78,7 +78,7 @@ namespace ImGui
 		TextEditSelectable(std::string_view id, std::string_view text) : m_ID(std::format("{}", id)), m_Text(text), m_EditingText(text){}
 		TextEditSelectable() : m_ID(""), m_Text(""), m_EditingText("") {}
 
-		TextEditResponse RenderTextEditSelectable();
+		TextEditResponse Render();
 
 		bool GetSelected() const { return m_Selected; }
 		bool GetBeingEdited() const { return m_BeingEdited; }

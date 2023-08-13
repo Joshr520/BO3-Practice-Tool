@@ -13,3 +13,4 @@ BO3 Practice Tool/Settings/
 
 # Exclude
 !vendor/bin
+/BO3 Practice Tool/imgui.ini

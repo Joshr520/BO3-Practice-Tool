@@ -47,7 +47,7 @@ namespace ImGui
 		m_Files = textFiles;
 	}
 
-	void FileEditor::RenderFiles()
+	void FileEditor::Render()
 	{
 		bool anyHovered = false;
 		bool anyEditing = false;
@@ -59,7 +59,7 @@ namespace ImGui
 		for (size_t i = 0; i < m_Files.size(); i++) {
 			size_t index = i;
 			TextEditSelectable& file = m_Files[i];
-			TextEditSelectable::TextEditResponse returnValue = file.RenderTextEditSelectable();
+			TextEditSelectable::TextEditResponse returnValue = file.Render();
 			const std::string oldName = returnValue.OldAndNewText.first;
 			const std::string newName = returnValue.OldAndNewText.second;
 
@@ -413,7 +413,7 @@ namespace ImGui
 			numFails++;
 		}
 
-		if (!std::filesystem::exists(oldName)) {
+		if (!std::filesystem::exists(GET_FILEPATH(oldName))) {
 			return true;
 		}
 
@@ -456,7 +456,7 @@ namespace ImGui
 
 
 
-	ImageSelectionResponse ImageSelection::RenderImageSelection(size_t index, ImTextureID textureID, const ImVec2& size)
+	ImageSelectionResponse ImageSelection::Render(size_t index, ImTextureID textureID, const ImVec2& size, bool toggle)
 	{
 		ImGuiContext& g = *GImGui;
 		ImGuiWindow* window = GetCurrentWindow();
@@ -479,7 +479,6 @@ namespace ImGui
 
 		const ImVec2& padding = g.Style.FramePadding;
 		const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
-		//ImU32 col = (m_Selected == index && highlightSelected) ? IM_COL32(255, 70, 0, 255) : IM_COL32(255, 255, 255, 255);
 		RenderNavHighlight(bb, id);
 		RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, 0.0f));
 
@@ -490,7 +489,65 @@ namespace ImGui
 		}
 
 		if (pressed) {
-			m_Selected = index;
+			if (m_Selected == index && toggle) {
+				m_Selected = -1;
+			}
+			else {
+				m_Selected = index;
+			}
+		}
+
+		return { hovered, pressed };
+	}
+
+	ImageSelectionResponse ImageMultiSelection::Render(size_t index, ImTextureID textureID, const ImVec2& size)
+	{
+		ImGuiContext& g = *GImGui;
+		ImGuiWindow* window = GetCurrentWindow();
+		if (window->SkipItems) {
+			return { false, false };
+		}
+
+		PushID((void*)(intptr_t)textureID);
+		const ImGuiID id = window->GetID("#image");
+		PopID();
+
+		const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+		ItemSize(bb);
+		if (!ItemAdd(bb, id)) {
+			return { false, false };
+		}
+
+		bool hovered, held;
+		bool pressed = ButtonBehavior(bb, id, &hovered, &held);
+		auto it = std::find(m_SelectedItems.begin(), m_SelectedItems.end(), index);
+		bool selected = it != m_SelectedItems.end();
+
+		const ImVec2& padding = g.Style.FramePadding;
+		const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+		RenderNavHighlight(bb, id);
+		RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, 0.0f));
+
+		window->DrawList->AddRectFilled(bb.Min, bb.Max, IM_COL32(0, 0, 0, 0));
+		window->DrawList->AddImage(textureID, bb.Min, bb.Max);
+		if (selected) {
+			window->DrawList->AddRect(bb.Min, bb.Max, IM_COL32(255, 70, 0, 255));
+			std::string numSelected = std::to_string(std::distance(m_SelectedItems.begin(), it) + 1);
+			ImVec2 textSize = CalcTextSize(numSelected.c_str());
+			ImVec2 textStart(bb.Max.x - textSize.x - 10.0f, bb.Min.y + 5.0f);
+			TextBackground(textStart, numSelected);
+		}
+
+		if (pressed) {
+			if (selected) {
+				m_SelectedItems.erase(it);
+			}
+			else {
+				if (m_SelectedItems.size() == m_MaxSelections) {
+					m_SelectedItems.erase(m_SelectedItems.begin());
+				}
+				m_SelectedItems.emplace_back(index);
+			}
 		}
 
 		return { hovered, pressed };

@@ -60,7 +60,7 @@ namespace BO3PracticeTool
 
 		ImGui::SetNextItemWidth(200.0f);
 		if (ImGui::BeginCombo("Select Filter Level", filterItems[filterIndex].c_str())) {
-			if (ImGui::Selection::RenderSelection(filterItems, filterIndex)) {
+			if (ImGui::Selection::Render(filterItems, filterIndex)) {
 				s_Filter = GetFilterByName(filterItems[filterIndex]);
 				FilterLogs();
 			}

@@ -102,7 +102,7 @@ namespace BO3PracticeTool
 
 	void DeleteBGBPreset(std::string_view name)
 	{
-		if (bgbPresetsIndex == bgbPresets.size() - 1) {
+		if (bgbPresetsIndex && bgbPresetsIndex == bgbPresets.size() - 1) {
 			bgbPresetsIndex--;
 		}
 		SafeEraseBGBPreset(bgbPresets, name);

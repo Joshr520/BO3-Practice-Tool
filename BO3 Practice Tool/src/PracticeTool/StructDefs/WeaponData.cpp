@@ -20,9 +20,15 @@ namespace BO3PracticeTool
 			const std::string& type = weaponList.Types[i];
 			rapidjson::Value& typeObject = json.AddObject(json.GetDocument(), type);
 
-			for (size_t j = 0; j < weaponList.Weapons.size(); j++) {
+			for (size_t j = 0; j < weaponList.Weapons[i].size(); j++) {
 				const Weapon& weapon = weaponList.Weapons[i][j];
-				const WeaponItem weaponItem = m_Items.find(type)->second[j];
+				WeaponItem weaponItem(-1, { }, -1);
+				const auto item = m_Items.find(type);
+				if (item != m_Items.end()) {
+					weaponItem.Optic = item->second[j].Optic;
+					weaponItem.Attachments = item->second[j].Attachments;
+					weaponItem.Camo = item->second[j].Camo;
+				}
 
 				rapidjson::Value& weaponObject = json.AddObject(typeObject, weapon.Name);
 				weaponObject.AddMember("Optic", weaponItem.Optic, json.GetAllocator());
@@ -31,6 +37,8 @@ namespace BO3PracticeTool
 				for (const size_t& attachment : weaponItem.Attachments) {
 					attachments.PushBack(attachment, json.GetAllocator());
 				}
+
+				weaponObject.AddMember("Camo", weaponItem.Camo, json.GetAllocator());
 			}
 		}
 
@@ -116,7 +124,16 @@ namespace BO3PracticeTool
 
 	void AddWeaponPreset(std::string_view name)
 	{
-		weaponPresets.emplace_back(WeaponPreset(name));
+		WeaponPreset preset(name);
+		for (size_t i = 0; i < weaponList.Types.size(); i++) {
+			const std::string& type = weaponList.Types[i];
+			std::vector<WeaponItem> weaponEntry;
+			for (int i = 0; i < weaponList.Weapons.size(); i++) {
+				weaponEntry.emplace_back(WeaponItem(-1, { }, -1));
+			}
+			preset.AddWeapons(type, weaponEntry);
+		}
+		weaponPresets.emplace_back(preset);
 		if (!CheckDirectory(WEAPON_DIRECTORY)) {
 			return;
 		}
@@ -125,7 +142,7 @@ namespace BO3PracticeTool
 
 	void DeleteWeaponPreset(std::string_view name)
 	{
-		if (weaponPresetsIndex == weaponPresets.size() - 1) {
+		if (weaponPresetsIndex && weaponPresetsIndex == weaponPresets.size() - 1) {
 			weaponPresetsIndex--;
 		}
 		SafeEraseWeaponPreset(weaponPresets, name);
@@ -143,26 +160,16 @@ namespace BO3PracticeTool
 	void LoadWeaponImages()
 	{
 		LOG_DEBUG("Weapon Image Load Start");
-		std::thread buildKitThread([&]() {
-			for (const auto& entry : std::filesystem::directory_iterator("Images\\Weapons\\Build Kits")) {
-				if (entry.path().extension().string() != ".png") {
-					continue;
-				}
-				buildKitImgList.emplace_back(std::make_unique<Walnut::Image>(entry.path().string()));
-			}
-			});
 
 		std::thread camosThread([&]() {
 			for (const auto& directory : std::filesystem::directory_iterator("Images\\Weapons\\Camos")) {
 				if (std::filesystem::is_directory(directory.path())) {
-					CamoGroup camoGroup;
 					for (const auto& file : std::filesystem::directory_iterator(directory.path())) {
 						if (file.path().extension().string() != ".png") {
 							continue;
 						}
-						camoGroup.Camos.insert({ file.path().filename().stem().string(), std::make_unique<Walnut::Image>(file.path().string()) });
+						camosImgList.emplace_back(Camo{ file.path().filename().string(), std::make_unique<Walnut::Image>(file.path().string())});
 					}
-					camosImgList.insert({ directory.path().filename().stem().string(), std::move(camoGroup) });
 				}
 			}
 			});
@@ -202,7 +209,6 @@ namespace BO3PracticeTool
 			}
 			});
 
-		buildKitThread.join();
 		camosThread.join();
 		weaponIconsThread.join();
 		opticsThread.join();

@@ -47,7 +47,7 @@ namespace ImGui
 		}
 	}
 
-	void TextURL::RenderTextURL(std::string_view text, std::string_view url, bool continueBefore, bool continueAfter)
+	void TextURL::Render(std::string_view text, std::string_view url, bool continueBefore, bool continueAfter)
 	{
 		if (continueBefore) {
 			SameLine();
@@ -90,7 +90,7 @@ namespace ImGui
 		}
 	}
 
-	bool Selection::RenderSelection(const std::vector<std::string>& items, int& index)
+	bool Selection::Render(const std::vector<std::string>& items, int& index)
 	{
 		int prevItem = index;
 		for (size_t i = 0; i < items.size(); i++) {
@@ -105,7 +105,7 @@ namespace ImGui
 		return prevItem != index;
 	}
 
-	TextEditSelectable::TextEditResponse TextEditSelectable::RenderTextEditSelectable()
+	TextEditSelectable::TextEditResponse TextEditSelectable::Render()
 	{
 		const std::string oldText = m_Text;
 		std::string newText = m_Text;

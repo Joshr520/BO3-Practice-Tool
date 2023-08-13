@@ -52,7 +52,7 @@ void BO3PracticeTool::RenderTabWindow()
 	TabSelection& group = userTabSelections[currentTabGroup];
 	ImGui::SetNextItemWidth(250);
 	if (ImGui::BeginCombo("##Tab Item Selection", group.TabItems[group.TabItemIndex].c_str())) {
-		if (ImGui::Selection::RenderSelection(group.TabItems, group.TabItemIndex)) {
+		if (ImGui::Selection::Render(group.TabItems, group.TabItemIndex)) {
 			std::string name = std::format("Black Ops 3 Practice Tool - {}: {}", group.TabGroup, group.TabItems[group.TabItemIndex]);
 			Walnut::Application::Get().SetAppName(name);
 			ManageImageLifetimes(group.TabItems[group.TabItemIndex]);
@@ -80,7 +80,7 @@ void BO3PracticeTool::RunPopups()
 		ImGui::SetNextWindowSize(ImVec2(400, 175));
 		if (ImGui::BeginPopup("About", ImGuiWindowFlags_NoDocking)) {
 			ImGui::Text::CenterText("Github Repository");
-			ImGui::TextURL::RenderTextURL("Github Repository", "https://github.com/Joshr520/BO3-Practice-Tool", 0, 0);
+			ImGui::TextURL::Render("Github Repository", "https://github.com/Joshr520/BO3-Practice-Tool", 0, 0);
 			ImGui::TextWrapped("A tool for the Steam version of Call of Duty: Black Ops III. Used to speedrun the Zombies mode.");
 			ImGui::TextWrapped("Allows the user to manipulate rng for practicing. Also provides many resources for doing real runs.");
 			if (Walnut::UI::ButtonCentered("Close")) {
