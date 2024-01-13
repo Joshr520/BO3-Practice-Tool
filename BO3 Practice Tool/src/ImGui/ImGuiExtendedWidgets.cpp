@@ -1,5 +1,6 @@
 #include "ImGuiExtendedWidgets.h"
 #include "imgui_internal.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 #include "PracticeTool/Core/Log.h"
 #include "PracticeTool/UI/Notifications.h"
@@ -34,6 +35,68 @@ std::string RemoveIllegalChars(std::string_view oldName, std::string_view newNam
 
 namespace ImGui
 {
+	TextEditSelectable::TextEditResponse TextEditSelectable::Render()
+	{
+		const std::string oldText = m_Text;
+		std::string newText = m_Text;
+		bool textEdited = false;
+		bool itemHovered = false;
+		int pops = 0;
+		if (!m_BeingEdited) {
+			if (m_Selected) {
+				PushStyleColor(ImGuiCol_HeaderActive, GetStyle().Colors[ImGuiCol_HeaderHovered]);
+				PushStyleColor(ImGuiCol_Header, GetStyle().Colors[ImGuiCol_HeaderActive]);
+			}
+			else {
+				PushStyleColor(ImGuiCol_HeaderActive, GetStyle().Colors[ImGuiCol_HeaderHovered]);
+				PushStyleColor(ImGuiCol_HeaderHovered, GetStyle().Colors[ImGuiCol_Header]);
+			}
+			pops = 2;
+		}
+		if (m_BeingEdited) {
+			const ImU32 bgCol = GetColorU32(ImGuiCol_HeaderHovered);
+			const ImVec2 cursor = GetCursorScreenPos();
+			ImRect frameBB = ImRect(cursor, ImVec2(GetContentRegionMaxAbs().x, cursor.y + GetFrameHeight()));
+			frameBB.Min.x -= IM_FLOOR(GetCurrentWindow()->WindowPadding.x * 0.5f - 1.0f);
+			frameBB.Max.x += IM_FLOOR(GetCurrentWindow()->WindowPadding.x * 0.5f);
+			RenderFrame(frameBB.Min, frameBB.Max, bgCol, true, GetStyle().FrameRounding);
+			RenderNavHighlight(frameBB, GetID(m_ID.c_str()), ImGuiNavHighlightFlags_TypeThin);
+			SetNextItemWidth(std::min(CalcTextSize(m_EditingText.c_str()).x + 25.0f, GetContentRegionAvail().x));
+			SetKeyboardFocusHere();
+			InputText(m_ID.c_str(), &m_EditingText, ImGuiInputTextFlags_AutoSelectAll);
+
+			if (IsKeyPressed(ImGuiKey_Enter, false)) {
+				m_BeingEdited = false;
+				if (m_EditingText != m_Text) {
+					textEdited = true;
+					newText = m_EditingText;
+					m_Text = m_EditingText;
+				}
+			}
+			else if (!IsItemHovered() && (IsMouseClicked(ImGuiMouseButton_Left) || IsMouseClicked(ImGuiMouseButton_Right))) {
+				if (!frameBB.Contains(GetMousePos())) {
+					m_Selected = false;
+				}
+				else {
+					itemHovered = true;
+				}
+				m_BeingEdited = false;
+				if (m_EditingText != m_Text) {
+					textEdited = true;
+					newText = m_EditingText;
+					m_Text = m_EditingText;
+				}
+			}
+		}
+		else {
+			// Hard coding indentation in text since not sure how to do it with imgui functions
+			TreeNodeEx(std::format("  {}", m_Text).c_str(), ImGuiTreeNodeFlags_CollapsingHeader | ImGuiTreeNodeFlags_Leaf);
+		}
+		PopStyleColor(pops);
+
+		return { textEdited, itemHovered ? itemHovered : IsItemHovered(), { oldText, newText } };
+	}
+
 #define GET_FILEPATH(filename) std::format("{}\\{}{}", m_Directory, filename, m_FileExt)
 
 	FileEditor::FileEditor(std::string_view id, const std::vector<std::string>& files)
@@ -454,8 +517,6 @@ namespace ImGui
 		return std::format("{} {}", m_PrefixID, m_Files.size() + 1);
 	}
 
-
-
 	ImageSelectionResponse ImageSelection::Render(int8_t index, ImTextureID textureID, const ImVec2& size, bool toggle)
 	{
 		ImGuiContext& g = *GImGui;
@@ -560,21 +621,36 @@ namespace ImGui
 			m_SelectedItems.erase(it);
 		}
 	}
-}
 
-void ImGui::TextBackground(const ImVec2& start, std::string_view text)
-{
-	ImGuiContext& g = *GImGui;
-	ImGuiWindow* window = GetCurrentWindow();
-	if (window->SkipItems) {
-		return;
+	bool MultiSelection::Render(bool autoInc)
+	{
+		if (!m_Selections.size()) {
+			return false;
+		}
+
+		bool changed = false;
+
+		for (size_t i = 0; i < m_Selections[m_DisplayIndex].Selection.size(); i++) {
+			const bool selected = m_SelectionIndex == m_DisplayIndex && m_ItemIndex == i;
+			if (ImGui::Selectable(m_Selections[m_DisplayIndex].Selection[i].c_str(), selected)) {
+				changed = m_SelectionIndex != m_DisplayIndex || m_ItemIndex != i;
+				m_SelectionIndex = m_DisplayIndex;
+				m_ItemIndex = i;
+			}
+			if (selected) {
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+
+		if (autoInc) {
+			m_DisplayIndex++;
+			if (m_DisplayIndex >= m_Selections.size()) {
+				m_DisplayIndex = 0;
+			}
+		}
+
+		return changed;
 	}
-
-	ImVec2 textSize = CalcTextSize(text.data());
-	ImVec2 end(start + textSize + ImVec2(5.0f, 5.0f));
-
-	window->DrawList->AddRectFilled(start, end, IM_COL32(25, 25, 25, 200));
-	window->DrawList->AddText(start + ImVec2(3.0f, 2.5f), Walnut::UI::Colors::Theme::text, text.data());
 }
 
 void ImGui::HelpMarker(std::string_view text)
@@ -589,9 +665,20 @@ void ImGui::HelpMarker(std::string_view text)
 	}
 }
 
+void ImGui::ItemTooltip(std::string_view text)
+{
+	if (IsItemHovered(ImGuiHoveredFlags_DelayNormal) && !IsItemActive()) {
+		if (BeginTooltip()) {
+			PushTextWrapPos(GetFontSize() * 35.0f);
+			TextWrapped(text.data());
+			PopTextWrapPos();
+			EndTooltip();
+		}
+	}
+}
+
 bool ImGui::Splitter(const char* label, bool split_vertically, float thickness, float* size1, float* size2, float min_size1, float min_size2, float splitter_long_axis_size)
 {
-	using namespace ImGui;
 	ImGuiContext& g = *GImGui;
 	ImGuiWindow* window = g.CurrentWindow;
 	ImGuiID id = window->GetID(label);
@@ -607,4 +694,83 @@ bool ImGui::BackButton()
 		return true;
 	}
 	return IsKeyPressed(ImGuiKey_Escape, false);
+}
+
+static std::unordered_map<std::string, bool> activeButtonData;
+
+bool ImGui::ActiveButton(std::string_view label, bool* active, ImVec2 size, ImU32 colorOn, ImU32 colorOff)
+{
+	if (activeButtonData.find(label.data()) == activeButtonData.end()) {
+		activeButtonData.insert({ label.data(), *active });
+	}
+
+	bool& on = activeButtonData[label.data()];
+	if (on) {
+		ImGui::PushStyleColor(ImGuiCol_Button, colorOn);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Walnut::UI::Colors::ColorWithMultipliedValue(colorOn, 1.15f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Walnut::UI::Colors::ColorWithMultipliedValue(colorOn, 1.075f));
+	}
+	else {
+		ImGui::PushStyleColor(ImGuiCol_Button, colorOff);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Walnut::UI::Colors::ColorWithMultipliedValue(colorOff, 1.15f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Walnut::UI::Colors::ColorWithMultipliedValue(colorOff, 1.075f));
+	}
+	bool released = ImGui::Button(label.data(), size);
+	ImGui::PopStyleColor(3);
+
+	if (IsItemActive() && IsItemHovered() && activeButtonData[label.data()] == *active) {
+		activeButtonData[label.data()] = !*active;
+	}
+	else if (!IsItemHovered() && activeButtonData[label.data()] != *active) {
+		activeButtonData[label.data()] = *active;
+	}
+	if (released) {
+		*active = !*active;
+	}
+	return released;
+}
+
+bool ImGui::ToggleButton(std::string_view id, std::string_view name, bool* value)
+{
+	ImGuiContext& g = *GImGui;
+	ImVec2 p = GetCursorScreenPos();
+	ImDrawList* drawList = GetWindowDrawList();
+
+	float height = GetFrameHeight();
+	float width = height * 1.75f;
+	float radius = height * 0.50f;
+
+	BeginGroup();
+	InvisibleButton(id.data(), ImVec2(width + CalcTextSize(name.data()).x + g.Style.ItemSpacing.x, height));
+	bool clicked = false;
+	if (IsItemClicked()) {
+		*value = !*value;
+		clicked = true;
+	}
+
+	float t = *value ? 1.0f : 0.0f;
+
+	float ANIM_SPEED = 0.08f;
+	if (g.LastActiveId == g.CurrentWindow->GetID(id.data()))// && g.LastActiveIdTimer < ANIM_SPEED)
+	{
+		float t_anim = ImSaturate(g.LastActiveIdTimer / ANIM_SPEED);
+		t = *value ? (t_anim) : (1.0f - t_anim);
+	}
+
+	ImU32 bg;
+	if (IsItemHovered()) {
+		bg = GetColorU32(ImLerp(ImVec4(0.55f, 0.55f, 0.55f, 1.0f), ImVec4(0.2f, 0.75f, 0.95f, 1.0f), t));
+	}
+	else {
+		bg = GetColorU32(ImLerp(ImVec4(0.45f, 0.45f, 0.45f, 1.0f), ImVec4(0.13f, 0.7f, 0.9f, 1.0f), t));
+	}
+
+	drawList->AddRectFilled(p, ImVec2(p.x + width, p.y + height), bg, height * 0.5f);
+	drawList->AddCircleFilled(ImVec2(p.x + radius + t * (width - radius * 2.0f), p.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));
+
+	SetCursorScreenPos(ImVec2(p.x + width + g.Style.ItemSpacing.x, p.y + GetFontSize() / 4));
+	Text(name.data());
+	EndGroup();
+
+	return clicked;
 }

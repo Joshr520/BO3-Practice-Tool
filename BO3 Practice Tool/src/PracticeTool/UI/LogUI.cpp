@@ -20,7 +20,7 @@ ImU32 GetColorByLevel(spdlog::level::level_enum level);
 #define COLOR_CRITICAL IM_COL32(255, 0, 0, 255)
 
 const std::vector<std::string> filterItems = { "Debug", "Info", "Warning", "Error" };
-int filterIndex = 1;
+size_t filterIndex = 1;
 
 ImGuiWindowFlags logFlags = ImGuiWindowFlags_NoCollapse;
 
@@ -54,13 +54,9 @@ namespace BO3PracticeTool
 			return ImGui::End();
 		}
 
-		if (ImGui::IsWindowDocked()) {
-			logFlags |= ImGuiWindowFlags_NoMove;
-		}
-
 		ImGui::SetNextItemWidth(200.0f);
 		if (ImGui::BeginCombo("Select Filter Level", filterItems[filterIndex].c_str())) {
-			if (ImGui::Selection::Render(filterItems, filterIndex)) {
+			if (ImGui::Selection(filterItems, filterIndex)) {
 				s_Filter = GetFilterByName(filterItems[filterIndex]);
 				FilterLogs();
 			}

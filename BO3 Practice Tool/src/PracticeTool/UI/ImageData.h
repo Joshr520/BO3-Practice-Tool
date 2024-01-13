@@ -7,10 +7,12 @@ namespace BO3PracticeTool
 {
 	inline void ManageImageLifetimes(std::string_view window)
 	{
-		if (bgbClassicImages.size() && (window != "Gobblegum Presets" && window != "Gum Tracker")) {
-			BO3PracticeTool::UnloadBGBImages();
+		if (bgbImages.size() && (window != "Gobblegum Presets" && window != "Gum Tracker")) {
+			UnloadBGBImages();
 		}
-		UnloadWeaponImages();
+		if (weaponIconsImgList.size()) {
+			UnloadWeaponImages();
+		}
 
 		if (window.empty()) {
 			return;

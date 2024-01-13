@@ -13,6 +13,8 @@ namespace BO3PracticeTool
 		static void Init();
 		static void Shutdown();
 
+		static bool LogReady() { return s_LogInit; }
+
 		static void SetCallback(std::function<void(spdlog::level::level_enum, std::string_view)> callback) { s_Callback = callback; }
 
 		template<typename... Args>
@@ -26,6 +28,8 @@ namespace BO3PracticeTool
 			}
 		}
 	private:
+		static bool s_LogInit;
+
 		static std::shared_ptr<spdlog::logger> s_Logger;
 		static std::shared_ptr<spdlog::sinks::ringbuffer_sink_mt> s_RingBuffer;
 

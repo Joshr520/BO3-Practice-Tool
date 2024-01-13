@@ -14,9 +14,9 @@ namespace BO3PracticeTool
         buffer << inFile.rdbuf();
         inFile.close();
         JSON json;
-        json.GetDocument().Parse(buffer.str().c_str());
-        if (json.GetDocument().HasParseError()) {
-            json.GetDocument().SetObject();
+        json.m_Document.Parse(buffer.str().c_str());
+        if (json.m_Document.HasParseError()) {
+            json.m_Document.SetObject();
             json.WriteEmpty(filename);
         }
         return json;
@@ -25,9 +25,9 @@ namespace BO3PracticeTool
     JSON JSON::FromString(const std::string& buffer)
     {
         JSON json;
-        json.GetDocument().Parse(buffer.c_str());
-        if (json.GetDocument().HasParseError()) {
-            json.GetDocument().SetObject();
+        json.m_Document.Parse(buffer.c_str());
+        if (json.m_Document.HasParseError()) {
+            json.m_Document.SetObject();
         }
         return json;
     }

@@ -11,6 +11,7 @@
 
 namespace BO3PracticeTool
 {
+	bool Log::s_LogInit = false;
 	std::shared_ptr<spdlog::logger> Log::s_Logger;
 	std::shared_ptr<spdlog::sinks::ringbuffer_sink_mt> Log::s_RingBuffer;
 	std::function<void(spdlog::level::level_enum, std::string_view)> Log::s_Callback;
@@ -37,6 +38,7 @@ namespace BO3PracticeTool
 		SetCallback(ImGuiLogs::AddLog);
 
 		LOG_INFO("Logging initialized");
+		s_LogInit = true;
 	}
 
 	void Log::Shutdown()

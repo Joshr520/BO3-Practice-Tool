@@ -19,7 +19,7 @@ namespace BO3PracticeTool
 			if (TimePoint == log.TimePoint) {
 				return Level < log.Level;
 			}
-			return TimePoint < log.TimePoint; 
+			return TimePoint < log.TimePoint;
 		}
 	};
 

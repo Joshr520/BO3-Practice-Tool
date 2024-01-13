@@ -1,53 +1,69 @@
 #include "ImGuiUtils.h"
 #include "imgui_internal.h"
-#include "misc/cpp/imgui_stdlib.h"
 
 #include "Walnut/ImGui/ImGuiTheme.h"
+#include "Walnut/Application.h"
 
 #include <thread>
 #include <Windows.h>
 
 namespace ImGui
 {
-	PopupState PopupWrapper::s_PrepState;
-	PopupState PopupWrapper::s_OpenState;
-	std::queue<PopupState> PopupWrapper::s_StateQueue;
+	void UnderlineText(ImColor color);
 
-	void PopupWrapper::PrepPopup(PopupState state)
+	void OpenOverridePopup(std::string_view name)
 	{
-		if (state == PopupState::None || state == PopupState::Open) {
-			return;
-		}
-		if (s_PrepState == PopupState::None) {
-			s_PrepState = state;
-		}
-		else {
-			s_StateQueue.push(state);
-		}
+		ImGuiID id = ImHashStr(name.data());
+		PushOverrideID(id);
+		OpenPopup(name.data());
+		PopID();
 	}
 
-	void PopupWrapper::OpenPopup(PopupState state)
+	bool BeginOverridePopup(std::string_view name, ImGuiWindowFlags flags)
 	{
-		if (state == PopupState::None || state == PopupState::Open) {
-			return;
+		ImGuiID id = ImHashStr(name.data());
+		PushOverrideID(id);
+		if (!BeginPopup(name.data(), flags)) {
+			PopID();
+			return false;
 		}
-		s_PrepState = PopupState::Open;
-		s_OpenState = state;
+		return true;
 	}
 
-	void PopupWrapper::ClosePopup()
+	void EndOverridePopup()
 	{
-		s_OpenState = PopupState::None;
-		if (s_StateQueue.size()) {
-			s_PrepState = s_StateQueue.front();
-			s_StateQueue.pop();
-		}
-		else {
-			s_PrepState = PopupState::None;
-		}
+		EndPopup();
+		PopID();
 	}
 
-	void TextURL::Render(std::string_view text, std::string_view url, bool continueBefore, bool continueAfter)
+	bool BeginCenteredOverridePopupModal(std::string_view name, const ImVec2& sizeArg, bool* open, ImGuiWindowFlags flags)
+	{
+		ImGuiContext& g = *GImGui;
+		ImGuiViewport* viewport = g.CurrentViewport;
+
+		ImVec2 size = ImFloor(sizeArg);
+		if (size.x <= 0.0f) {
+			size.x = viewport->WorkSize.x * 0.6f;
+		}
+		if (size.y <= 0.0f) {
+			size.y = viewport->WorkSize.y * 0.6f;
+		}
+		ImVec2 windowPos = ImVec2(viewport->WorkPos.x + (viewport->WorkSize.x - size.x) * 0.5f, viewport->WorkPos.y + (viewport->WorkSize.y - size.y) * 0.5f);
+
+		SetNextWindowSize(size);
+		SetNextWindowPos(windowPos, ImGuiCond_Always);
+
+		ImGuiID id = ImHashStr(name.data());
+		PushOverrideID(id);
+
+		if (!BeginPopupModal(name.data(), open, flags)) {
+			PopID();
+			return false;
+		}
+		return true;
+	}
+
+	void TextURL(std::string_view text, std::string_view url, bool continueBefore, bool continueAfter)
 	{
 		if (continueBefore) {
 			SameLine();
@@ -69,7 +85,7 @@ namespace ImGui
 		}
 	}
 
-	void TextURL::UnderlineText(ImColor color)
+	void UnderlineText(ImColor color)
 	{
 		ImVec2 min = GetItemRectMin();
 		ImVec2 max = GetItemRectMax();
@@ -77,11 +93,53 @@ namespace ImGui
 		GetWindowDrawList()->AddLine(min, max, color, 1.0f);
 	}
 
-	void Text::CenterText(std::string_view text)
+	void TextBold(const char* fmt, ...)
+	{
+		PushFont(Walnut::Application::GetFont("Bold"));
+		va_list args;
+		va_start(args, fmt);
+		TextV(fmt, args);
+		va_end(args);
+		PopFont();
+	}
+
+	void TextBackground(const ImVec2& start, std::string_view text)
+	{
+		ImGuiContext& g = *GImGui;
+		ImGuiWindow* window = GetCurrentWindow();
+		if (window->SkipItems) {
+			return;
+		}
+
+		ImVec2 textSize = CalcTextSize(text.data());
+		ImVec2 end(start + textSize + ImVec2(5.0f, 5.0f));
+
+		window->DrawList->AddRectFilled(start, end, IM_COL32(25, 25, 25, 200));
+		window->DrawList->AddText(start + ImVec2(3.0f, 2.5f), Walnut::UI::Colors::Theme::text, text.data());
+	}
+
+	void TextClipped(std::string_view text, const ImRect& bb)
+	{
+		ImGuiContext& g = *GImGui;
+		ImVec2 size = CalcTextSize(text.data(), NULL, true);
+
+		if (bb.GetWidth() <= 1.0f) {
+			return;
+		}
+
+		ImRect textPixelClipBB(bb.Min.x + g.Style.FramePadding.x, bb.Min.y + g.Style.FramePadding.y, bb.Max.x - g.Style.FramePadding.x, bb.Max.y);
+		ImRect textEllipsisClipBB = textPixelClipBB;
+
+		bool clipped = (textEllipsisClipBB.Min.x + size.x) > textPixelClipBB.Max.x;
+
+		RenderTextEllipsis(g.CurrentWindow->DrawList, textEllipsisClipBB.Min, textEllipsisClipBB.Max, textPixelClipBB.Max.x, bb.Max.x - 1.0f, text.data(), NULL, &size);
+	}
+
+	void CenterText(std::string_view text)
 	{
 		ImGuiStyle& style = GetStyle();
 
-		float actualSize = CalcTextSize(text.data()).x + style.FramePadding.x * 2.0f;
+		float actualSize = CalcTextSize(text.data()).x;
 		float avail = GetContentRegionAvail().x;
 
 		float off = (avail - actualSize) * 0.5f;
@@ -90,13 +148,26 @@ namespace ImGui
 		}
 	}
 
-	bool Selection::Render(const std::vector<std::string>& items, int& index)
+	void CenterTextHorizontalToWindow(std::string_view text)
 	{
-		int prevItem = index;
+		ImGuiStyle& style = GetStyle();
+
+		float actualSize = CalcTextSize(text.data()).x;
+		float width = GetContentRegionMax().x;
+
+		float off = (width - actualSize) * 0.5f;
+		if (off > 0.0f) {
+			SetCursorPosX(off);
+		}
+	}
+
+	bool Selection(const std::vector<std::string>& items, size_t& index)
+	{
+		size_t prevItem = index;
 		for (size_t i = 0; i < items.size(); i++) {
 			const bool selected = index == i;
 			if (Selectable(items[i].c_str(), selected)) {
-				index = static_cast<int>(i);
+				index = i;
 			}
 			if (selected) {
 				SetItemDefaultFocus();
@@ -105,65 +176,15 @@ namespace ImGui
 		return prevItem != index;
 	}
 
-	TextEditSelectable::TextEditResponse TextEditSelectable::Render()
+	void BeginRedButtons()
 	{
-		const std::string oldText = m_Text;
-		std::string newText = m_Text;
-		bool textEdited = false;
-		bool itemHovered = false;
-		int pops = 0;
-		if (!m_BeingEdited) {
-			if (m_Selected) {
-				PushStyleColor(ImGuiCol_HeaderActive, GetStyle().Colors[ImGuiCol_HeaderHovered]);
-				PushStyleColor(ImGuiCol_Header, GetStyle().Colors[ImGuiCol_HeaderActive]);
-			}
-			else {
-				PushStyleColor(ImGuiCol_HeaderActive, GetStyle().Colors[ImGuiCol_HeaderHovered]);
-				PushStyleColor(ImGuiCol_HeaderHovered, GetStyle().Colors[ImGuiCol_Header]);
-			}
-			pops = 2;
-		}
-		if (m_BeingEdited) {
-			const ImU32 bgCol = GetColorU32(ImGuiCol_HeaderHovered);
-			const ImVec2 cursor = GetCursorScreenPos();
-			ImRect frameBB = ImRect(cursor, ImVec2(GetContentRegionMaxAbs().x, cursor.y + GetFrameHeight()));
-			frameBB.Min.x -= IM_FLOOR(GetCurrentWindow()->WindowPadding.x * 0.5f - 1.0f);
-			frameBB.Max.x += IM_FLOOR(GetCurrentWindow()->WindowPadding.x * 0.5f);
-			RenderFrame(frameBB.Min, frameBB.Max, bgCol, true, GetStyle().FrameRounding);
-			RenderNavHighlight(frameBB, GetID(m_ID.c_str()), ImGuiNavHighlightFlags_TypeThin);
-			SetNextItemWidth(min(CalcTextSize(m_EditingText.c_str()).x + 25.0f, GetContentRegionAvail().x));
-			SetKeyboardFocusHere();
-			InputText(m_ID.c_str(), &m_EditingText, ImGuiInputTextFlags_AutoSelectAll);
+		ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(150, 0, 0, 200));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(150, 0, 0, 255));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(150, 0, 0, 150));
+	}
 
-			if (IsKeyPressed(ImGuiKey_Enter, false)) {
-				m_BeingEdited = false;
-				if (m_EditingText != m_Text) {
-					textEdited = true;
-					newText = m_EditingText;
-					m_Text = m_EditingText;
-				}
-			}
-			else if (!IsItemHovered() && (IsMouseClicked(ImGuiMouseButton_Left) || IsMouseClicked(ImGuiMouseButton_Right))) {
-				if (!frameBB.Contains(GetMousePos())) {
-					m_Selected = false;
-				}
-				else {
-					itemHovered = true;
-				}
-				m_BeingEdited = false;
-				if (m_EditingText != m_Text) {
-					textEdited = true;
-					newText = m_EditingText;
-					m_Text = m_EditingText;
-				}
-			}
-		}
-		else {
-			// Hard coding indentation in text since not sure how to do it with imgui functions
-			TreeNodeEx(std::format("  {}", m_Text).c_str(), ImGuiTreeNodeFlags_CollapsingHeader | ImGuiTreeNodeFlags_Leaf);
-		}
-		PopStyleColor(pops);
-
-		return { textEdited, itemHovered ? itemHovered : IsItemHovered(), { oldText, newText } };
+	void EndRedButtons()
+	{
+		ImGui::PopStyleColor(3);
 	}
 }
